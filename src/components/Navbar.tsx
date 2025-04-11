@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Home, Search, ClipboardList } from 'lucide-react';
+import { Menu, X, User, Home, Search, ClipboardList, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Navbar = () => {
@@ -18,37 +18,38 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-restaurant-primary text-white shadow-md">
+    <nav className="bg-blink-primary text-blink-text shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="font-bold text-xl">Prato Fácil</span>
+              <Zap className="h-6 w-6 mr-2" />
+              <span className="font-bold text-xl">Blink</span>
             </Link>
           </div>
           
           <div className="hidden md:flex items-center space-x-4">
             <Link 
               to="/search" 
-              className="px-3 py-2 rounded-md text-sm font-medium hover:bg-restaurant-dark"
+              className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blink-secondary hover:text-white"
             >
               Buscar Restaurantes
             </Link>
             <Link 
               to="/check-in/latest" 
-              className="px-3 py-2 rounded-md text-sm font-medium hover:bg-restaurant-dark"
+              className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blink-secondary hover:text-white"
             >
               Check-in
             </Link>
             <Link 
               to="/order-summary/latest" 
-              className="px-3 py-2 rounded-md text-sm font-medium hover:bg-restaurant-dark"
+              className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blink-secondary hover:text-white"
             >
               Meus Pedidos
             </Link>
             <Button 
               variant="outline" 
-              className="border-white text-white hover:bg-restaurant-dark hover:text-white"
+              className="border-blink-text text-blink-text hover:bg-blink-secondary hover:text-white"
               asChild
             >
               <Link to="/login">
@@ -61,7 +62,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-restaurant-dark focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-blink-text hover:bg-blink-secondary hover:text-white focus:outline-none"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -72,10 +73,10 @@ const Navbar = () => {
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-restaurant-primary">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-blink-primary">
             <Link
               to="/search"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-restaurant-dark"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               <div className="flex items-center">
@@ -85,7 +86,7 @@ const Navbar = () => {
             </Link>
             <Link
               to="/check-in/latest"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-restaurant-dark"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               <div className="flex items-center">
@@ -95,7 +96,7 @@ const Navbar = () => {
             </Link>
             <Link
               to="/order-summary/latest"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-restaurant-dark"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               <div className="flex items-center">
@@ -105,7 +106,7 @@ const Navbar = () => {
             </Link>
             <Link
               to="/login"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-restaurant-dark"
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               <div className="flex items-center">

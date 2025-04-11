@@ -63,14 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				restaurant: {
-					primary: '#2e7d32',
-					secondary: '#ff8a65',
-					accent: '#ff5722',
-					light: '#e8f5e9',
-					dark: '#1b5e20',
-					text: '#263238',
-					background: '#f5f5f5'
+				blink: {
+					primary: '#faff00', // Bright yellow
+					secondary: '#F97316', // Bright orange for call-to-actions
+					accent: '#9333EA', // Purple for attraction/highlights
+					light: '#FEF7CD', // Soft yellow
+					peach: '#FDE1D3', // Soft peach
+					purple: '#E5DEFF', // Soft purple
+					text: '#222222', // Dark gray for text
+					background: '#F1F1F1' // Light gray for backgrounds
 				}
 			},
 			borderRadius: {
