@@ -36,7 +36,7 @@ const OrderSummary = () => {
       
       toast({
         title: "Pedido finalizado com sucesso!",
-        description: "Obrigado por utilizar o Prato Fácil.",
+        description: "Obrigado por utilizar o Blink.",
       });
       
       navigate('/completed-order/latest');
@@ -99,8 +99,8 @@ const OrderSummary = () => {
                   </div>
                 </li>
                 <li className="flex items-center">
-                  <div className="bg-restaurant-light p-1 rounded-full mr-3">
-                    <Clock className="h-4 w-4 text-restaurant-primary" />
+                  <div className="bg-blink-light p-1 rounded-full mr-3">
+                    <Clock className="h-4 w-4 text-blink-primary" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">Preparando pedido</p>
@@ -117,7 +117,7 @@ const OrderSummary = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start">
-                <MapPin className="h-5 w-5 text-restaurant-primary mt-0.5 mr-2" />
+                <MapPin className="h-5 w-5 text-blink-primary mt-0.5 mr-2" />
                 <div>
                   <p className="font-medium">Boteco Tal</p>
                   <p className="text-sm text-gray-500">Rua das Flores, 123</p>
@@ -125,7 +125,7 @@ const OrderSummary = () => {
               </div>
               
               <div className="flex items-start">
-                <Utensils className="h-5 w-5 text-restaurant-primary mt-0.5 mr-2" />
+                <Utensils className="h-5 w-5 text-blink-primary mt-0.5 mr-2" />
                 <div>
                   <p className="font-medium">Mesa 2</p>
                   <p className="text-sm text-gray-500">4 pessoas</p>
@@ -133,7 +133,7 @@ const OrderSummary = () => {
               </div>
               
               <div className="flex items-start">
-                <CreditCard className="h-5 w-5 text-restaurant-primary mt-0.5 mr-2" />
+                <CreditCard className="h-5 w-5 text-blink-primary mt-0.5 mr-2" />
                 <div>
                   <p className="font-medium">Pagamento pelo App</p>
                   <p className="text-sm text-gray-500">Aprovado</p>
@@ -141,7 +141,7 @@ const OrderSummary = () => {
               </div>
               
               <div className="flex items-start">
-                <ClipboardList className="h-5 w-5 text-restaurant-primary mt-0.5 mr-2" />
+                <ClipboardList className="h-5 w-5 text-blink-primary mt-0.5 mr-2" />
                 <div>
                   <p className="font-medium">Pedido #12345</p>
                   <p className="text-sm text-gray-500">Hoje, 19:30</p>
@@ -193,7 +193,7 @@ const OrderSummary = () => {
         
         <div className="space-y-4">
           <Button 
-            className="w-full bg-restaurant-primary hover:bg-restaurant-dark"
+            className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
             size="lg"
             onClick={handleCompleteOrder}
             disabled={isCompleting}

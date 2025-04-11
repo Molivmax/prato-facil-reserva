@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CreditCard, WalletCards, Banknote } from 'lucide-react';
+import { ArrowLeft, CreditCard, WalletCards, Banknote, Coins } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,7 +69,7 @@ const PaymentOptions = () => {
                 <RadioGroupItem value="credit" id="payment-credit" />
                 <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
-                    <CreditCard className="h-5 w-5 text-restaurant-primary mr-3" />
+                    <CreditCard className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
                       <p className="font-medium">Cartão de Crédito</p>
                       <p className="text-sm text-gray-500">Pague agora e tenha seu pedido aprovado imediatamente</p>
@@ -82,7 +82,7 @@ const PaymentOptions = () => {
                 <RadioGroupItem value="app" id="payment-app" />
                 <Label htmlFor="payment-app" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
-                    <WalletCards className="h-5 w-5 text-restaurant-primary mr-3" />
+                    <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
                       <p className="font-medium">Pagar pelo App</p>
                       <p className="text-sm text-gray-500">Use seu saldo ou cartões salvos no app</p>
@@ -92,10 +92,23 @@ const PaymentOptions = () => {
               </div>
               
               <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
+                <RadioGroupItem value="micro-credit" id="payment-micro-credit" />
+                <Label htmlFor="payment-micro-credit" className="flex-1 cursor-pointer">
+                  <div className="flex items-center">
+                    <Coins className="h-5 w-5 text-blink-primary mr-3" />
+                    <div>
+                      <p className="font-medium">Micro Crédito Blink</p>
+                      <p className="text-sm text-gray-500">Use seu limite de micro crédito disponível no app</p>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
                 <RadioGroupItem value="local" id="payment-local" />
                 <Label htmlFor="payment-local" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
-                    <Banknote className="h-5 w-5 text-restaurant-primary mr-3" />
+                    <Banknote className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
                       <p className="font-medium">Pagar no Local</p>
                       <p className="text-sm text-gray-500">Pague com dinheiro, cartão ou Pix no restaurante</p>
@@ -109,7 +122,7 @@ const PaymentOptions = () => {
         
         <div className="space-y-4">
           <Button 
-            className="w-full bg-restaurant-primary hover:bg-restaurant-dark"
+            className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
             size="lg"
             onClick={handleContinue}
             disabled={!paymentMethod || isProcessing}
@@ -118,7 +131,7 @@ const PaymentOptions = () => {
           </Button>
           
           <p className="text-center text-sm text-gray-500">
-            Ao confirmar o pagamento, você concorda com os Termos e Condições e a Política de Privacidade do Prato Fácil.
+            Ao confirmar o pagamento, você concorda com os Termos e Condições e a Política de Privacidade do Blink.
           </p>
         </div>
       </div>
