@@ -5,21 +5,21 @@ import { Zap } from 'lucide-react';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blink-light to-white p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-black/70 p-4">
       <div className="text-center max-w-md">
         <div className="mb-6 flex justify-center">
-          <div className="bg-blink-primary rounded-full p-4 inline-block">
+          <div className="bg-blink-primary rounded-full p-4 inline-block shadow-[0_0_30px_rgba(250,255,0,0.3)]">
             <Zap className="h-12 w-12 text-blink-text" />
           </div>
         </div>
-        <h1 className="text-4xl font-bold mb-3 text-blink-text">Blink</h1>
-        <p className="text-xl text-gray-700 mb-8">
+        <h1 className="text-4xl font-bold mb-3 text-white">Blink</h1>
+        <p className="text-xl text-gray-300 mb-8">
           Num piscar de olhos você está atendido! Reserve, escolha seu prato e pague antes de chegar.
         </p>
         
         <div className="space-y-4">
           <Button 
-            className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
+            className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text shadow-lg"
             size="lg"
             asChild
           >
@@ -30,7 +30,7 @@ const Index = () => {
           
           <Button 
             variant="outline" 
-            className="w-full border-blink-primary text-blink-text hover:bg-blink-light"
+            className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
             size="lg"
             asChild
           >
@@ -41,7 +41,7 @@ const Index = () => {
           
           <Button 
             variant="link" 
-            className="w-full text-blink-secondary"
+            className="w-full text-blink-secondary hover:text-blink-primary"
             asChild
           >
             <Link to="/search">

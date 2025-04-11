@@ -50,74 +50,74 @@ const PaymentOptions = () => {
   };
 
   return (
-    <div className="subtle-gradient min-h-screen">
+    <div className="bg-background min-h-screen">
       <Navbar />
       <div className="container max-w-md mx-auto px-4 py-6">
         <Button 
           variant="ghost" 
-          className="mb-4"
+          className="mb-4 text-white hover:bg-white/10"
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </Button>
         
-        <h1 className="text-2xl font-bold mb-6">Opções de Pagamento</h1>
+        <h1 className="text-2xl font-bold mb-6 text-white">Opções de Pagamento</h1>
         
-        <Card className="mb-8 glass-effect border-none">
+        <Card className="mb-8 bg-black/50 backdrop-blur-md border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
           <CardContent className="p-6">
             <RadioGroup
               value={paymentMethod || ""}
               onValueChange={setPaymentMethod}
               className="space-y-4"
             >
-              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
+              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="credit" id="payment-credit" />
                 <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
                     <CreditCard className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
-                      <p className="font-medium">Cartão de Crédito</p>
-                      <p className="text-sm text-gray-500">Pague agora e tenha seu pedido aprovado imediatamente</p>
+                      <p className="font-medium text-white">Cartão de Crédito</p>
+                      <p className="text-sm text-gray-400">Pague agora e tenha seu pedido aprovado imediatamente</p>
                     </div>
                   </div>
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
+              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="app" id="payment-app" />
                 <Label htmlFor="payment-app" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
                     <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
-                      <p className="font-medium">Pagar pelo App</p>
-                      <p className="text-sm text-gray-500">Use seu saldo ou cartões salvos no app</p>
+                      <p className="font-medium text-white">Pagar pelo App</p>
+                      <p className="text-sm text-gray-400">Use seu saldo ou cartões salvos no app</p>
                     </div>
                   </div>
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
+              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="micro-credit" id="payment-micro-credit" />
                 <Label htmlFor="payment-micro-credit" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
                     <Coins className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
-                      <p className="font-medium">Micro Crédito Blink</p>
-                      <p className="text-sm text-gray-500">Use seu limite de micro crédito disponível no app</p>
+                      <p className="font-medium text-white">Micro Crédito Blink</p>
+                      <p className="text-sm text-gray-400">Use seu limite de micro crédito disponível no app</p>
                     </div>
                   </div>
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
+              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="local" id="payment-local" />
                 <Label htmlFor="payment-local" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
                     <Banknote className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
-                      <p className="font-medium">Pagar no Local</p>
-                      <p className="text-sm text-gray-500">Pague com dinheiro, cartão ou Pix no restaurante</p>
+                      <p className="font-medium text-white">Pagar no Local</p>
+                      <p className="text-sm text-gray-400">Pague com dinheiro, cartão ou Pix no restaurante</p>
                     </div>
                   </div>
                 </Label>
@@ -135,7 +135,7 @@ const PaymentOptions = () => {
             {isProcessing ? "Processando..." : "Confirmar Pagamento"}
           </Button>
           
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-gray-400">
             Ao confirmar o pagamento, você concorda com os Termos e Condições e a Política de Privacidade do Blink.
           </p>
         </div>

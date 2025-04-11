@@ -1,38 +1,37 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 98%; /* Lighter, more sophisticated background */
-    --foreground: 0 0% 13%; /* #222222 */
+    --background: 225 25% 12%; /* More sophisticated dark background */
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
+    --card: 222 25% 16%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
+    --popover: 222 25% 16%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 60 100% 50%; /* #faff00 bright yellow */
+    --primary: 60 100% 50%; /* #faff00 */
     --primary-foreground: 0 0% 13%;
 
-    --secondary: 25 94% 53%; /* #F97316 bright orange */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 25 94% 53%; /* #F97316 */
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 60 100% 90%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 220 25% 20%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 270 80% 56%; /* #9333EA purple */
-    --accent-foreground: 0 0% 100%;
+    --accent: 270 80% 56%; /* #9333EA */
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
     --ring: 60 100% 50%;
-
-    --radius: 0.5rem;
   }
 
   .dark {
