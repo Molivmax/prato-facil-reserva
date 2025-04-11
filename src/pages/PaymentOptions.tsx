@@ -39,12 +39,18 @@ const PaymentOptions = () => {
         description: "Seu pedido foi recebido pelo restaurante.",
       });
       
+      // Simular envio de notificação ao restaurante quando estiver a 5min de distância
+      toast({
+        title: "Localização ativada",
+        description: "O restaurante será notificado quando você estiver a 5 minutos de distância.",
+      });
+      
       navigate(`/check-in/${orderId}`);
     }, 1500);
   };
 
   return (
-    <>
+    <div className="subtle-gradient min-h-screen">
       <Navbar />
       <div className="container max-w-md mx-auto px-4 py-6">
         <Button 
@@ -58,14 +64,14 @@ const PaymentOptions = () => {
         
         <h1 className="text-2xl font-bold mb-6">Opções de Pagamento</h1>
         
-        <Card className="mb-8">
+        <Card className="mb-8 glass-effect border-none">
           <CardContent className="p-6">
             <RadioGroup
               value={paymentMethod || ""}
               onValueChange={setPaymentMethod}
               className="space-y-4"
             >
-              <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
+              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
                 <RadioGroupItem value="credit" id="payment-credit" />
                 <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
@@ -78,7 +84,7 @@ const PaymentOptions = () => {
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
+              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
                 <RadioGroupItem value="app" id="payment-app" />
                 <Label htmlFor="payment-app" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
@@ -91,7 +97,7 @@ const PaymentOptions = () => {
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
+              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
                 <RadioGroupItem value="micro-credit" id="payment-micro-credit" />
                 <Label htmlFor="payment-micro-credit" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
@@ -104,7 +110,7 @@ const PaymentOptions = () => {
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
+              <div className="flex items-center space-x-2 rounded-lg border border-gray-100 p-4 cursor-pointer hover:bg-white/50 transition-colors">
                 <RadioGroupItem value="local" id="payment-local" />
                 <Label htmlFor="payment-local" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
@@ -122,8 +128,7 @@ const PaymentOptions = () => {
         
         <div className="space-y-4">
           <Button 
-            className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
-            size="lg"
+            className="w-full btn-sophisticated py-6"
             onClick={handleContinue}
             disabled={!paymentMethod || isProcessing}
           >
@@ -135,7 +140,7 @@ const PaymentOptions = () => {
           </p>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
