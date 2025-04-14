@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Zap } from 'lucide-react';
@@ -54,7 +55,7 @@ const Index = () => {
             asChild
           >
             <Link to="/partner-registration">
-              Cadastre seu Estabelecimento
+              Blink
             </Link>
           </Button>
         </div>
@@ -64,3 +65,4 @@ const Index = () => {
 };
 
 export default Index;
+
