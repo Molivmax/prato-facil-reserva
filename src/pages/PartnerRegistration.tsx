@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MapPin, Store } from 'lucide-react';
 import DishImageSelector from '@/components/DishImageSelector';
+import DescriptionSuggestions from '@/components/DescriptionSuggestions';
 
 interface Dish {
   name: string;
@@ -24,6 +25,7 @@ const PartnerRegistration = () => {
     price: '',
   });
   const { toast } = useToast();
+	const [description, setDescription] = useState('');
 
   const requestLocation = () => {
     if ("geolocation" in navigator) {
@@ -69,6 +71,14 @@ const PartnerRegistration = () => {
     }
   };
 
+	const handleDescriptionSelect = (selectedDescription: string) => {
+    setDescription(selectedDescription);
+    toast({
+      title: "Descrição selecionada",
+      description: "A descrição foi atualizada com sucesso.",
+    });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-black/70 p-4">
       <Card className="w-full max-w-2xl bg-black/50 backdrop-blur-md border border-white/10">
@@ -108,14 +118,18 @@ const PartnerRegistration = () => {
                 </p>
               )}
             </div>
+					</div>
 
-            <div className="space-y-2">
-              <Label className="text-white">Descrição</Label>
-              <Textarea 
-                placeholder="Descreva seu estabelecimento..."
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-              />
-            </div>
+          <div className="space-y-4">
+            <Label className="text-white">Descrição do Estabelecimento</Label>
+            <DescriptionSuggestions onSelect={handleDescriptionSelect} />
+            <Textarea 
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descrição do seu estabelecimento..."
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 mt-4"
+            />
+          </div>
 
             <div className="space-y-2">
               <Label className="text-white">Horário de Funcionamento</Label>
@@ -133,7 +147,7 @@ const PartnerRegistration = () => {
                 className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
               />
             </div>
-          </div>
+          
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white">Cadastro de Pratos</h3>
