@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Zap } from 'lucide-react';
@@ -46,6 +45,16 @@ const Index = () => {
           >
             <Link to="/search">
               Explorar sem login
+            </Link>
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
+            size="lg"
+            asChild
+          >
+            <Link to="/partner-registration">
+              Cadastre seu Estabelecimento
             </Link>
           </Button>
         </div>
