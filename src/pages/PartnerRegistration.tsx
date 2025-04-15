@@ -10,6 +10,8 @@ import DishImageSelector from '@/components/DishImageSelector';
 import DescriptionSuggestions from '@/components/DescriptionSuggestions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CurrencyInput from '@/components/CurrencyInput';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface Dish {
   name: string;
@@ -32,6 +34,10 @@ const PartnerRegistration = () => {
 	const [description, setDescription] = useState('');
   const [customHours, setCustomHours] = useState('');
   const [selectedHours, setSelectedHours] = useState('');
+
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [establishmentName, setEstablishmentName] = useState('');
 
   const requestLocation = () => {
     if ("geolocation" in navigator) {
@@ -94,6 +100,74 @@ const PartnerRegistration = () => {
     });
   };
 
+  const handleSubmit = async () => {
+    if (!establishmentName || !location || !selectedHours || !description) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Insert establishment
+      const { data: establishment, error: establishmentError } = await supabase
+        .from('establishments')
+        .insert([{
+          name: establishmentName,
+          description: description,
+          latitude: location.lat,
+          longitude: location.lng,
+          working_hours: selectedHours === 'Outros' ? customHours : selectedHours,
+          contact: document.querySelector<HTMLInputElement>('input[type="tel"]')?.value || '',
+        }])
+        .select()
+        .single();
+
+      if (establishmentError) throw establishmentError;
+
+      // Insert products
+      if (dishes.length > 0 && establishment) {
+        const productsToInsert = dishes.map(dish => ({
+          establishment_id: establishment.id,
+          name: dish.name,
+          description: dish.description,
+          price: parseFloat(dish.price) / 100, // Convert from cents to reais
+          category: dish.category,
+          image_url: dish.imageUrl,
+        }));
+
+        const { error: productsError } = await supabase
+          .from('products')
+          .insert(productsToInsert);
+
+        if (productsError) throw productsError;
+      }
+
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Seu estabelecimento foi cadastrado.",
+      });
+
+      // Redirect to a success page or home
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Erro no cadastro",
+        description: "Ocorreu um erro ao cadastrar o estabelecimento. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-black/70 p-4">
       <Card className="w-full max-w-2xl bg-black/50 backdrop-blur-md border border-white/10">
@@ -110,6 +184,8 @@ const PartnerRegistration = () => {
               <div className="relative">
                 <Store className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <Input 
+                  value={establishmentName}
+                  onChange={(e) => setEstablishmentName(e.target.value)}
                   placeholder="Digite o nome do seu estabelecimento"
                   className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-500"
                 />
@@ -279,8 +355,12 @@ const PartnerRegistration = () => {
             )}
           </div>
 
-          <Button className="w-full bg-blink-primary hover:bg-blink-secondary text-blink-text">
-            Cadastrar Estabelecimento
+          <Button 
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-full bg-blink-primary hover:bg-blink-secondary text-blink-text"
+          >
+            {isSubmitting ? 'Cadastrando...' : 'Cadastrar Estabelecimento'}
           </Button>
         </CardContent>
       </Card>
