@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -18,7 +19,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -32,15 +33,37 @@ const Register = () => {
     
     setIsLoading(true);
 
-    // Simulação de cadastro
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            phone,
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
       toast({
         title: "Cadastro realizado com sucesso",
         description: "Bem-vindo ao Prato Fácil!",
       });
+      
       navigate('/search');
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Erro no cadastro",
+        description: error.message || "Ocorreu um erro ao realizar o cadastro",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
