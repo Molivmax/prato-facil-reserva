@@ -31,13 +31,38 @@ const DishImageSelector: React.FC<DishImageSelectorProps> = ({ dishName, onImage
     }
   };
 
-  // Updated suggestedImages with more relevant food images
-  const suggestedImages = [
-    "https://images.unsplash.com/photo-1544025162-d76694265947", // Picanha na tábua
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836", // Prato gourmet
-    "https://images.unsplash.com/photo-1563805042-7684c019e1cb", // Drinks coloridos
-    "https://images.unsplash.com/photo-1551024506-0bccd828d307", // Sobremesa elaborada
-  ];
+  const getSuggestedImages = (name: string) => {
+    const cleanName = name.toLowerCase().trim();
+    if (cleanName.includes('picanha')) {
+      return [
+        "https://images.unsplash.com/photo-1594041680534-e8c8cdebd659",
+        "https://images.unsplash.com/photo-1615937657715-bc7b4b7962c1",
+        "https://images.unsplash.com/photo-1607116176195-b81b1f41f536",
+        "https://images.unsplash.com/photo-1588168333785-2425f7b99956"
+      ];
+    } else if (cleanName.includes('cerveja') || cleanName.includes('chopp')) {
+      return [
+        "https://images.unsplash.com/photo-1608270586620-248524c67de9",
+        "https://images.unsplash.com/photo-1571600097834-45bdaa288f53",
+        "https://images.unsplash.com/photo-1608270586620-248524c67de9",
+        "https://images.unsplash.com/photo-1525034687081-c702010cb70d"
+      ];
+    } else if (cleanName.includes('sobremesa') || cleanName.includes('doce')) {
+      return [
+        "https://images.unsplash.com/photo-1551024506-0bccd828d307",
+        "https://images.unsplash.com/photo-1587314168485-3236d6710814",
+        "https://images.unsplash.com/photo-1488477181946-6428a0291777",
+        "https://images.unsplash.com/photo-1516715094483-75da7dee9758"
+      ];
+    }
+    // Default food images if no specific match
+    return [
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1",
+      "https://images.unsplash.com/photo-1557499305-87bd9049ec2d"
+    ];
+  };
 
   return (
     <div className="space-y-4">
@@ -75,7 +100,7 @@ const DishImageSelector: React.FC<DishImageSelectorProps> = ({ dishName, onImage
 
       {showSuggestions && (
         <div className="grid grid-cols-2 gap-4">
-          {suggestedImages.map((image, index) => (
+          {getSuggestedImages(dishName).map((image, index) => (
             <div
               key={index}
               onClick={() => {

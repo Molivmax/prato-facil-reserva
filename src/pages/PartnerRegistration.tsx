@@ -9,6 +9,7 @@ import { MapPin, Store } from 'lucide-react';
 import DishImageSelector from '@/components/DishImageSelector';
 import DescriptionSuggestions from '@/components/DescriptionSuggestions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CurrencyInput from '@/components/CurrencyInput';
 
 interface Dish {
   name: string;
@@ -221,9 +222,9 @@ const PartnerRegistration = () => {
 
             <div className="space-y-2">
               <Label className="text-white">Preço</Label>
-              <Input 
+              <CurrencyInput 
                 value={currentDish.price}
-                onChange={(e) => setCurrentDish(prev => ({ ...prev, price: e.target.value }))}
+                onChange={(value) => setCurrentDish(prev => ({ ...prev, price: value }))}
                 placeholder="R$ 0,00"
                 className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
               />

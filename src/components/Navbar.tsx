@@ -48,8 +48,8 @@ const Navbar = () => {
               Meus Pedidos
             </Link>
             <Button 
-              variant="outline" 
-              className="border-blink-text text-blink-text hover:bg-blink-secondary hover:text-white"
+              variant="secondary" 
+              className="bg-blink-secondary text-white hover:bg-blink-secondary/90"
               asChild
             >
               <Link to="/login">
