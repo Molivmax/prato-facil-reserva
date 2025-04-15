@@ -16,6 +16,7 @@ import CompletedOrder from "./pages/CompletedOrder";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PartnerRegistration from "./pages/PartnerRegistration";
+import PaymentSetup from "./pages/PaymentSetup";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/search" element={<SearchRestaurants />} />
+          <Route path="/payment-setup" element={<PaymentSetup />} />
           <Route path="/restaurant/:id" element={<RestaurantDetails />} />
           <Route path="/table-selection/:restaurantId" element={<TableSelection />} />
           <Route path="/menu-selection/:restaurantId/:tableId" element={<MenuSelection />} />

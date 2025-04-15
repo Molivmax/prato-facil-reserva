@@ -6,47 +6,79 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, History } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import RestaurantCard from '@/components/RestaurantCard';
-import { restaurants } from '@/data/mockData';
-import { Restaurant } from '@/data/types';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useNavigate } from 'react-router-dom';
 
 const SearchRestaurants = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(restaurants);
+  const [establishments, setEstablishments] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    handleSearch();
-  }, [searchTerm, activeTab]);
-  
-  const handleSearch = () => {
-    let results = restaurants;
+    fetchEstablishments();
+    checkNewUser();
+  }, []);
+
+  const checkNewUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (profile) {
+        setShowPaymentDialog(true);
+      }
+    }
+  };
+
+  const fetchEstablishments = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('establishments')
+        .select('*');
+      
+      if (error) throw error;
+      
+      setEstablishments(data || []);
+    } catch (error) {
+      console.error('Error fetching establishments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterEstablishments = () => {
+    let filtered = [...establishments];
     
     if (searchTerm) {
-      results = results.filter(
-        restaurant => 
-          restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          restaurant.cuisine.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          restaurant.address.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        establishment => 
+          establishment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          establishment.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
-    if (activeTab !== 'all') {
-      // Simulando filtros por categoria
-      switch (activeTab) {
-        case 'nearby':
-          results = results.filter(r => parseFloat(r.distance.split(' ')[0]) < 1.5);
-          break;
-        case 'popular':
-          results = results.filter(r => r.rating >= 4.7);
-          break;
-        case 'recent':
-          // Simulando restaurantes visitados recentemente
-          results = [results[0], results[2]];
-          break;
-      }
-    }
-    
-    setFilteredRestaurants(results);
+    return filtered;
+  };
+
+  const handleSetupPayment = () => {
+    navigate('/payment-setup');
+    setShowPaymentDialog(false);
   };
 
   return (
@@ -58,7 +90,7 @@ const SearchRestaurants = () => {
         <div className="relative mb-6">
           <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
           <Input
-            placeholder="Buscar por nome, tipo de cozinha ou localização"
+            placeholder="Buscar por nome ou tipo de estabelecimento"
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -72,7 +104,6 @@ const SearchRestaurants = () => {
               <MapPin className="h-4 w-4 mr-1" />
               Próximos
             </TabsTrigger>
-            <TabsTrigger value="popular">Populares</TabsTrigger>
             <TabsTrigger value="recent" className="flex items-center">
               <History className="h-4 w-4 mr-1" />
               Recentes
@@ -83,33 +114,35 @@ const SearchRestaurants = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">
             {activeTab === 'nearby' 
-              ? 'Restaurantes próximos' 
-              : activeTab === 'popular'
-                ? 'Restaurantes populares'
-                : activeTab === 'recent'
-                  ? 'Suas últimas visitas'
-                  : 'Restaurantes disponíveis'}
+              ? 'Estabelecimentos próximos' 
+              : activeTab === 'recent'
+                ? 'Suas últimas visitas'
+                : 'Estabelecimentos disponíveis'}
           </h2>
           
-          {filteredRestaurants.length > 0 ? (
+          {isLoading ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500">Carregando estabelecimentos...</p>
+            </div>
+          ) : filterEstablishments().length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredRestaurants.map(restaurant => (
+              {filterEstablishments().map(establishment => (
                 <RestaurantCard
-                  key={restaurant.id}
-                  id={restaurant.id}
-                  name={restaurant.name}
-                  image={restaurant.image}
-                  rating={restaurant.rating}
-                  cuisine={restaurant.cuisine}
-                  distance={restaurant.distance}
-                  address={restaurant.address}
-                  openingHours={restaurant.openingHours}
+                  key={establishment.id}
+                  id={establishment.id}
+                  name={establishment.name}
+                  image={establishment.image_url || '/placeholder.svg'}
+                  rating={4.5}
+                  cuisine={establishment.description || ''}
+                  distance="1.2 km"
+                  address={establishment.location || ''}
+                  openingHours={establishment.working_hours}
                 />
               ))}
             </div>
           ) : (
             <div className="text-center py-10 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Nenhum restaurante encontrado.</p>
+              <p className="text-gray-500">Nenhum estabelecimento encontrado.</p>
               <Button 
                 variant="link" 
                 className="text-restaurant-primary mt-2"
@@ -124,6 +157,32 @@ const SearchRestaurants = () => {
           )}
         </div>
       </div>
+
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configurar Forma de Pagamento</DialogTitle>
+            <DialogDescription>
+              Para uma melhor experiência, recomendamos configurar sua forma de pagamento agora.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-start">
+            <Button
+              variant="default"
+              onClick={handleSetupPayment}
+              className="bg-restaurant-primary hover:bg-restaurant-dark"
+            >
+              Configurar Agora
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowPaymentDialog(false)}
+            >
+              Deixar para depois
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
