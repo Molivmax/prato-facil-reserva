@@ -8,12 +8,14 @@ import { useToast } from '@/hooks/use-toast';
 import { MapPin, Store } from 'lucide-react';
 import DishImageSelector from '@/components/DishImageSelector';
 import DescriptionSuggestions from '@/components/DescriptionSuggestions';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Dish {
   name: string;
   description: string;
   price: string;
   imageUrl?: string;
+  category: 'Prato' | 'Bebida' | 'Sobremesa';
 }
 
 const PartnerRegistration = () => {
@@ -23,9 +25,12 @@ const PartnerRegistration = () => {
     name: '',
     description: '',
     price: '',
+    category: 'Prato'
   });
   const { toast } = useToast();
 	const [description, setDescription] = useState('');
+  const [customHours, setCustomHours] = useState('');
+  const [selectedHours, setSelectedHours] = useState('');
 
   const requestLocation = () => {
     if ("geolocation" in navigator) {
@@ -51,6 +56,14 @@ const PartnerRegistration = () => {
     }
   };
 
+  const predefinedHours = [
+    "Segunda a Sexta, 09:00 - 18:00",
+    "Segunda a Sábado, 11:00 - 23:00",
+    "Todos os dias, 11:00 - 23:00",
+    "Terça a Domingo, 18:00 - 00:00",
+    "Outros"
+  ];
+
   const handleDishImageSelected = (imageUrl: string) => {
     setCurrentDish(prev => ({ ...prev, imageUrl }));
   };
@@ -62,6 +75,7 @@ const PartnerRegistration = () => {
         name: '',
         description: '',
         price: '',
+        category: 'Prato',
         imageUrl: undefined
       });
       toast({
@@ -131,13 +145,27 @@ const PartnerRegistration = () => {
             />
           </div>
 
-            <div className="space-y-2">
-              <Label className="text-white">Horário de Funcionamento</Label>
+          <div className="space-y-2">
+            <Label className="text-white">Horário de Funcionamento</Label>
+            <Select onValueChange={setSelectedHours}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Selecione o horário" />
+              </SelectTrigger>
+              <SelectContent>
+                {predefinedHours.map((hour) => (
+                  <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedHours === 'Outros' && (
               <Input 
+                value={customHours}
+                onChange={(e) => setCustomHours(e.target.value)}
                 placeholder="Ex: Segunda a Sexta, 09:00 - 18:00"
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                className="mt-2 bg-white/10 border-white/20 text-white placeholder:text-gray-500"
               />
-            </div>
+            )}
+          </div>
 
             <div className="space-y-2">
               <Label className="text-white">Contato</Label>
@@ -150,8 +178,27 @@ const PartnerRegistration = () => {
           
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Cadastro de Pratos</h3>
+            <h3 className="text-lg font-semibold text-white">Cadastro de Produto</h3>
             
+            <div className="space-y-2">
+              <Label className="text-white">Categoria</Label>
+              <Select 
+                value={currentDish.category}
+                onValueChange={(value: 'Prato' | 'Bebida' | 'Sobremesa') => 
+                  setCurrentDish(prev => ({ ...prev, category: value }))
+                }
+              >
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Prato">Prato</SelectItem>
+                  <SelectItem value="Bebida">Bebida</SelectItem>
+                  <SelectItem value="Sobremesa">Sobremesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-white">Nome do Prato</Label>
               <Input 
@@ -207,7 +254,7 @@ const PartnerRegistration = () => {
 
             {dishes.length > 0 && (
               <div className="mt-6 space-y-4">
-                <h4 className="text-white font-semibold">Pratos Cadastrados</h4>
+                <h4 className="text-white font-semibold">Produtos Cadastrados</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {dishes.map((dish, index) => (
                     <Card key={index} className="bg-white/10 border-white/20">
@@ -222,6 +269,7 @@ const PartnerRegistration = () => {
                         <h5 className="text-white font-semibold">{dish.name}</h5>
                         <p className="text-gray-400 text-sm">{dish.description}</p>
                         <p className="text-white mt-2">R$ {dish.price}</p>
+                        <p className="text-sm text-gray-400">{dish.category}</p>
                       </CardContent>
                     </Card>
                   ))}

@@ -31,9 +31,12 @@ const DishImageSelector: React.FC<DishImageSelectorProps> = ({ dishName, onImage
     }
   };
 
+  // Updated suggestedImages with more relevant food images
   const suggestedImages = [
-    `https://images.unsplash.com/photo-1618160702438-9b02ab6515c9`,
-    `https://images.unsplash.com/photo-1493962853295-0fd70327578a`,
+    "https://images.unsplash.com/photo-1544025162-d76694265947", // Picanha na tábua
+    "https://images.unsplash.com/photo-1504674900247-0877df9cc836", // Prato gourmet
+    "https://images.unsplash.com/photo-1563805042-7684c019e1cb", // Drinks coloridos
+    "https://images.unsplash.com/photo-1551024506-0bccd828d307", // Sobremesa elaborada
   ];
 
   return (
