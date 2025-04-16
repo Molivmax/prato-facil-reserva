@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { MapPin, Store } from 'lucide-react';
+import { MapPin, Store, Upload, Image, Trash2 } from 'lucide-react';
 import DishImageSelector from '@/components/DishImageSelector';
 import DescriptionSuggestions from '@/components/DescriptionSuggestions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CurrencyInput from '@/components/CurrencyInput';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Dish {
   name: string;
@@ -31,13 +32,38 @@ const PartnerRegistration = () => {
     category: 'Prato'
   });
   const { toast } = useToast();
-	const [description, setDescription] = useState('');
+  const [description, setDescription] = useState('');
   const [customHours, setCustomHours] = useState('');
   const [selectedHours, setSelectedHours] = useState('');
+  
+  // New state for establishment photo
+  const [establishmentPhoto, setEstablishmentPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [establishmentName, setEstablishmentName] = useState('');
+  const [user, setUser] = useState<any>(null);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setUser(data.session.user);
+      } else {
+        toast({
+          title: "Login necessário",
+          description: "Você precisa estar logado para cadastrar um estabelecimento.",
+          variant: "destructive",
+        });
+        navigate('/login');
+      }
+    };
+    
+    checkUser();
+  }, [navigate, toast]);
 
   const requestLocation = () => {
     if ("geolocation" in navigator) {
@@ -92,12 +118,63 @@ const PartnerRegistration = () => {
     }
   };
 
-	const handleDescriptionSelect = (selectedDescription: string) => {
+  const handleDescriptionSelect = (selectedDescription: string) => {
     setDescription(selectedDescription);
     toast({
       title: "Descrição selecionada",
       description: "A descrição foi atualizada com sucesso.",
     });
+  };
+
+  // Handle establishment photo selection
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setEstablishmentPhoto(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected photo
+  const handleRemovePhoto = () => {
+    setEstablishmentPhoto(null);
+    setPhotoPreview(null);
+  };
+
+  const uploadEstablishmentPhoto = async (): Promise<string | null> => {
+    if (!establishmentPhoto) return null;
+    
+    setUploadingPhoto(true);
+    try {
+      const fileExt = establishmentPhoto.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `establishments/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, establishmentPhoto);
+      
+      if (uploadError) throw uploadError;
+      
+      const { data } = supabase.storage.from('public').getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Erro ao enviar imagem",
+        description: "Não foi possível enviar a imagem do estabelecimento.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -112,6 +189,9 @@ const PartnerRegistration = () => {
 
     setIsSubmitting(true);
     try {
+      // Upload photo if selected
+      const photoUrl = await uploadEstablishmentPhoto();
+      
       // Insert establishment
       const { data: establishment, error: establishmentError } = await supabase
         .from('establishments')
@@ -122,6 +202,8 @@ const PartnerRegistration = () => {
           longitude: location.lng,
           working_hours: selectedHours === 'Outros' ? customHours : selectedHours,
           contact: document.querySelector<HTMLInputElement>('input[type="tel"]')?.value || '',
+          user_id: user?.id,
+          photo_url: photoUrl // Add the photo URL to the establishment record
         }])
         .select()
         .single();
@@ -192,6 +274,46 @@ const PartnerRegistration = () => {
               </div>
             </div>
 
+            {/* New Photo/Logo Upload Field */}
+            <div className="space-y-2">
+              <Label className="text-white">Logo ou Foto do Estabelecimento</Label>
+              {!photoPreview ? (
+                <div className="relative">
+                  <Input
+                    type="file"
+                    id="establishmentPhoto"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="sr-only"
+                  />
+                  <Label 
+                    htmlFor="establishmentPhoto" 
+                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-white/20 cursor-pointer bg-white/5 hover:bg-white/10"
+                  >
+                    <Image className="w-8 h-8 mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-400">Clique para selecionar uma imagem</p>
+                    <p className="mt-1 text-xs text-gray-500">PNG, JPG ou GIF até 5MB</p>
+                  </Label>
+                </div>
+              ) : (
+                <div className="relative w-full h-48 rounded-md overflow-hidden">
+                  <img 
+                    src={photoPreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemovePhoto}
+                    className="absolute top-2 right-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label className="text-white">Localização</Label>
               <div className="flex gap-2">
@@ -209,7 +331,7 @@ const PartnerRegistration = () => {
                 </p>
               )}
             </div>
-					</div>
+          </div>
 
           <div className="space-y-4">
             <Label className="text-white">Descrição do Estabelecimento</Label>
@@ -357,10 +479,10 @@ const PartnerRegistration = () => {
 
           <Button 
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadingPhoto}
             className="w-full bg-blink-primary hover:bg-blink-secondary text-blink-text"
           >
-            {isSubmitting ? 'Cadastrando...' : 'Cadastrar Estabelecimento'}
+            {isSubmitting || uploadingPhoto ? 'Cadastrando...' : 'Cadastrar Estabelecimento'}
           </Button>
         </CardContent>
       </Card>
