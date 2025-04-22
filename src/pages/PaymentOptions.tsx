@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -16,13 +15,26 @@ const PaymentOptions = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [userCredit, setUserCredit] = useState<{ hasCredit: boolean; limit: number } | null>(null);
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Simulação de detalhes do pedido 
-  // Em um ambiente real, estes seriam recuperados do banco de dados
+  // Fetch user credit info and order details
   useEffect(() => {
+    const fetchUserCreditInfo = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const hasCredit = user.user_metadata?.has_credit || false;
+          const creditLimit = user.user_metadata?.credit_limit || 0;
+          setUserCredit({ hasCredit, limit: creditLimit });
+        }
+      } catch (err) {
+        console.error("Erro ao buscar informações de crédito:", err);
+      }
+    };
+
     // Simulando carregar dados do pedido de um estado global ou API
     const mockOrderDetails = {
       items: [
@@ -35,6 +47,7 @@ const PaymentOptions = () => {
     };
     
     setOrderDetails(mockOrderDetails);
+    fetchUserCreditInfo();
   }, [orderId]);
 
   const handleContinue = async () => {
@@ -60,73 +73,69 @@ const PaymentOptions = () => {
     setError(null);
     
     try {
-      if (paymentMethod === 'credit' || paymentMethod === 'app') {
-        // Obter a sessão do usuário
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          throw new Error("Você precisa estar logado para continuar");
+      // Obter a sessão do usuário
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("Você precisa estar logado para continuar");
+      }
+      
+      // Chamar a função edge do Supabase para processar o pagamento
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: {
+          amount: orderDetails.total,
+          orderDetails: orderDetails.items,
+          restaurantId: orderDetails.restaurantId,
+          tableId: orderDetails.tableId,
+          paymentMethod: paymentMethod
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
-        
-        // Chamar a função edge do Supabase para processar o pagamento
-        const { data, error } = await supabase.functions.invoke('process-payment', {
-          body: {
-            amount: orderDetails.total,
-            orderDetails: orderDetails.items,
-            restaurantId: orderDetails.restaurantId,
-            tableId: orderDetails.tableId
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
+      });
+      
+      if (error) {
+        throw new Error(error.message || "Erro ao processar o pagamento");
+      }
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Processar a resposta com base no método de pagamento
+      if (paymentMethod === "micro-credit") {
+        toast({
+          title: "Pagamento com Microcrédito Confirmado!",
+          description: `Seu pedido foi aprovado. Crédito restante: R$ ${data.remainingCredit.toFixed(2)}`,
         });
         
-        if (error) {
-          throw new Error(error.message || "Erro ao processar o pagamento");
-        }
+        // Atualizar o limite de crédito do usuário na interface
+        setUserCredit(prev => prev ? { ...prev, limit: data.remainingCredit } : null);
         
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        
-        // Em um ambiente de produção, você usaria o clientSecret para confirmar o pagamento
-        // no frontend usando o Stripe Elements ou Stripe.js
-        
-        // Para o MVP, vamos simular o pagamento bem-sucedido
+        navigate(`/check-in/${data.orderId}`);
+      } else if (paymentMethod === "credit" || paymentMethod === "app") {
+        // Para o MVP, simular o pagamento bem-sucedido
         toast({
           title: "Pagamento confirmado!",
           description: "Seu pedido foi recebido pelo restaurante.",
         });
         
-        // Simular envio de notificação ao restaurante quando estiver a 5min de distância
-        toast({
-          title: "Localização ativada",
-          description: "O restaurante será notificado quando você estiver a 5 minutos de distância.",
-        });
-        
-        // Navegar para a página de check-in
         navigate(`/check-in/${data.orderId || orderId}`);
-      } else if (paymentMethod === 'local') {
-        // Para pagamento no local, apenas confirmar o pedido
+      } else if (paymentMethod === "local") {
+        // Para pagamento no local
         toast({
           title: "Pedido confirmado!",
           description: "Você pagará diretamente no estabelecimento.",
         });
         
-        // Gera um ID de pedido simulado
-        const localOrderId = "local-order-" + Date.now();
-        navigate(`/check-in/${localOrderId}`);
-      } else if (paymentMethod === 'micro-credit') {
-        // Simulação de microcrédito
-        toast({
-          title: "Micro Crédito Aprovado!",
-          description: "Seu pedido foi confirmado usando seu limite disponível.",
-        });
-        
-        // Gera um ID de pedido simulado
-        const creditOrderId = "credit-order-" + Date.now();
-        navigate(`/check-in/${creditOrderId}`);
+        navigate(`/check-in/${data.orderId}`);
       }
+      
+      // Simular envio de notificação ao restaurante quando estiver a 5min de distância
+      toast({
+        title: "Localização ativada",
+        description: "O restaurante será notificado quando você estiver a 5 minutos de distância.",
+      });
     } catch (err: any) {
       console.error("Erro no pagamento:", err);
       setError(err.message || "Houve um erro ao processar o pagamento. Tente novamente.");
@@ -151,6 +160,9 @@ const PaymentOptions = () => {
       </div>
     );
   }
+
+  // Verificar se o usuário tem crédito suficiente
+  const hasSufficientCredit = userCredit?.hasCredit && userCredit?.limit >= orderDetails.total;
 
   return (
     <div className="bg-background min-h-screen">
@@ -194,6 +206,33 @@ const PaymentOptions = () => {
               onValueChange={setPaymentMethod}
               className="space-y-4"
             >
+              {/* Destacar a opção de microcrédito */}
+              {userCredit?.hasCredit && (
+                <div className={`flex items-center space-x-2 rounded-lg ${hasSufficientCredit ? 'border-2 border-blink-primary' : 'border border-white/10'} p-4 cursor-pointer hover:bg-white/5 transition-colors`}>
+                  <RadioGroupItem 
+                    value="micro-credit" 
+                    id="payment-micro-credit" 
+                    disabled={!hasSufficientCredit}
+                  />
+                  <Label 
+                    htmlFor="payment-micro-credit" 
+                    className={`flex-1 cursor-pointer ${!hasSufficientCredit ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex items-center">
+                      <Coins className="h-5 w-5 text-blink-primary mr-3" />
+                      <div>
+                        <p className="font-medium text-white">Micro Crédito Blink</p>
+                        <p className="text-sm text-gray-400">
+                          {hasSufficientCredit
+                            ? `Seu limite disponível: R$ ${userCredit.limit.toFixed(2)}`
+                            : `Limite insuficiente (R$ ${userCredit.limit.toFixed(2)})`}
+                        </p>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+              )}
+              
               <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="credit" id="payment-credit" />
                 <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
@@ -221,19 +260,6 @@ const PaymentOptions = () => {
               </div>
               
               <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                <RadioGroupItem value="micro-credit" id="payment-micro-credit" />
-                <Label htmlFor="payment-micro-credit" className="flex-1 cursor-pointer">
-                  <div className="flex items-center">
-                    <Coins className="h-5 w-5 text-blink-primary mr-3" />
-                    <div>
-                      <p className="font-medium text-white">Micro Crédito Blink</p>
-                      <p className="text-sm text-gray-400">Use seu limite de micro crédito disponível no app</p>
-                    </div>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="local" id="payment-local" />
                 <Label htmlFor="payment-local" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
@@ -246,6 +272,15 @@ const PaymentOptions = () => {
                 </Label>
               </div>
             </RadioGroup>
+            
+            {/* Notificação para usuários sem crédito */}
+            {!userCredit?.hasCredit && (
+              <div className="mt-4 p-3 rounded-md bg-gray-800 border border-gray-700">
+                <p className="text-sm text-gray-300">
+                  <span className="font-medium text-blink-primary">Dica:</span> Cadastre-se com seu CPF para ter acesso ao Micro Crédito Blink e fazer compras sem precisar de dinheiro no fim do mês.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         

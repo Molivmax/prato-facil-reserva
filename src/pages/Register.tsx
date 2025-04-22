@@ -5,19 +5,86 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { UtensilsCrossed, ArrowLeft } from 'lucide-react';
+import { UtensilsCrossed, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import InputMask from 'react-input-mask';
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreditAnalysisLoading, setIsCreditAnalysisLoading] = useState(false);
+  const [creditStatus, setCreditStatus] = useState<null | {
+    approved: boolean;
+    limit: number;
+    message: string;
+  }>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const analyzeCreditScore = async () => {
+    // Validação básica de CPF - apenas verificar se tem o formato correto
+    const cpfOnlyNumbers = cpf.replace(/\D/g, '');
+    if (cpfOnlyNumbers.length !== 11) {
+      toast({
+        title: "CPF inválido",
+        description: "Por favor, informe um CPF válido com 11 dígitos",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsCreditAnalysisLoading(true);
+    
+    try {
+      // Simulação de análise de crédito
+      // Em um cenário real, aqui chamaríamos a API do fornecedor de crédito
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulando aprovação de crédito baseado no último dígito do CPF para teste
+      // Em um ambiente real, isto seria substituído pela resposta da API do fornecedor
+      const lastDigit = parseInt(cpfOnlyNumbers.charAt(10));
+      const isApproved = lastDigit >= 5; // Apenas para simulação
+      const creditLimit = isApproved ? (lastDigit * 100 + 300) : 0;
+      
+      setCreditStatus({
+        approved: isApproved,
+        limit: creditLimit,
+        message: isApproved 
+          ? `Parabéns! Você foi aprovado com limite de R$ ${creditLimit.toFixed(2)}` 
+          : "No momento não conseguimos aprovar seu crédito"
+      });
+      
+      toast({
+        title: isApproved ? "Crédito aprovado!" : "Crédito não aprovado",
+        description: isApproved 
+          ? `Você tem um limite de R$ ${creditLimit.toFixed(2)} para usar em restaurantes` 
+          : "No momento não podemos oferecer crédito, mas você pode usar outras formas de pagamento",
+        variant: isApproved ? "default" : "destructive",
+      });
+      
+      return isApproved;
+    } catch (error: any) {
+      toast({
+        title: "Erro na análise de crédito",
+        description: error.message || "Falha ao analisar seu CPF, tente novamente mais tarde",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsCreditAnalysisLoading(false);
+    }
+  };
+
+  const handleCreditAnalysis = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await analyzeCreditScore();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +98,19 @@ const Register = () => {
       return;
     }
     
+    // Se a análise de crédito ainda não foi feita, fazer agora
+    if (!creditStatus) {
+      const creditApproved = await analyzeCreditScore();
+      if (!creditApproved) {
+        // Permitir o cadastro mesmo sem aprovação de crédito
+        // Apenas notifica o usuário que ele não terá a opção de crédito
+        toast({
+          title: "Você ainda pode prosseguir",
+          description: "Você pode se cadastrar e usar outras formas de pagamento",
+        });
+      }
+    }
+    
     setIsLoading(true);
 
     try {
@@ -41,6 +121,9 @@ const Register = () => {
           data: {
             name,
             phone,
+            cpf,
+            credit_limit: creditStatus?.limit || 0,
+            has_credit: creditStatus?.approved || false
           },
         },
       });
@@ -106,14 +189,59 @@ const Register = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(00) 00000-0000"
+              <InputMask
+                mask="(99) 99999-9999"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                required
-              />
+              >
+                {(inputProps: any) => (
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(00) 00000-0000"
+                    required
+                    {...inputProps}
+                  />
+                )}
+              </InputMask>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF</Label>
+              <div className="flex space-x-2">
+                <InputMask
+                  mask="999.999.999-99"
+                  value={cpf}
+                  onChange={(e) => setCpf(e.target.value)}
+                >
+                  {(inputProps: any) => (
+                    <Input
+                      id="cpf"
+                      type="text"
+                      placeholder="000.000.000-00"
+                      required
+                      className="flex-1"
+                      {...inputProps}
+                    />
+                  )}
+                </InputMask>
+                <Button 
+                  onClick={handleCreditAnalysis}
+                  disabled={isCreditAnalysisLoading || cpf.replace(/\D/g, '').length !== 11}
+                  type="button"
+                  variant="outline"
+                >
+                  {isCreditAnalysisLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Analisar Crédito"
+                  )}
+                </Button>
+              </div>
+              {creditStatus && (
+                <div className={`mt-2 p-2 rounded text-sm ${creditStatus.approved ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                  {creditStatus.message}
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
