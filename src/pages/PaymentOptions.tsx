@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CreditCard, WalletCards, Banknote, Coins, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, WalletCards, Banknote, Loader2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,40 +16,43 @@ const PaymentOptions = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
-  const [userCredit, setUserCredit] = useState<{ hasCredit: boolean; limit: number } | null>(null);
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch user credit info and order details
+  // Fetch order details
   useEffect(() => {
-    const fetchUserCreditInfo = async () => {
+    const getOrderDetails = () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const hasCredit = user.user_metadata?.has_credit || false;
-          const creditLimit = user.user_metadata?.credit_limit || 0;
-          setUserCredit({ hasCredit, limit: creditLimit });
+        // For MVP, we're using localStorage to store order details
+        const savedOrder = localStorage.getItem('currentOrder');
+        if (savedOrder) {
+          setOrderDetails(JSON.parse(savedOrder));
+        } else {
+          // If no order details in localStorage, use mock data
+          const mockOrderDetails = {
+            items: [
+              { id: '1', name: 'Isca de Tilápia', price: 45.90, quantity: 1 },
+              { id: '2', name: 'Chopp Artesanal', price: 14.90, quantity: 2 }
+            ],
+            restaurantId: 'restaurante-123',
+            tableId: 'mesa-45',
+            total: 75.70
+          };
+          setOrderDetails(mockOrderDetails);
         }
       } catch (err) {
-        console.error("Erro ao buscar informações de crédito:", err);
+        console.error("Erro ao buscar detalhes do pedido:", err);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os detalhes do pedido",
+          variant: "destructive",
+        });
       }
     };
-
-    // Simulando carregar dados do pedido de um estado global ou API
-    const mockOrderDetails = {
-      items: [
-        { id: '1', name: 'Isca de Tilápia', price: 45.90, quantity: 1 },
-        { id: '2', name: 'Chopp Artesanal', price: 14.90, quantity: 2 }
-      ],
-      restaurantId: 'restaurante-123',
-      tableId: 'mesa-45',
-      total: 75.70
-    };
     
-    setOrderDetails(mockOrderDetails);
-    fetchUserCreditInfo();
-  }, [orderId]);
+    getOrderDetails();
+  }, [orderId, toast]);
 
   const handleContinue = async () => {
     if (!paymentMethod) {
@@ -103,17 +107,7 @@ const PaymentOptions = () => {
       }
 
       // Processar a resposta com base no método de pagamento
-      if (paymentMethod === "micro-credit") {
-        toast({
-          title: "Pagamento com Microcrédito Confirmado!",
-          description: `Seu pedido foi aprovado. Crédito restante: R$ ${data.remainingCredit.toFixed(2)}`,
-        });
-        
-        // Atualizar o limite de crédito do usuário na interface
-        setUserCredit(prev => prev ? { ...prev, limit: data.remainingCredit } : null);
-        
-        navigate(`/check-in/${data.orderId}`);
-      } else if (paymentMethod === "credit" || paymentMethod === "app") {
+      if (paymentMethod === "credit" || paymentMethod === "app") {
         // Para o MVP, simular o pagamento bem-sucedido
         toast({
           title: "Pagamento confirmado!",
@@ -161,9 +155,6 @@ const PaymentOptions = () => {
     );
   }
 
-  // Verificar se o usuário tem crédito suficiente
-  const hasSufficientCredit = userCredit?.hasCredit && userCredit?.limit >= orderDetails.total;
-
   return (
     <div className="bg-background min-h-screen">
       <Navbar />
@@ -206,33 +197,6 @@ const PaymentOptions = () => {
               onValueChange={setPaymentMethod}
               className="space-y-4"
             >
-              {/* Destacar a opção de microcrédito */}
-              {userCredit?.hasCredit && (
-                <div className={`flex items-center space-x-2 rounded-lg ${hasSufficientCredit ? 'border-2 border-blink-primary' : 'border border-white/10'} p-4 cursor-pointer hover:bg-white/5 transition-colors`}>
-                  <RadioGroupItem 
-                    value="micro-credit" 
-                    id="payment-micro-credit" 
-                    disabled={!hasSufficientCredit}
-                  />
-                  <Label 
-                    htmlFor="payment-micro-credit" 
-                    className={`flex-1 cursor-pointer ${!hasSufficientCredit ? 'opacity-50' : ''}`}
-                  >
-                    <div className="flex items-center">
-                      <Coins className="h-5 w-5 text-blink-primary mr-3" />
-                      <div>
-                        <p className="font-medium text-white">Micro Crédito Blink</p>
-                        <p className="text-sm text-gray-400">
-                          {hasSufficientCredit
-                            ? `Seu limite disponível: R$ ${userCredit.limit.toFixed(2)}`
-                            : `Limite insuficiente (R$ ${userCredit.limit.toFixed(2)})`}
-                        </p>
-                      </div>
-                    </div>
-                  </Label>
-                </div>
-              )}
-              
               <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                 <RadioGroupItem value="credit" id="payment-credit" />
                 <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
@@ -272,15 +236,6 @@ const PaymentOptions = () => {
                 </Label>
               </div>
             </RadioGroup>
-            
-            {/* Notificação para usuários sem crédito */}
-            {!userCredit?.hasCredit && (
-              <div className="mt-4 p-3 rounded-md bg-gray-800 border border-gray-700">
-                <p className="text-sm text-gray-300">
-                  <span className="font-medium text-blink-primary">Dica:</span> Cadastre-se com seu CPF para ter acesso ao Micro Crédito Blink e fazer compras sem precisar de dinheiro no fim do mês.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
         

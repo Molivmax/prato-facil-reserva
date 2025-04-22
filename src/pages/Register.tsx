@@ -21,6 +21,17 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // CPF validation function
+  const isValidCPF = (cpf: string) => {
+    const cleanCPF = cpf.replace(/[^\d]/g, '');
+    if (cleanCPF.length !== 11) return false;
+    
+    // Check for known invalid CPFs
+    if (/^(\d)\1{10}$/.test(cleanCPF)) return false;
+    
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -28,6 +39,16 @@ const Register = () => {
       toast({
         title: "Erro",
         description: "As senhas não coincidem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate CPF
+    if (!isValidCPF(cpf)) {
+      toast({
+        title: "Erro",
+        description: "CPF inválido",
         variant: "destructive",
       });
       return;
@@ -59,9 +80,15 @@ const Register = () => {
       
       navigate('/search');
     } catch (error: any) {
+      let errorMessage = "Ocorreu um erro ao realizar o cadastro";
+      
+      if (error.message.includes("Email already registered")) {
+        errorMessage = "Este email já está cadastrado";
+      }
+      
       toast({
         title: "Erro no cadastro",
-        description: error.message || "Ocorreu um erro ao realizar o cadastro",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -171,7 +198,12 @@ const Register = () => {
               className="w-full bg-restaurant-primary hover:bg-restaurant-dark"
               disabled={isLoading}
             >
-              {isLoading ? "Cadastrando..." : "Cadastrar"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cadastrando...
+                </>
+              ) : "Cadastrar"}
             </Button>
           </form>
         </CardContent>
@@ -195,4 +227,3 @@ const Register = () => {
 };
 
 export default Register;
-
