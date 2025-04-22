@@ -20,7 +20,15 @@ import PartnerRegistration from "./pages/PartnerRegistration";
 import PaymentSetup from "./pages/PaymentSetup";
 import EstablishmentLogin from "./pages/EstablishmentLogin";
 
-const queryClient = new QueryClient();
+// Configure a queryClient com retry para as chamadas de API, incluindo a função edge
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

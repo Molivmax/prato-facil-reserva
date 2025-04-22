@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ const OrderSummary = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Dados simulados do pedido
+  // Dados simulados do pedido - em uma aplicação real, estes viriam de um banco de dados
   const orderItems = [
     { id: '1', name: 'Isca de Tilápia', price: 45.90, quantity: 1 },
     { id: '2', name: 'Chopp Artesanal', price: 14.90, quantity: 2 }
@@ -26,6 +25,10 @@ const OrderSummary = () => {
   const orderTotal = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const orderTip = orderTotal * 0.10; // 10% de gorjeta
   const orderGrandTotal = orderTotal + orderTip;
+  
+  // Método de pagamento usado - em uma aplicação real, viria do banco de dados
+  const paymentMethod = "Cartão de Crédito (Pré-pago)";
+  const isPrepaid = true; // Indicador de que o pagamento foi feito antecipadamente
   
   const handleCompleteOrder = () => {
     setIsCompleting(true);
@@ -87,6 +90,9 @@ const OrderSummary = () => {
                   <div className="flex-1">
                     <p className="font-medium">Pagamento aprovado</p>
                     <p className="text-sm text-gray-500">Hoje, 19:30</p>
+                    {isPrepaid && (
+                      <p className="text-xs text-green-600 font-semibold">Pago antecipadamente</p>
+                    )}
                   </div>
                 </li>
                 <li className="flex items-center">
@@ -135,8 +141,10 @@ const OrderSummary = () => {
               <div className="flex items-start">
                 <CreditCard className="h-5 w-5 text-blink-primary mt-0.5 mr-2" />
                 <div>
-                  <p className="font-medium">Pagamento pelo App</p>
-                  <p className="text-sm text-gray-500">Aprovado</p>
+                  <p className="font-medium">{paymentMethod}</p>
+                  <p className="text-sm text-green-500 font-semibold">
+                    {isPrepaid ? "Pago antecipadamente" : "Aprovado"}
+                  </p>
                 </div>
               </div>
               
@@ -186,6 +194,11 @@ const OrderSummary = () => {
                   <p>Total</p>
                   <p>R$ {orderGrandTotal.toFixed(2)}</p>
                 </div>
+                {isPrepaid && (
+                  <div className="mt-2 p-2 bg-green-100 text-green-800 rounded text-sm text-center">
+                    Pagamento realizado antecipadamente
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

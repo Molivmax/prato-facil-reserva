@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -91,9 +90,27 @@ const MenuSelection = () => {
       return;
     }
     
-    // Simula a criação de um pedido e redireciona para a página de pagamento
-    const orderId = "new-order-" + Date.now();
-    navigate(`/payment/${orderId}`);
+    // Calcular o valor total do pedido
+    const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    
+    // Criar um objeto com os detalhes do pedido para passar para a página de pagamento
+    const orderDetails = {
+      items: cart,
+      restaurantId: restaurantId,
+      tableId: tableId,
+      total: totalAmount,
+      restaurantName: restaurant?.name || "",
+      tableNumber: table?.number || 0
+    };
+    
+    // Salvar detalhes do pedido no localStorage (abordagem simples para o MVP)
+    localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+    
+    // Gerar um ID de pedido temporário
+    const tempOrderId = "order-" + Date.now();
+    
+    // Navegar para a página de pagamento
+    navigate(`/payment/${tempOrderId}`);
   };
 
   if (loading) {
