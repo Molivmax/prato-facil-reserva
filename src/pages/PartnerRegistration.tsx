@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,29 +42,17 @@ const PartnerRegistration = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Registration form states
   const [establishmentName, setEstablishmentName] = useState('');
-  const [user, setUser] = useState<any>(null);
-
-  // Check if user is logged in
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setUser(data.session.user);
-      } else {
-        toast({
-          title: "Login necessário",
-          description: "Você precisa estar logado para cadastrar um estabelecimento.",
-          variant: "destructive",
-        });
-        navigate('/login');
-      }
-    };
-    
-    checkUser();
-  }, [navigate, toast]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  
+  // New auth states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [contact, setContact] = useState('');
 
   const requestLocation = () => {
     if ("geolocation" in navigator) {
@@ -178,10 +167,29 @@ const PartnerRegistration = () => {
   };
 
   const handleSubmit = async () => {
+    // Validation
     if (!establishmentName || !location || !selectedHours || !description) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha todos os campos obrigatórios do estabelecimento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!email || !password) {
+      toast({
+        title: "Informações de conta necessárias",
+        description: "Por favor, forneça email e senha para criar sua conta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Senhas não conferem",
+        description: "Por favor, verifique se as senhas estão iguais.",
         variant: "destructive",
       });
       return;
@@ -189,6 +197,20 @@ const PartnerRegistration = () => {
 
     setIsSubmitting(true);
     try {
+      // First, create user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            phone: contact
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
       // Upload photo if selected
       const photoUrl = await uploadEstablishmentPhoto();
       
@@ -201,9 +223,9 @@ const PartnerRegistration = () => {
           latitude: location.lat,
           longitude: location.lng,
           working_hours: selectedHours === 'Outros' ? customHours : selectedHours,
-          contact: document.querySelector<HTMLInputElement>('input[type="tel"]')?.value || '',
-          user_id: user?.id,
-          photo_url: photoUrl // Add the photo URL to the establishment record
+          contact: contact,
+          user_id: authData.user?.id,
+          photo_url: photoUrl
         }])
         .select()
         .single();
@@ -238,11 +260,11 @@ const PartnerRegistration = () => {
         navigate('/');
       }, 2000);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao cadastrar o estabelecimento. Tente novamente.",
+        description: error.message || "Ocorreu um erro ao cadastrar o estabelecimento. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -260,221 +282,276 @@ const PartnerRegistration = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Account Information */}
           <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white">Informações da Conta</h3>
+            
             <div className="space-y-2">
-              <Label className="text-white">Nome do Estabelecimento</Label>
-              <div className="relative">
-                <Store className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                <Input 
-                  value={establishmentName}
-                  onChange={(e) => setEstablishmentName(e.target.value)}
-                  placeholder="Digite o nome do seu estabelecimento"
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-                />
-              </div>
-            </div>
-
-            {/* New Photo/Logo Upload Field */}
-            <div className="space-y-2">
-              <Label className="text-white">Logo ou Foto do Estabelecimento</Label>
-              {!photoPreview ? (
-                <div className="relative">
-                  <Input
-                    type="file"
-                    id="establishmentPhoto"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="sr-only"
-                  />
-                  <Label 
-                    htmlFor="establishmentPhoto" 
-                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-white/20 cursor-pointer bg-white/5 hover:bg-white/10"
-                  >
-                    <Image className="w-8 h-8 mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-400">Clique para selecionar uma imagem</p>
-                    <p className="mt-1 text-xs text-gray-500">PNG, JPG ou GIF até 5MB</p>
-                  </Label>
-                </div>
-              ) : (
-                <div className="relative w-full h-48 rounded-md overflow-hidden">
-                  <img 
-                    src={photoPreview} 
-                    alt="Preview" 
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemovePhoto}
-                    className="absolute top-2 right-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Localização</Label>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={requestLocation}
-                  className="flex-1 bg-blink-primary hover:bg-blink-secondary text-blink-text"
-                >
-                  <MapPin className="mr-2" />
-                  {location ? "Atualizar Localização" : "Obter Localização"}
-                </Button>
-              </div>
-              {location && (
-                <p className="text-sm text-gray-400">
-                  Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <Label className="text-white">Descrição do Estabelecimento</Label>
-            <DescriptionSuggestions onSelect={handleDescriptionSelect} />
-            <Textarea 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição do seu estabelecimento..."
-              className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 mt-4"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-white">Horário de Funcionamento</Label>
-            <Select onValueChange={setSelectedHours}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Selecione o horário" />
-              </SelectTrigger>
-              <SelectContent>
-                {predefinedHours.map((hour) => (
-                  <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedHours === 'Outros' && (
+              <Label className="text-white">Nome Completo</Label>
               <Input 
-                value={customHours}
-                onChange={(e) => setCustomHours(e.target.value)}
-                placeholder="Ex: Segunda a Sexta, 09:00 - 18:00"
-                className="mt-2 bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Digite seu nome completo"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
               />
-            )}
-          </div>
+            </div>
 
             <div className="space-y-2">
-              <Label className="text-white">Contato</Label>
+              <Label className="text-white">Email</Label>
+              <Input 
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu.email@exemplo.com"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white">Senha</Label>
+              <Input 
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="********"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white">Confirmar Senha</Label>
+              <Input 
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="********"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white">Telefone de Contato</Label>
               <Input 
                 type="tel"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
                 placeholder="(00) 00000-0000"
                 className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
               />
             </div>
-          
+          </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Cadastro de Produto</h3>
+          <div className="border-t border-white/10 pt-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Informações do Estabelecimento</h3>
             
-            <div className="space-y-2">
-              <Label className="text-white">Categoria</Label>
-              <Select 
-                value={currentDish.category}
-                onValueChange={(value: 'Prato' | 'Bebida' | 'Sobremesa') => 
-                  setCurrentDish(prev => ({ ...prev, category: value }))
-                }
-              >
-                <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="Selecione a categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Prato">Prato</SelectItem>
-                  <SelectItem value="Bebida">Bebida</SelectItem>
-                  <SelectItem value="Sobremesa">Sobremesa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Nome do Prato</Label>
-              <Input 
-                value={currentDish.name}
-                onChange={(e) => setCurrentDish(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Digite o nome do prato"
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Descrição do Prato</Label>
-              <Textarea 
-                value={currentDish.description}
-                onChange={(e) => setCurrentDish(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Descreva o prato..."
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Preço</Label>
-              <CurrencyInput 
-                value={currentDish.price}
-                onChange={(value) => setCurrentDish(prev => ({ ...prev, price: value }))}
-                placeholder="R$ 0,00"
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
-              />
-            </div>
-
-            <DishImageSelector 
-              dishName={currentDish.name}
-              onImageSelected={handleDishImageSelected}
-            />
-
-            {currentDish.imageUrl && (
-              <div className="mt-4">
-                <Label className="text-white">Imagem Selecionada</Label>
-                <img 
-                  src={currentDish.imageUrl} 
-                  alt={currentDish.name}
-                  className="mt-2 w-full h-48 object-cover rounded-md"
-                />
-              </div>
-            )}
-
-            <Button 
-              onClick={handleAddDish}
-              className="w-full bg-blink-primary hover:bg-blink-secondary text-blink-text"
-            >
-              Adicionar Prato
-            </Button>
-
-            {dishes.length > 0 && (
-              <div className="mt-6 space-y-4">
-                <h4 className="text-white font-semibold">Produtos Cadastrados</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {dishes.map((dish, index) => (
-                    <Card key={index} className="bg-white/10 border-white/20">
-                      <CardContent className="p-4">
-                        {dish.imageUrl && (
-                          <img 
-                            src={dish.imageUrl} 
-                            alt={dish.name}
-                            className="w-full h-32 object-cover rounded-md mb-3"
-                          />
-                        )}
-                        <h5 className="text-white font-semibold">{dish.name}</h5>
-                        <p className="text-gray-400 text-sm">{dish.description}</p>
-                        <p className="text-white mt-2">R$ {dish.price}</p>
-                        <p className="text-sm text-gray-400">{dish.category}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-white">Nome do Estabelecimento</Label>
+                <div className="relative">
+                  <Store className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <Input 
+                    value={establishmentName}
+                    onChange={(e) => setEstablishmentName(e.target.value)}
+                    placeholder="Digite o nome do seu estabelecimento"
+                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                  />
                 </div>
               </div>
-            )}
+
+              {/* Photo/Logo Upload Field */}
+              <div className="space-y-2">
+                <Label className="text-white">Logo ou Foto do Estabelecimento</Label>
+                {!photoPreview ? (
+                  <div className="relative">
+                    <Input
+                      type="file"
+                      id="establishmentPhoto"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="sr-only"
+                    />
+                    <Label 
+                      htmlFor="establishmentPhoto" 
+                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-md border-white/20 cursor-pointer bg-white/5 hover:bg-white/10"
+                    >
+                      <Image className="w-8 h-8 mb-2 text-gray-400" />
+                      <p className="text-sm text-gray-400">Clique para selecionar uma imagem</p>
+                      <p className="mt-1 text-xs text-gray-500">PNG, JPG ou GIF até 5MB</p>
+                    </Label>
+                  </div>
+                ) : (
+                  <div className="relative w-full h-48 rounded-md overflow-hidden">
+                    <img 
+                      src={photoPreview} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleRemovePhoto}
+                      className="absolute top-2 right-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white">Localização</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={requestLocation}
+                    className="flex-1 bg-blink-primary hover:bg-blink-secondary text-blink-text"
+                  >
+                    <MapPin className="mr-2" />
+                    {location ? "Atualizar Localização" : "Obter Localização"}
+                  </Button>
+                </div>
+                {location && (
+                  <p className="text-sm text-gray-400">
+                    Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <Label className="text-white">Descrição do Estabelecimento</Label>
+              <DescriptionSuggestions onSelect={handleDescriptionSelect} />
+              <Textarea 
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descrição do seu estabelecimento..."
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 mt-4"
+              />
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <Label className="text-white">Horário de Funcionamento</Label>
+              <Select onValueChange={setSelectedHours}>
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Selecione o horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {predefinedHours.map((hour) => (
+                    <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedHours === 'Outros' && (
+                <Input 
+                  value={customHours}
+                  onChange={(e) => setCustomHours(e.target.value)}
+                  placeholder="Ex: Segunda a Sexta, 09:00 - 18:00"
+                  className="mt-2 bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-white/10 pt-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Cadastro de Produtos</h3>
+              
+              <div className="space-y-2">
+                <Label className="text-white">Categoria</Label>
+                <Select 
+                  value={currentDish.category}
+                  onValueChange={(value: 'Prato' | 'Bebida' | 'Sobremesa') => 
+                    setCurrentDish(prev => ({ ...prev, category: value }))
+                  }
+                >
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Prato">Prato</SelectItem>
+                    <SelectItem value="Bebida">Bebida</SelectItem>
+                    <SelectItem value="Sobremesa">Sobremesa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white">Nome do Produto</Label>
+                <Input 
+                  value={currentDish.name}
+                  onChange={(e) => setCurrentDish(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Digite o nome do produto"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white">Descrição do Produto</Label>
+                <Textarea 
+                  value={currentDish.description}
+                  onChange={(e) => setCurrentDish(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Descreva o produto..."
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white">Preço</Label>
+                <CurrencyInput 
+                  value={currentDish.price}
+                  onChange={(value) => setCurrentDish(prev => ({ ...prev, price: value }))}
+                  placeholder="R$ 0,00"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500"
+                />
+              </div>
+
+              <DishImageSelector 
+                dishName={currentDish.name}
+                onImageSelected={handleDishImageSelected}
+              />
+
+              {currentDish.imageUrl && (
+                <div className="mt-4">
+                  <Label className="text-white">Imagem Selecionada</Label>
+                  <img 
+                    src={currentDish.imageUrl} 
+                    alt={currentDish.name}
+                    className="mt-2 w-full h-48 object-cover rounded-md"
+                  />
+                </div>
+              )}
+
+              <Button 
+                onClick={handleAddDish}
+                className="w-full bg-blink-primary hover:bg-blink-secondary text-blink-text"
+              >
+                Adicionar Produto
+              </Button>
+
+              {dishes.length > 0 && (
+                <div className="mt-6 space-y-4">
+                  <h4 className="text-white font-semibold">Produtos Cadastrados</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {dishes.map((dish, index) => (
+                      <Card key={index} className="bg-white/10 border-white/20">
+                        <CardContent className="p-4">
+                          {dish.imageUrl && (
+                            <img 
+                              src={dish.imageUrl} 
+                              alt={dish.name}
+                              className="w-full h-32 object-cover rounded-md mb-3"
+                            />
+                          )}
+                          <h5 className="text-white font-semibold">{dish.name}</h5>
+                          <p className="text-gray-400 text-sm">{dish.description}</p>
+                          <p className="text-white mt-2">R$ {(parseInt(dish.price) / 100).toFixed(2)}</p>
+                          <p className="text-sm text-gray-400">{dish.category}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <Button 
