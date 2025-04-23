@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
 
 // Validation schema for user and establishment registration
 const registrationSchema = z.object({
@@ -25,15 +25,21 @@ type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 const PartnerRegistration: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegistrationFormData>({
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors } 
+  } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema)
   });
 
   const onSubmit = async (data: RegistrationFormData) => {
     setIsLoading(true);
+    
     try {
-      // Register user in Supabase Auth
+      // Sign up user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -45,7 +51,10 @@ const PartnerRegistration: React.FC = () => {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        toast.error(authError.message || 'Erro ao cadastrar usuário');
+        return;
+      }
 
       // If user registration is successful, create establishment
       if (authData.user) {
@@ -59,10 +68,13 @@ const PartnerRegistration: React.FC = () => {
             user_id: authData.user.id
           });
 
-        if (establishmentError) throw establishmentError;
+        if (establishmentError) {
+          toast.error(establishmentError.message || 'Erro ao criar estabelecimento');
+          return;
+        }
 
         toast.success('Cadastro realizado com sucesso!');
-        // Redirect or navigate to next page
+        navigate('/search'); // Redirect to search page after successful registration
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -83,7 +95,7 @@ const PartnerRegistration: React.FC = () => {
             placeholder="Nome completo" 
             className={errors.name ? 'border-red-500' : ''}
           />
-          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
+          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
         </div>
         
         <div>
@@ -93,7 +105,7 @@ const PartnerRegistration: React.FC = () => {
             placeholder="E-mail" 
             className={errors.email ? 'border-red-500' : ''}
           />
-          {errors.email && <p className="text-red-500">{errors.email.message}</p>}
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -103,7 +115,7 @@ const PartnerRegistration: React.FC = () => {
             placeholder="Telefone" 
             className={errors.phone ? 'border-red-500' : ''}
           />
-          {errors.phone && <p className="text-red-500">{errors.phone.message}</p>}
+          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
         </div>
 
         <div>
@@ -113,7 +125,7 @@ const PartnerRegistration: React.FC = () => {
             placeholder="Senha" 
             className={errors.password ? 'border-red-500' : ''}
           />
-          {errors.password && <p className="text-red-500">{errors.password.message}</p>}
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
         </div>
 
         {/* Establishment Information */}
@@ -123,7 +135,7 @@ const PartnerRegistration: React.FC = () => {
             placeholder="Nome do estabelecimento" 
             className={errors.establishmentName ? 'border-red-500' : ''}
           />
-          {errors.establishmentName && <p className="text-red-500">{errors.establishmentName.message}</p>}
+          {errors.establishmentName && <p className="text-red-500 text-sm mt-1">{errors.establishmentName.message}</p>}
         </div>
 
         <div>
@@ -146,7 +158,7 @@ const PartnerRegistration: React.FC = () => {
             placeholder="Horário de funcionamento" 
             className={errors.workingHours ? 'border-red-500' : ''}
           />
-          {errors.workingHours && <p className="text-red-500">{errors.workingHours.message}</p>}
+          {errors.workingHours && <p className="text-red-500 text-sm mt-1">{errors.workingHours.message}</p>}
         </div>
 
         <Button 
