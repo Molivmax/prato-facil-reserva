@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -47,8 +48,8 @@ const EstablishmentLogin = () => {
       if (!establishment) {
         navigate('/partner-registration');
       } else {
-        // Otherwise go to establishment dashboard (to be created later)
-        navigate('/search');
+        // Redirect to establishment dashboard
+        navigate('/establishment-dashboard');
       }
     } catch (error: any) {
       toast({

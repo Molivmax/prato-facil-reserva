@@ -1,6 +1,7 @@
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Zap } from 'lucide-react';
+import { Zap, Store } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -47,16 +48,33 @@ const Index = () => {
               Explorar sem login
             </Link>
           </Button>
-          <Button 
-            variant="outline" 
-            className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
-            size="lg"
-            asChild
-          >
-            <Link to="/partner-registration">
-              Cadastrar Estabelecimento
-            </Link>
-          </Button>
+          
+          <div className="pt-4 border-t border-gray-700">
+            <h3 className="text-white mb-4">Área do Estabelecimento</h3>
+            <Button 
+              variant="outline" 
+              className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text mb-2"
+              size="lg"
+              asChild
+            >
+              <Link to="/partner-registration">
+                <Store className="mr-2 h-4 w-4" />
+                Cadastrar Estabelecimento
+              </Link>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
+              size="lg"
+              asChild
+            >
+              <Link to="/establishment-login">
+                <Store className="mr-2 h-4 w-4" />
+                Login de Estabelecimento
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
