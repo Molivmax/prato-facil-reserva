@@ -1,12 +1,9 @@
 
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Zap, Building, Compass } from 'lucide-react';
+import { Zap, Store } from 'lucide-react';
 
 const Index = () => {
-  const [showEstablishmentButtons, setShowEstablishmentButtons] = useState(false);
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-black/70 p-4">
       <div className="text-center max-w-md">
@@ -26,7 +23,9 @@ const Index = () => {
             size="lg"
             asChild
           >
-            <Link to="/register">1</Link>
+            <Link to="/register">
+              Cadastre-se
+            </Link>
           </Button>
           
           <Button 
@@ -35,7 +34,9 @@ const Index = () => {
             size="lg"
             asChild
           >
-            <Link to="/login">2</Link>
+            <Link to="/login">
+              Login
+            </Link>
           </Button>
           
           <Button 
@@ -44,46 +45,36 @@ const Index = () => {
             asChild
           >
             <Link to="/search">
-              <Compass className="mr-2 h-4 w-4" />
               Explorar sem login
             </Link>
           </Button>
           
-          <Button 
-            variant="outline" 
-            className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
-            size="lg"
-            onClick={() => setShowEstablishmentButtons(!showEstablishmentButtons)}
-          >
-            <Building className="mr-2 h-4 w-4" />
-            Área do Estabelecimento
-          </Button>
-          
-          {showEstablishmentButtons && (
-            <div className="space-y-4 pt-4 border-t border-gray-700">
-              <Button 
-                variant="outline" 
-                className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
-                size="lg"
-                asChild
-              >
-                <Link to="/partner-registration">
-                  Cadastrar Estabelecimento
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
-                size="lg"
-                asChild
-              >
-                <Link to="/establishment-login">
-                  Login de Estabelecimento
-                </Link>
-              </Button>
-            </div>
-          )}
+          <div className="pt-4 border-t border-gray-700">
+            <h3 className="text-white mb-4">Área do Estabelecimento</h3>
+            <Button 
+              variant="outline" 
+              className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text mb-2"
+              size="lg"
+              asChild
+            >
+              <Link to="/partner-registration">
+                <Store className="mr-2 h-4 w-4" />
+                Cadastrar Estabelecimento
+              </Link>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
+              size="lg"
+              asChild
+            >
+              <Link to="/establishment-login">
+                <Store className="mr-2 h-4 w-4" />
+                Login de Estabelecimento
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
