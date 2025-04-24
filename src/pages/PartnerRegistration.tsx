@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
-import CurrencyInput from '@/components/CurrencyInput';
+import { formatCEP, formatDocument, formatPhone } from '@/utils/AddressUtils';
 import {
   Form,
   FormControl,
@@ -105,25 +105,23 @@ const PartnerRegistration: React.FC = () => {
 
       // If user registration is successful, create establishment
       if (authData.user) {
-        const fullAddress = `${data.address}, ${data.addressNumber}`;
+        // Create the full address string from components
+        const fullAddress = `${data.address}, ${data.addressNumber}, ${data.city}, ${data.state}, ${data.zipCode}`;
         
         const { error: establishmentError } = await supabase
           .from('establishments')
           .insert({
             name: data.establishmentName,
             description: data.description,
-            contact: data.contact,
+            contact: data.contact || data.phone, // Use the provided contact or default to phone
             working_hours: data.workingHours,
             user_id: authData.user.id,
-            address: fullAddress,
-            city: data.city,
-            state: data.state,
-            zip_code: data.zipCode,
             latitude: data.latitude,
             longitude: data.longitude
           });
 
         if (establishmentError) {
+          console.error('Establishment error:', establishmentError);
           toast.error(establishmentError.message || 'Erro ao criar estabelecimento');
           setIsLoading(false);
           return;
@@ -262,6 +260,10 @@ const PartnerRegistration: React.FC = () => {
                       placeholder="Contato adicional" 
                       {...field} 
                       value={field.value || ""}
+                      onChange={(e) => {
+                        const formattedValue = formatPhone(e.target.value);
+                        field.onChange(formattedValue);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -308,7 +310,15 @@ const PartnerRegistration: React.FC = () => {
                 <FormItem>
                   <FormLabel>Telefone</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="(00) 00000-0000" {...field} />
+                    <Input 
+                      type="tel" 
+                      placeholder="(00) 00000-0000" 
+                      {...field} 
+                      onChange={(e) => {
+                        const formattedValue = formatPhone(e.target.value);
+                        field.onChange(formattedValue);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -374,8 +384,13 @@ const PartnerRegistration: React.FC = () => {
                     <FormLabel>Número do documento</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder={form.watch('documentType') === 'cpf' ? "000.000.000-00" : "00.000.000/0000-00"} 
-                        {...field} 
+                        placeholder={form.watch('documentType') === 'cpf' ? "000.000.000-00" : "00.000.000/0000-00"}
+                        {...field}
+                        onChange={(e) => {
+                          const type = form.watch('documentType');
+                          const formattedValue = formatDocument(e.target.value, type);
+                          field.onChange(formattedValue);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -421,7 +436,8 @@ const PartnerRegistration: React.FC = () => {
                         placeholder="00000-000" 
                         {...field} 
                         onChange={(e) => {
-                          field.onChange(e);
+                          const formattedValue = formatCEP(e.target.value);
+                          field.onChange(formattedValue);
                         }}
                         onBlur={(e) => {
                           field.onBlur();
