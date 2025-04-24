@@ -54,13 +54,25 @@ const PartnerRegistration: React.FC = () => {
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       documentType: "cpf",
-      latitude: undefined,
-      longitude: undefined,
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      documentNumber: "",
+      establishmentName: "",
+      description: "",
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      contact: "",
+      workingHours: "",
     }
   });
 
   const onSubmit = async (data: RegistrationFormData) => {
     if (step === 1) {
+      // Move to step 2 without form validation
       setStep(2);
       return;
     }
@@ -84,6 +96,7 @@ const PartnerRegistration: React.FC = () => {
 
       if (authError) {
         toast.error(authError.message || 'Erro ao cadastrar usuário');
+        setIsLoading(false);
         return;
       }
 
@@ -107,6 +120,7 @@ const PartnerRegistration: React.FC = () => {
 
         if (establishmentError) {
           toast.error(establishmentError.message || 'Erro ao criar estabelecimento');
+          setIsLoading(false);
           return;
         }
 
@@ -118,6 +132,21 @@ const PartnerRegistration: React.FC = () => {
       toast.error('Erro no cadastro. Tente novamente.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleContinue = () => {
+    form.trigger(['name', 'email', 'phone', 'password', 'documentNumber', 'establishmentName', 'workingHours']);
+    const hasErrors = !!form.formState.errors.name || 
+                     !!form.formState.errors.email || 
+                     !!form.formState.errors.phone || 
+                     !!form.formState.errors.password || 
+                     !!form.formState.errors.documentNumber || 
+                     !!form.formState.errors.establishmentName ||
+                     !!form.formState.errors.workingHours;
+    
+    if (!hasErrors) {
+      setStep(2);
     }
   };
 
@@ -270,6 +299,7 @@ const PartnerRegistration: React.FC = () => {
                       <Textarea 
                         placeholder="Descrição do estabelecimento (opcional)" 
                         {...field} 
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -301,12 +331,25 @@ const PartnerRegistration: React.FC = () => {
                   <FormItem>
                     <FormLabel>Contato adicional (opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contato adicional" {...field} />
+                      <Input 
+                        placeholder="Contato adicional" 
+                        {...field} 
+                        value={field.value || ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              <Button 
+                type="button" 
+                className="w-full"
+                disabled={isLoading}
+                onClick={handleContinue}
+              >
+                {isLoading ? "Processando..." : "Continuar"}
+              </Button>
             </>
           ) : (
             // Step 2: Address and Location Info
@@ -393,16 +436,16 @@ const PartnerRegistration: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setStep(1)} className="mr-2">
                 Voltar
               </Button>
+              
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full mt-4"
+              >
+                {isLoading ? "Processando..." : "Cadastrar"}
+              </Button>
             </>
           )}
-          
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? "Processando..." : step === 1 ? "Continuar" : "Cadastrar"}
-          </Button>
         </form>
       </Form>
     </div>
