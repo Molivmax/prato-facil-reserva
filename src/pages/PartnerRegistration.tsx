@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
+import { Loader2 } from 'lucide-react';
+import CurrencyInput from '@/components/CurrencyInput';
 import {
   Form,
   FormControl,
@@ -24,6 +26,7 @@ const registrationSchema = z.object({
   email: z.string().email("E-mail inválido"),
   phone: z.string().min(10, "Telefone inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+  confirmPassword: z.string().min(6, "Confirmação de senha é obrigatória"),
   documentType: z.enum(["cpf", "cnpj"]),
   documentNumber: z.string()
     .refine(val => {
@@ -34,6 +37,7 @@ const registrationSchema = z.object({
   establishmentName: z.string().min(2, "Nome do estabelecimento é obrigatório"),
   description: z.string().optional(),
   address: z.string().min(5, "Endereço é obrigatório"),
+  addressNumber: z.string().min(1, "Número é obrigatório"),
   city: z.string().min(2, "Cidade é obrigatória"),
   state: z.string().min(2, "Estado é obrigatório"),
   zipCode: z.string().min(8, "CEP é obrigatório"),
@@ -41,13 +45,16 @@ const registrationSchema = z.object({
   longitude: z.number().optional(),
   contact: z.string().optional(),
   workingHours: z.string().min(1, "Horário de funcionamento é obrigatório")
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
 });
 
 type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 const PartnerRegistration: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Basic info, 2: Address info
+  const [cepLoading, setCepLoading] = useState(false);
   const navigate = useNavigate();
 
   const form = useForm<RegistrationFormData>({
@@ -58,10 +65,12 @@ const PartnerRegistration: React.FC = () => {
       email: "",
       phone: "",
       password: "",
+      confirmPassword: "",
       documentNumber: "",
       establishmentName: "",
       description: "",
       address: "",
+      addressNumber: "",
       city: "",
       state: "",
       zipCode: "",
@@ -71,12 +80,6 @@ const PartnerRegistration: React.FC = () => {
   });
 
   const onSubmit = async (data: RegistrationFormData) => {
-    if (step === 1) {
-      // Move to step 2 without form validation
-      setStep(2);
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
@@ -102,6 +105,8 @@ const PartnerRegistration: React.FC = () => {
 
       // If user registration is successful, create establishment
       if (authData.user) {
+        const fullAddress = `${data.address}, ${data.addressNumber}`;
+        
         const { error: establishmentError } = await supabase
           .from('establishments')
           .insert({
@@ -110,7 +115,7 @@ const PartnerRegistration: React.FC = () => {
             contact: data.contact,
             working_hours: data.workingHours,
             user_id: authData.user.id,
-            address: data.address,
+            address: fullAddress,
             city: data.city,
             state: data.state,
             zip_code: data.zipCode,
@@ -132,21 +137,6 @@ const PartnerRegistration: React.FC = () => {
       toast.error('Erro no cadastro. Tente novamente.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleContinue = () => {
-    form.trigger(['name', 'email', 'phone', 'password', 'documentNumber', 'establishmentName', 'workingHours']);
-    const hasErrors = !!form.formState.errors.name || 
-                     !!form.formState.errors.email || 
-                     !!form.formState.errors.phone || 
-                     !!form.formState.errors.password || 
-                     !!form.formState.errors.documentNumber || 
-                     !!form.formState.errors.establishmentName ||
-                     !!form.formState.errors.workingHours;
-    
-    if (!hasErrors) {
-      setStep(2);
     }
   };
 
@@ -172,56 +162,160 @@ const PartnerRegistration: React.FC = () => {
     }
   };
 
+  // Buscar endereço pelo CEP
+  const fetchAddressByCEP = async (cep: string) => {
+    // Remove caracteres não numéricos
+    const cleanCEP = cep.replace(/\D/g, '');
+    
+    if (cleanCEP.length !== 8) {
+      return;
+    }
+
+    setCepLoading(true);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+      const data = await response.json();
+      
+      if (!data.erro) {
+        form.setValue('address', data.logradouro || '');
+        form.setValue('city', data.localidade || '');
+        form.setValue('state', data.uf || '');
+        // Foca no campo de número após preencher o endereço
+        document.getElementById('addressNumber')?.focus();
+      } else {
+        toast.error('CEP não encontrado. Por favor, verifique e tente novamente.');
+      }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      toast.error('Erro ao buscar endereço. Por favor, tente novamente.');
+    } finally {
+      setCepLoading(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
       <h1 className="text-2xl font-bold mb-6">Cadastro de Parceiro</h1>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {step === 1 ? (
-            // Step 1: Basic Info
-            <>
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome completo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="E-mail" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="bg-muted/30 p-6 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-4">Dados do Estabelecimento</h2>
+            
+            <FormField
+              control={form.control}
+              name="establishmentName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do estabelecimento</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nome do estabelecimento" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="Telefone" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Descrição do estabelecimento (opcional)" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <FormField
+              control={form.control}
+              name="workingHours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Horário de funcionamento</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: Seg-Sex: 8h às 18h, Sáb: 9h às 13h" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="contact"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contato adicional (opcional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Contato adicional" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="bg-muted/30 p-6 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-4">Dados Pessoais</h2>
+            
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome completo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nome completo" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>E-mail</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="E-mail" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="(00) 00000-0000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="password"
@@ -236,86 +330,51 @@ const PartnerRegistration: React.FC = () => {
                 )}
               />
 
-              <div className="flex space-x-4">
-                <FormField
-                  control={form.control}
-                  name="documentType"
-                  render={({ field }) => (
-                    <FormItem className="w-1/3">
-                      <FormLabel>Tipo de documento</FormLabel>
-                      <FormControl>
-                        <select
-                          className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md"
-                          {...field}
-                        >
-                          <option value="cpf">CPF</option>
-                          <option value="cnpj">CNPJ</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="documentNumber"
-                  render={({ field }) => (
-                    <FormItem className="w-2/3">
-                      <FormLabel>Número do documento</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder={form.watch('documentType') === 'cpf' ? "CPF" : "CNPJ"} 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
-                name="establishmentName"
+                name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome do estabelecimento</FormLabel>
+                    <FormLabel>Confirmar senha</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do estabelecimento" {...field} />
+                      <Input type="password" placeholder="Confirmar senha" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            </div>
 
+            <div className="flex flex-col md:flex-row gap-4">
               <FormField
                 control={form.control}
-                name="description"
+                name="documentType"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
+                  <FormItem className="md:w-1/3">
+                    <FormLabel>Tipo de documento</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Descrição do estabelecimento (opcional)" 
-                        {...field} 
-                        value={field.value || ""}
-                      />
+                      <select
+                        className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md"
+                        {...field}
+                      >
+                        <option value="cpf">CPF</option>
+                        <option value="cnpj">CNPJ</option>
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
+              
               <FormField
                 control={form.control}
-                name="workingHours"
+                name="documentNumber"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Horário de funcionamento</FormLabel>
+                  <FormItem className="md:w-2/3">
+                    <FormLabel>Número do documento</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Ex: Seg-Sex: 8h às 18h, Sáb: 9h às 13h" 
+                        placeholder={form.watch('documentType') === 'cpf' ? "000.000.000-00" : "00.000.000/0000-00"} 
                         {...field} 
                       />
                     </FormControl>
@@ -323,129 +382,132 @@ const PartnerRegistration: React.FC = () => {
                   </FormItem>
                 )}
               />
+            </div>
+          </div>
 
-              <FormField
-                control={form.control}
-                name="contact"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contato adicional (opcional)</FormLabel>
+          <div className="bg-muted/30 p-6 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-4">Endereço e Localização</h2>
+            
+            <div className="bg-muted/50 p-4 rounded-md mb-4">
+              <h3 className="font-medium mb-2">Localização do Estabelecimento</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Por favor, forneça o endereço completo do seu estabelecimento ou use a geolocalização automática.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={getCurrentLocation}
+                disabled={isLoading}
+                className="w-full mb-4"
+              >
+                {isLoading ? "Obtendo localização..." : "Usar minha localização atual"}
+              </Button>
+              
+              <div className="flex space-x-2 text-sm mb-2">
+                <div>Latitude: {form.watch('latitude') || 'Não definida'}</div>
+                <div>Longitude: {form.watch('longitude') || 'Não definida'}</div>
+              </div>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="zipCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CEP</FormLabel>
+                  <div className="flex gap-2">
                     <FormControl>
                       <Input 
-                        placeholder="Contato adicional" 
+                        placeholder="00000-000" 
                         {...field} 
-                        value={field.value || ""}
+                        onChange={(e) => {
+                          field.onChange(e);
+                        }}
+                        onBlur={(e) => {
+                          field.onBlur();
+                          fetchAddressByCEP(e.target.value);
+                        }}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button 
-                type="button" 
-                className="w-full"
-                disabled={isLoading}
-                onClick={handleContinue}
-              >
-                {isLoading ? "Processando..." : "Continuar"}
-              </Button>
-            </>
-          ) : (
-            // Step 2: Address and Location Info
-            <>
-              <div className="bg-muted/50 p-4 rounded-md mb-4">
-                <h2 className="font-medium mb-2">Localização do Estabelecimento</h2>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Por favor, forneça o endereço completo do seu estabelecimento ou use a geolocalização automática.
-                </p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={getCurrentLocation}
-                  disabled={isLoading}
-                  className="w-full mb-4"
-                >
-                  {isLoading ? "Obtendo localização..." : "Usar minha localização atual"}
-                </Button>
-                
-                <div className="flex space-x-2 text-sm mb-2">
-                  <div>Latitude: {form.watch('latitude') || 'Não definida'}</div>
-                  <div>Longitude: {form.watch('longitude') || 'Não definida'}</div>
-                </div>
-              </div>
+                    <Button 
+                      type="button" 
+                      onClick={() => fetchAddressByCEP(form.getValues('zipCode'))}
+                      disabled={cepLoading}
+                    >
+                      {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logradouro</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Rua, Avenida, etc" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="address"
+                name="addressNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Endereço</FormLabel>
+                    <FormLabel>Número</FormLabel>
                     <FormControl>
-                      <Input placeholder="Rua, número, complemento" {...field} />
+                      <Input id="addressNumber" placeholder="Número" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cidade" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Estado" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
               <FormField
                 control={form.control}
-                name="zipCode"
+                name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CEP</FormLabel>
+                    <FormLabel>Cidade</FormLabel>
                     <FormControl>
-                      <Input placeholder="00000-000" {...field} />
+                      <Input placeholder="Cidade" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <Button type="button" variant="outline" onClick={() => setStep(1)} className="mr-2">
-                Voltar
-              </Button>
-              
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-                className="w-full mt-4"
-              >
-                {isLoading ? "Processando..." : "Cadastrar"}
-              </Button>
-            </>
-          )}
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Estado" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+          
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? "Processando..." : "Cadastrar Estabelecimento"}
+          </Button>
         </form>
       </Form>
     </div>
