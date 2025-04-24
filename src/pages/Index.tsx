@@ -1,9 +1,12 @@
 
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Zap, Store } from 'lucide-react';
+import { Zap, Store, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Index = () => {
+  const [showEstablishmentArea, setShowEstablishmentArea] = useState(false);
+  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-black/70 p-4">
       <div className="text-center max-w-md">
@@ -49,32 +52,45 @@ const Index = () => {
             </Link>
           </Button>
           
-          <div className="pt-4 border-t border-gray-700">
-            <h3 className="text-white mb-4">Área do Estabelecimento</h3>
-            <Button 
-              variant="outline" 
-              className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text mb-2"
-              size="lg"
-              asChild
-            >
-              <Link to="/partner-registration">
-                <Store className="mr-2 h-4 w-4" />
-                Cadastrar Estabelecimento
-              </Link>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
-              size="lg"
-              asChild
-            >
-              <Link to="/establishment-login">
-                <Store className="mr-2 h-4 w-4" />
-                Login de Estabelecimento
-              </Link>
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            className="w-full text-white border-gray-700 hover:bg-gray-800 flex justify-between"
+            onClick={() => setShowEstablishmentArea(!showEstablishmentArea)}
+          >
+            <span className="flex items-center">
+              <Store className="mr-2 h-5 w-5" />
+              Área do Estabelecimento
+            </span>
+            {showEstablishmentArea ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </Button>
+          
+          {showEstablishmentArea && (
+            <div className="pt-2 space-y-3 animate-fadeIn">
+              <Button 
+                variant="outline" 
+                className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
+                size="lg"
+                asChild
+              >
+                <Link to="/partner-registration">
+                  <Store className="mr-2 h-4 w-4" />
+                  Cadastrar Estabelecimento
+                </Link>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full border-blink-primary text-white hover:bg-blink-light hover:text-blink-text"
+                size="lg"
+                asChild
+              >
+                <Link to="/establishment-login">
+                  <Store className="mr-2 h-4 w-4" />
+                  Login de Estabelecimento
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
