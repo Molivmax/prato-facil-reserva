@@ -11,6 +11,8 @@ export type Database = {
     Tables: {
       establishments: {
         Row: {
+          address: string | null
+          city: string | null
           contact: string | null
           created_at: string
           description: string | null
@@ -18,10 +20,14 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           name: string
+          state: string | null
           user_id: string | null
           working_hours: string
+          zip_code: string | null
         }
         Insert: {
+          address?: string | null
+          city?: string | null
           contact?: string | null
           created_at?: string
           description?: string | null
@@ -29,10 +35,14 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name: string
+          state?: string | null
           user_id?: string | null
           working_hours: string
+          zip_code?: string | null
         }
         Update: {
+          address?: string | null
+          city?: string | null
           contact?: string | null
           created_at?: string
           description?: string | null
@@ -40,8 +50,10 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name?: string
+          state?: string | null
           user_id?: string | null
           working_hours?: string
+          zip_code?: string | null
         }
         Relationships: []
       }

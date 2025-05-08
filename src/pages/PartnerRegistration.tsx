@@ -117,7 +117,11 @@ const PartnerRegistration: React.FC = () => {
             working_hours: data.workingHours,
             user_id: authData.user.id,
             latitude: data.latitude,
-            longitude: data.longitude
+            longitude: data.longitude,
+            address: data.address,
+            city: data.city,
+            state: data.state,
+            zip_code: data.zipCode
           });
 
         if (establishmentError) {
