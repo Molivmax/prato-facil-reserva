@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, ArrowLeft, Store } from 'lucide-react';
+import { ArrowLeft, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -67,7 +67,7 @@ const EstablishmentLogin = () => {
       <Card className="w-full max-w-md bg-black/50 backdrop-blur-md border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-2">
-            <div className="bg-restaurant-primary rounded-full p-3 inline-block shadow-[0_0_20px_rgba(255,150,0,0.3)]">
+            <div className="bg-blink-primary rounded-full p-3 inline-block shadow-[0_0_20px_rgba(255,255,0,0.3)]">
               <Store className="h-6 w-6 text-black" />
             </div>
           </div>
@@ -95,7 +95,7 @@ const EstablishmentLogin = () => {
                 <Label htmlFor="password" className="text-gray-200">Senha</Label>
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-restaurant-primary hover:text-restaurant-secondary"
+                  className="text-sm text-blink-primary hover:text-blink-secondary"
                 >
                   Esqueceu a senha?
                 </Link>
@@ -112,7 +112,7 @@ const EstablishmentLogin = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-restaurant-primary hover:bg-restaurant-dark text-black"
+              className="w-full bg-blink-primary hover:bg-blink-primary/80 text-black"
               disabled={isLoading}
             >
               {isLoading ? "Entrando..." : "Entrar"}
@@ -122,7 +122,7 @@ const EstablishmentLogin = () => {
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-center w-full text-gray-300">
             Não tem uma conta?{" "}
-            <Link to="/partner-registration" className="text-restaurant-primary hover:text-restaurant-secondary">
+            <Link to="/partner-registration" className="text-blink-primary hover:text-blink-secondary">
               Cadastre seu estabelecimento
             </Link>
           </div>

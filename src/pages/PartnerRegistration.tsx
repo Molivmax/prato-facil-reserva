@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { formatCEP, formatDocument, formatPhone } from '@/utils/AddressUtils';
 import {
   Form,
@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // Validation schema for user and establishment registration
 const registrationSchema = z.object({
@@ -54,6 +55,8 @@ type RegistrationFormData = z.infer<typeof registrationSchema>;
 const PartnerRegistration: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
   const navigate = useNavigate();
 
   const form = useForm<RegistrationFormData>({
@@ -80,6 +83,7 @@ const PartnerRegistration: React.FC = () => {
 
   const onSubmit = async (data: RegistrationFormData) => {
     setIsLoading(true);
+    setRegistrationStatus('idle');
     
     try {
       // Sign up user in Supabase Auth
@@ -97,6 +101,8 @@ const PartnerRegistration: React.FC = () => {
       });
 
       if (authError) {
+        setRegistrationStatus('error');
+        setStatusMessage(authError.message || 'Erro ao cadastrar usuário');
         toast.error(authError.message || 'Erro ao cadastrar usuário');
         setIsLoading(false);
         return;
@@ -125,16 +131,39 @@ const PartnerRegistration: React.FC = () => {
 
         if (establishmentError) {
           console.error('Establishment error:', establishmentError);
+          setRegistrationStatus('error');
+          setStatusMessage(establishmentError.message || 'Erro ao criar estabelecimento');
           toast.error(establishmentError.message || 'Erro ao criar estabelecimento');
           setIsLoading(false);
           return;
         }
 
+        // Check if email confirmation is required (always true by default in Supabase)
+        const needsEmailConfirmation = authData.session === null;
+        
+        setRegistrationStatus('success');
+        setStatusMessage(
+          needsEmailConfirmation 
+            ? 'Cadastro realizado com sucesso! Por favor, verifique seu email para confirmar o registro antes de fazer login.' 
+            : 'Cadastro realizado com sucesso!'
+        );
+        
         toast.success('Cadastro realizado com sucesso!');
-        navigate('/establishment-dashboard'); // Redirect to dashboard where they can add menu items
+        
+        // If email confirmation is required, redirect to login after 5 seconds
+        // Otherwise, redirect to dashboard immediately
+        if (needsEmailConfirmation) {
+          setTimeout(() => {
+            navigate('/establishment-login');
+          }, 5000);
+        } else {
+          navigate('/establishment-dashboard');
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
+      setRegistrationStatus('error');
+      setStatusMessage('Erro no cadastro. Tente novamente.');
       toast.error('Erro no cadastro. Tente novamente.');
     } finally {
       setIsLoading(false);
@@ -198,6 +227,27 @@ const PartnerRegistration: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <h1 className="text-2xl font-bold mb-6">Cadastro de Parceiro</h1>
+      
+      {registrationStatus === 'success' && (
+        <Alert className="mb-6 bg-green-50 border-green-200">
+          <CheckCircle className="h-5 w-5 text-green-500" />
+          <AlertTitle className="text-green-800">Cadastro realizado com sucesso!</AlertTitle>
+          <AlertDescription className="text-green-700">
+            {statusMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {registrationStatus === 'error' && (
+        <Alert className="mb-6 bg-red-50 border-red-200" variant="destructive">
+          <AlertCircle className="h-5 w-5 text-red-500" />
+          <AlertTitle className="text-red-800">Erro no cadastro</AlertTitle>
+          <AlertDescription className="text-red-700">
+            {statusMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="bg-muted/30 p-6 rounded-lg mb-6">
@@ -522,11 +572,24 @@ const PartnerRegistration: React.FC = () => {
           
           <Button 
             type="submit" 
-            disabled={isLoading}
-            className="w-full"
+            disabled={isLoading || registrationStatus === 'success'}
+            className="w-full bg-blink-primary hover:bg-blink-primary/80 text-black"
           >
-            {isLoading ? "Processando..." : "Cadastrar Estabelecimento"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              "Cadastrar Estabelecimento"
+            )}
           </Button>
+          
+          {registrationStatus === 'success' && (
+            <p className="text-center text-sm text-muted-foreground">
+              Redirecionando para página de login...
+            </p>
+          )}
         </form>
       </Form>
     </div>
