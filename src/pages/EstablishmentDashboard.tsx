@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,9 @@ import {
   Bell,
   BarChart,
   AlertCircle,
-  Info
+  Info,
+  Check,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -22,12 +23,24 @@ import ProductsList from '@/components/ProductsList';
 import AddProductForm from '@/components/AddProductForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+// Define order status type
+type OrderStatus = 'pending' | 'accepted' | 'rejected';
+
+// Define order interface
+interface Order {
+  id: number;
+  tableNumber: number;
+  itemCount: number;
+  total: number;
+  status: OrderStatus;
+}
+
 const EstablishmentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [establishment, setEstablishment] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('products');
-  const [pendingOrders, setPendingOrders] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [arrivingCustomers, setArrivingCustomers] = useState(0);
   const navigate = useNavigate();
 
@@ -46,10 +59,30 @@ const EstablishmentDashboard = () => {
 
     checkAuth();
 
-    // Simulação de pedidos pendentes e clientes chegando
-    setPendingOrders(Math.floor(Math.random() * 5));
-    setArrivingCustomers(Math.floor(Math.random() * 3));
+    // Generate mock orders
+    generateMockData();
   }, [navigate]);
+
+  const generateMockData = () => {
+    // Generate random number of mock orders
+    const orderCount = Math.floor(Math.random() * 5);
+    const mockOrders: Order[] = [];
+    
+    for (let i = 0; i < orderCount; i++) {
+      mockOrders.push({
+        id: Math.floor(Math.random() * 1000) + 1000,
+        tableNumber: Math.floor(Math.random() * 20) + 1,
+        itemCount: Math.floor(Math.random() * 5) + 1,
+        total: parseFloat((Math.random() * 100 + 20).toFixed(2)),
+        status: 'pending'
+      });
+    }
+    
+    setPendingOrders(mockOrders);
+    
+    // Generate random number of arriving customers
+    setArrivingCustomers(Math.floor(Math.random() * 3));
+  };
 
   const fetchEstablishmentData = async (userId: string) => {
     try {
@@ -85,6 +118,30 @@ const EstablishmentDashboard = () => {
     } catch (error: any) {
       toast.error(error.message || 'Erro ao fazer logout');
     }
+  };
+
+  const getPendingOrdersCount = () => {
+    return pendingOrders.filter(order => order.status === 'pending').length;
+  };
+
+  // Function to handle accepting an order
+  const handleAcceptOrder = (orderId: number) => {
+    setPendingOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId ? { ...order, status: 'accepted' } : order
+      )
+    );
+    toast.success(`Pedido #${orderId} aceito com sucesso!`);
+  };
+
+  // Function to handle rejecting an order
+  const handleRejectOrder = (orderId: number) => {
+    setPendingOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId ? { ...order, status: 'rejected' } : order
+      )
+    );
+    toast.error(`Pedido #${orderId} rejeitado.`);
   };
 
   if (loading) {
@@ -136,9 +193,9 @@ const EstablishmentDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">{pendingOrders}</div>
+              <div className="text-3xl font-bold text-white">{getPendingOrdersCount()}</div>
               <p className="text-sm text-gray-300 mt-1">
-                {pendingOrders === 0 ? 'Nenhum pedido novo' : 'Aguardando atenção'}
+                {getPendingOrdersCount() === 0 ? 'Nenhum pedido novo' : 'Aguardando atenção'}
               </p>
             </CardContent>
           </Card>
@@ -198,9 +255,9 @@ const EstablishmentDashboard = () => {
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Pedidos
-                    {pendingOrders > 0 && (
+                    {getPendingOrdersCount() > 0 && (
                       <span className="ml-2 bg-blink-primary text-black text-xs py-0.5 px-2 rounded-full">
-                        {pendingOrders}
+                        {getPendingOrdersCount()}
                       </span>
                     )}
                   </Button>
@@ -286,31 +343,49 @@ const EstablishmentDashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  {pendingOrders > 0 ? (
+                  {pendingOrders.length > 0 ? (
                     <div className="space-y-4">
-                      {Array.from({ length: pendingOrders }).map((_, index) => (
-                        <Card key={index} className="border border-gray-700 bg-gray-700 hover:bg-gray-600 cursor-pointer transition-all duration-200">
+                      {pendingOrders.map((order) => (
+                        <Card key={order.id} className={`border ${order.status === 'pending' ? 'border-gray-700 bg-gray-700' : order.status === 'accepted' ? 'border-green-800 bg-green-900/30' : 'border-red-800 bg-red-900/30'} transition-all duration-200`}>
                           <CardHeader className="pb-2">
                             <div className="flex justify-between">
-                              <CardTitle className="text-lg text-white">Pedido #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
-                              <span className="text-sm bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-medium">
-                                Pendente
+                              <CardTitle className="text-lg text-white">Pedido #{order.id}</CardTitle>
+                              <span className={`text-sm px-2 py-1 rounded-md font-medium ${
+                                order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
+                                order.status === 'accepted' ? 'bg-green-100 text-green-800' : 
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {order.status === 'pending' ? 'Pendente' : 
+                                 order.status === 'accepted' ? 'Aceito' : 'Rejeitado'}
                               </span>
                             </div>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-2 text-white">
-                              <p className="text-sm text-gray-300">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
-                              <p className="font-medium">Itens: {Math.floor(Math.random() * 5) + 1}</p>
-                              <p className="font-medium">Total: R$ {(Math.random() * 100 + 20).toFixed(2)}</p>
-                              <div className="flex space-x-2 pt-2">
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                  Aceitar
-                                </Button>
-                                <Button size="sm" variant="outline" className="border-red-300 text-red-500 hover:bg-red-900/20">
-                                  Rejeitar
-                                </Button>
-                              </div>
+                              <p className="text-sm text-gray-300">Mesa: #{order.tableNumber}</p>
+                              <p className="font-medium">Itens: {order.itemCount}</p>
+                              <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                              {order.status === 'pending' && (
+                                <div className="flex space-x-2 pt-2">
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
+                                    onClick={() => handleAcceptOrder(order.id)}
+                                  >
+                                    <Check size={16} />
+                                    Aceitar
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="border-red-500 text-red-400 hover:bg-red-900/20 flex items-center gap-1"
+                                    onClick={() => handleRejectOrder(order.id)}
+                                  >
+                                    <X size={16} />
+                                    Rejeitar
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
