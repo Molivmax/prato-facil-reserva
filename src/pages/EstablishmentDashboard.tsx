@@ -17,13 +17,15 @@ import {
   Info,
   Check,
   X,
-  Package
+  Package,
+  DoorOpen
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ProductsList from '@/components/ProductsList';
 import AddProductForm from '@/components/AddProductForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import CheckoutDialog from '@/components/CheckoutDialog';
 
 // Define order status type
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
@@ -45,6 +47,8 @@ const EstablishmentDashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [arrivingCustomers, setArrivingCustomers] = useState(0);
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -183,6 +187,21 @@ const EstablishmentDashboard = () => {
         return prevOrders;
       });
     }, 3000);
+  };
+
+  // Function to handle checkout process
+  const handleCheckout = (order: Order) => {
+    setSelectedOrder(order);
+    setCheckoutDialogOpen(true);
+  };
+
+  // Function to close checkout dialog
+  const handleCloseCheckoutDialog = () => {
+    setCheckoutDialogOpen(false);
+    setSelectedOrder(null);
+    
+    // In a real app, we would mark the table as available after checkout
+    toast.success("Mesa liberada para novos clientes!");
   };
 
   if (loading) {
@@ -458,6 +477,20 @@ const EstablishmentDashboard = () => {
                                   </Button>
                                 </div>
                               )}
+
+                              {order.status === 'completed' && (
+                                <div className="flex pt-2">
+                                  <Button 
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-blink-primary text-blink-primary hover:bg-blink-primary/10"
+                                    onClick={() => handleCheckout(order)}
+                                  >
+                                    <DoorOpen size={16} className="mr-1" />
+                                    Liberar Cliente
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -547,6 +580,16 @@ const EstablishmentDashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Checkout Dialog */}
+      {selectedOrder && (
+        <CheckoutDialog
+          isOpen={checkoutDialogOpen}
+          onClose={handleCloseCheckoutDialog}
+          orderId={selectedOrder.id}
+          tableNumber={selectedOrder.tableNumber}
+        />
+      )}
     </div>
   );
 };
