@@ -12,12 +12,15 @@ import {
   Users, 
   ShoppingCart,
   Bell,
-  BarChart
+  BarChart,
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ProductsList from '@/components/ProductsList';
 import AddProductForm from '@/components/AddProductForm';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const EstablishmentDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -86,19 +89,19 @@ const EstablishmentDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blink-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Carregando...</p>
+          <p className="mt-4 text-lg text-gray-300">Carregando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-900">
       {/* Header */}
-      <header className="bg-gray-900 text-white shadow-lg">
+      <header className="bg-gray-900 text-white border-b border-gray-800 shadow-lg">
         <div className="container max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -107,7 +110,7 @@ const EstablishmentDashboard = () => {
             </div>
             <div className="flex items-center space-x-6">
               <p className="text-md hidden md:block">
-                Olá, <span className="font-semibold">{establishment?.name}</span>
+                Olá, <span className="font-semibold text-blink-primary">{establishment?.name}</span>
               </p>
               <Button 
                 variant="outline" 
@@ -125,7 +128,7 @@ const EstablishmentDashboard = () => {
       <main className="container max-w-7xl mx-auto px-4 py-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-white hover:shadow-md transition-shadow">
+          <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
                 <ShoppingCart className="h-5 w-5 mr-2 text-blink-primary" />
@@ -133,14 +136,14 @@ const EstablishmentDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{pendingOrders}</div>
-              <p className="text-sm text-gray-500 mt-1">
+              <div className="text-3xl font-bold text-white">{pendingOrders}</div>
+              <p className="text-sm text-gray-300 mt-1">
                 {pendingOrders === 0 ? 'Nenhum pedido novo' : 'Aguardando atenção'}
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-white hover:shadow-md transition-shadow">
+          <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
                 <Users className="h-5 w-5 mr-2 text-blink-primary" />
@@ -148,14 +151,14 @@ const EstablishmentDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{arrivingCustomers}</div>
-              <p className="text-sm text-gray-500 mt-1">
+              <div className="text-3xl font-bold text-white">{arrivingCustomers}</div>
+              <p className="text-sm text-gray-300 mt-1">
                 {arrivingCustomers === 0 ? 'Nenhum cliente a caminho' : 'A caminho do estabelecimento'}
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-white hover:shadow-md transition-shadow">
+          <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
                 <BarChart className="h-5 w-5 mr-2 text-blink-primary" />
@@ -163,8 +166,8 @@ const EstablishmentDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">Bom</div>
-              <p className="text-sm text-gray-500 mt-1">
+              <div className="text-3xl font-bold text-white">Bom</div>
+              <p className="text-sm text-gray-300 mt-1">
                 Avaliação média: 4.8/5
               </p>
             </CardContent>
@@ -174,7 +177,7 @@ const EstablishmentDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="md:col-span-1">
-            <Card className="bg-gray-900 text-white">
+            <Card className="bg-gray-800 border-0 text-white">
               <CardHeader>
                 <CardTitle className="text-lg text-blink-primary">Menu</CardTitle>
               </CardHeader>
@@ -231,10 +234,10 @@ const EstablishmentDashboard = () => {
           <div className="md:col-span-3">
             {activeTab === 'products' && (
               <div className="space-y-6">
-                <Card className="border-0 shadow-md">
-                  <CardHeader className="flex flex-row items-center justify-between bg-gray-900 text-white rounded-t-lg">
+                <Card className="border-0 shadow-md bg-gray-800 text-white">
+                  <CardHeader className="flex flex-row items-center justify-between bg-gray-800 rounded-t-lg border-b border-gray-700">
                     <div>
-                      <CardTitle className="text-xl">Gerenciar Produtos</CardTitle>
+                      <CardTitle className="text-xl text-white">Gerenciar Produtos</CardTitle>
                       <CardDescription className="text-gray-300">
                         Adicione e edite os produtos disponíveis no seu estabelecimento
                       </CardDescription>
@@ -255,9 +258,9 @@ const EstablishmentDashboard = () => {
             )}
 
             {activeTab === 'add-product' && (
-              <Card className="border-0 shadow-md">
-                <CardHeader className="bg-gray-900 text-white rounded-t-lg">
-                  <CardTitle className="text-xl">Adicionar Novo Produto</CardTitle>
+              <Card className="border-0 shadow-md bg-gray-800 text-white">
+                <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                  <CardTitle className="text-xl text-white">Adicionar Novo Produto</CardTitle>
                   <CardDescription className="text-gray-300">
                     Preencha os detalhes do produto para adicioná-lo ao seu cardápio
                   </CardDescription>
@@ -275,9 +278,9 @@ const EstablishmentDashboard = () => {
             )}
 
             {activeTab === 'orders' && (
-              <Card className="border-0 shadow-md">
-                <CardHeader className="bg-gray-900 text-white rounded-t-lg">
-                  <CardTitle className="text-xl">Gerenciar Pedidos</CardTitle>
+              <Card className="border-0 shadow-md bg-gray-800 text-white">
+                <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                  <CardTitle className="text-xl text-white">Gerenciar Pedidos</CardTitle>
                   <CardDescription className="text-gray-300">
                     Visualize e gerencie os pedidos do seu estabelecimento
                   </CardDescription>
@@ -286,25 +289,25 @@ const EstablishmentDashboard = () => {
                   {pendingOrders > 0 ? (
                     <div className="space-y-4">
                       {Array.from({ length: pendingOrders }).map((_, index) => (
-                        <Card key={index} className="border border-gray-200">
+                        <Card key={index} className="border border-gray-700 bg-gray-700 hover:bg-gray-600 cursor-pointer transition-all duration-200">
                           <CardHeader className="pb-2">
                             <div className="flex justify-between">
-                              <CardTitle className="text-lg">Pedido #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
+                              <CardTitle className="text-lg text-white">Pedido #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
                               <span className="text-sm bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-medium">
                                 Pendente
                               </span>
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-500">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
+                            <div className="space-y-2 text-white">
+                              <p className="text-sm text-gray-300">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
                               <p className="font-medium">Itens: {Math.floor(Math.random() * 5) + 1}</p>
                               <p className="font-medium">Total: R$ {(Math.random() * 100 + 20).toFixed(2)}</p>
                               <div className="flex space-x-2 pt-2">
                                 <Button size="sm" className="bg-green-600 hover:bg-green-700">
                                   Aceitar
                                 </Button>
-                                <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+                                <Button size="sm" variant="outline" className="border-red-300 text-red-500 hover:bg-red-900/20">
                                   Rejeitar
                                 </Button>
                               </div>
@@ -314,20 +317,22 @@ const EstablishmentDashboard = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <ShoppingCart className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                      <h3 className="text-lg font-medium text-gray-700">Nenhum pedido pendente</h3>
-                      <p className="text-gray-500 mt-1">Os novos pedidos aparecerão aqui.</p>
-                    </div>
+                    <Alert className="bg-gray-700 border-gray-600">
+                      <AlertCircle className="h-4 w-4 text-gray-400" />
+                      <AlertTitle className="text-gray-200">Nenhum pedido pendente</AlertTitle>
+                      <AlertDescription className="text-gray-300">
+                        Os novos pedidos aparecerão aqui quando os clientes fizerem seus pedidos.
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </CardContent>
               </Card>
             )}
 
             {activeTab === 'customers' && (
-              <Card className="border-0 shadow-md">
-                <CardHeader className="bg-gray-900 text-white rounded-t-lg">
-                  <CardTitle className="text-xl">Clientes Chegando</CardTitle>
+              <Card className="border-0 shadow-md bg-gray-800 text-white">
+                <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                  <CardTitle className="text-xl text-white">Clientes Chegando</CardTitle>
                   <CardDescription className="text-gray-300">
                     Veja quem está a caminho do seu estabelecimento
                   </CardDescription>
@@ -336,18 +341,18 @@ const EstablishmentDashboard = () => {
                   {arrivingCustomers > 0 ? (
                     <div className="space-y-4">
                       {Array.from({ length: arrivingCustomers }).map((_, index) => (
-                        <Card key={index} className="border border-gray-200">
+                        <Card key={index} className="border border-gray-700 bg-gray-700 hover:bg-gray-600 cursor-pointer transition-all duration-200">
                           <CardHeader className="pb-2">
                             <div className="flex justify-between">
-                              <CardTitle className="text-lg">Cliente #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
+                              <CardTitle className="text-lg text-white">Cliente #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
                               <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium">
                                 Chegando
                               </span>
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <div className="space-y-2">
-                              <p className="text-sm text-gray-500">Horário estimado: {new Date().getHours()}:{new Date().getMinutes() + Math.floor(Math.random() * 30)}</p>
+                            <div className="space-y-2 text-white">
+                              <p className="text-sm text-gray-300">Horário estimado: {new Date().getHours()}:{new Date().getMinutes() + Math.floor(Math.random() * 30)}</p>
                               <p className="font-medium">Pessoas: {Math.floor(Math.random() * 4) + 1}</p>
                               <p className="font-medium">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
                               <div className="flex space-x-2 pt-2">
@@ -361,30 +366,34 @@ const EstablishmentDashboard = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                      <h3 className="text-lg font-medium text-gray-700">Nenhum cliente a caminho</h3>
-                      <p className="text-gray-500 mt-1">Os clientes que estiverem a caminho aparecerão aqui.</p>
-                    </div>
+                    <Alert className="bg-gray-700 border-gray-600">
+                      <Info className="h-4 w-4 text-gray-400" />
+                      <AlertTitle className="text-gray-200">Nenhum cliente a caminho</AlertTitle>
+                      <AlertDescription className="text-gray-300">
+                        Os clientes que estiverem a caminho aparecerão aqui quando confirmarem sua reserva.
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </CardContent>
               </Card>
             )}
 
             {activeTab === 'notifications' && (
-              <Card className="border-0 shadow-md">
-                <CardHeader className="bg-gray-900 text-white rounded-t-lg">
-                  <CardTitle className="text-xl">Notificações</CardTitle>
+              <Card className="border-0 shadow-md bg-gray-800 text-white">
+                <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                  <CardTitle className="text-xl text-white">Notificações</CardTitle>
                   <CardDescription className="text-gray-300">
                     Acompanhe as atualizações do seu estabelecimento
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Bell className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                    <h3 className="text-lg font-medium text-gray-700">Nenhuma notificação no momento</h3>
-                    <p className="text-gray-500 mt-1">Fique atento às novidades do seu estabelecimento.</p>
-                  </div>
+                  <Alert className="bg-gray-700 border-gray-600">
+                    <Bell className="h-4 w-4 text-gray-400" />
+                    <AlertTitle className="text-gray-200">Nenhuma notificação no momento</AlertTitle>
+                    <AlertDescription className="text-gray-300">
+                      Fique atento às novidades do seu estabelecimento. As notificações aparecerão aqui.
+                    </AlertDescription>
+                  </Alert>
                 </CardContent>
               </Card>
             )}
