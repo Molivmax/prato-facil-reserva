@@ -21,6 +21,9 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         blink: "bg-blink-primary text-black hover:bg-blink-primary/80",
         "blink-secondary": "bg-blink-secondary text-white hover:bg-blink-secondary/80",
+        "order-accept": "bg-green-600 hover:bg-green-700 text-white",
+        "order-reject": "border-red-500 text-red-400 hover:bg-red-900/20",
+        "order-add": "bg-amber-400 text-black hover:bg-amber-500",
       },
       size: {
         default: "h-10 px-4 py-2",

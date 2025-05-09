@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import {
   AlertCircle,
   Info,
   Check,
-  X
+  X,
+  Package
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,7 +26,7 @@ import AddProductForm from '@/components/AddProductForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Define order status type
-type OrderStatus = 'pending' | 'accepted' | 'rejected';
+type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
 
 // Define order interface
 interface Order {
@@ -33,6 +35,7 @@ interface Order {
   itemCount: number;
   total: number;
   status: OrderStatus;
+  canAddMore: boolean;
 }
 
 const EstablishmentDashboard = () => {
@@ -74,7 +77,8 @@ const EstablishmentDashboard = () => {
         tableNumber: Math.floor(Math.random() * 20) + 1,
         itemCount: Math.floor(Math.random() * 5) + 1,
         total: parseFloat((Math.random() * 100 + 20).toFixed(2)),
-        status: 'pending'
+        status: 'pending',
+        canAddMore: false
       });
     }
     
@@ -128,7 +132,7 @@ const EstablishmentDashboard = () => {
   const handleAcceptOrder = (orderId: number) => {
     setPendingOrders(prevOrders =>
       prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'accepted' } : order
+        order.id === orderId ? { ...order, status: 'accepted', canAddMore: true } : order
       )
     );
     toast.success(`Pedido #${orderId} aceito com sucesso!`);
@@ -138,10 +142,47 @@ const EstablishmentDashboard = () => {
   const handleRejectOrder = (orderId: number) => {
     setPendingOrders(prevOrders =>
       prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'rejected' } : order
+        order.id === orderId ? { ...order, status: 'rejected', canAddMore: false } : order
       )
     );
     toast.error(`Pedido #${orderId} rejeitado.`);
+  };
+
+  // Function to handle completing an order
+  const handleCompleteOrder = (orderId: number) => {
+    setPendingOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId ? { ...order, status: 'completed', canAddMore: false } : order
+      )
+    );
+    toast.success(`Pedido #${orderId} finalizado com sucesso!`);
+  };
+
+  // Function to allow customer to add more items to an accepted order
+  const handleAllowMoreItems = (orderId: number) => {
+    // In a real application, this would send a notification to the customer's app
+    toast.success(`Cliente da mesa ${pendingOrders.find(o => o.id === orderId)?.tableNumber} notificado para adicionar mais itens!`);
+    
+    // For demo purposes, simulate a new order being added after 3 seconds
+    setTimeout(() => {
+      setPendingOrders(prevOrders => {
+        const orderIndex = prevOrders.findIndex(o => o.id === orderId);
+        if (orderIndex >= 0) {
+          const updatedOrder = { 
+            ...prevOrders[orderIndex],
+            itemCount: prevOrders[orderIndex].itemCount + Math.floor(Math.random() * 3) + 1,
+            total: prevOrders[orderIndex].total + parseFloat((Math.random() * 30).toFixed(2))
+          };
+          
+          const newOrders = [...prevOrders];
+          newOrders[orderIndex] = updatedOrder;
+          
+          toast.success(`Cliente da mesa ${updatedOrder.tableNumber} adicionou mais itens ao pedido #${orderId}!`);
+          return newOrders;
+        }
+        return prevOrders;
+      });
+    }, 3000);
   };
 
   if (loading) {
@@ -346,17 +387,25 @@ const EstablishmentDashboard = () => {
                   {pendingOrders.length > 0 ? (
                     <div className="space-y-4">
                       {pendingOrders.map((order) => (
-                        <Card key={order.id} className={`border ${order.status === 'pending' ? 'border-gray-700 bg-gray-700' : order.status === 'accepted' ? 'border-green-800 bg-green-900/30' : 'border-red-800 bg-red-900/30'} transition-all duration-200`}>
+                        <Card key={order.id} className={`border 
+                          ${order.status === 'pending' ? 'border-amber-500/50 bg-amber-950/20' : 
+                            order.status === 'accepted' ? 'border-green-500/50 bg-green-950/20' : 
+                            order.status === 'completed' ? 'border-blue-500/50 bg-blue-950/20' :
+                            'border-red-500/50 bg-red-950/20'} 
+                          transition-all duration-200 hover:border-opacity-75 cursor-pointer`}>
                           <CardHeader className="pb-2">
-                            <div className="flex justify-between">
+                            <div className="flex justify-between items-center">
                               <CardTitle className="text-lg text-white">Pedido #{order.id}</CardTitle>
                               <span className={`text-sm px-2 py-1 rounded-md font-medium ${
                                 order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
                                 order.status === 'accepted' ? 'bg-green-100 text-green-800' : 
+                                order.status === 'completed' ? 'bg-blue-100 text-blue-800' :
                                 'bg-red-100 text-red-800'
                               }`}>
                                 {order.status === 'pending' ? 'Pendente' : 
-                                 order.status === 'accepted' ? 'Aceito' : 'Rejeitado'}
+                                 order.status === 'accepted' ? 'Aceito' : 
+                                 order.status === 'completed' ? 'Finalizado' :
+                                 'Rejeitado'}
                               </span>
                             </div>
                           </CardHeader>
@@ -365,11 +414,12 @@ const EstablishmentDashboard = () => {
                               <p className="text-sm text-gray-300">Mesa: #{order.tableNumber}</p>
                               <p className="font-medium">Itens: {order.itemCount}</p>
                               <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                              
                               {order.status === 'pending' && (
                                 <div className="flex space-x-2 pt-2">
                                   <Button 
                                     size="sm" 
-                                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
+                                    variant="order-accept"
                                     onClick={() => handleAcceptOrder(order.id)}
                                   >
                                     <Check size={16} />
@@ -378,11 +428,33 @@ const EstablishmentDashboard = () => {
                                   <Button 
                                     size="sm" 
                                     variant="outline" 
-                                    className="border-red-500 text-red-400 hover:bg-red-900/20 flex items-center gap-1"
+                                    className="border-red-500 text-red-400 hover:bg-red-900/20"
                                     onClick={() => handleRejectOrder(order.id)}
                                   >
                                     <X size={16} />
                                     Rejeitar
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {order.status === 'accepted' && (
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="order-add"
+                                    onClick={() => handleAllowMoreItems(order.id)}
+                                  >
+                                    <PlusCircle size={16} />
+                                    Permitir Adicionar Itens
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="border-blue-500 text-blue-400 hover:bg-blue-900/20"
+                                    onClick={() => handleCompleteOrder(order.id)}
+                                  >
+                                    <Package size={16} className="mr-1" />
+                                    Finalizar Pedido
                                   </Button>
                                 </div>
                               )}
@@ -416,7 +488,7 @@ const EstablishmentDashboard = () => {
                   {arrivingCustomers > 0 ? (
                     <div className="space-y-4">
                       {Array.from({ length: arrivingCustomers }).map((_, index) => (
-                        <Card key={index} className="border border-gray-700 bg-gray-700 hover:bg-gray-600 cursor-pointer transition-all duration-200">
+                        <Card key={index} className="border border-gray-700 bg-gray-700/50 hover:bg-gray-700 cursor-pointer transition-all duration-200">
                           <CardHeader className="pb-2">
                             <div className="flex justify-between">
                               <CardTitle className="text-lg text-white">Cliente #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
