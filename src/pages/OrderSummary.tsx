@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -7,16 +6,18 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Clock, CreditCard, Check, 
-  ShoppingBag, MapPin, Utensils, ClipboardList, DoorOpen 
+  ShoppingBag, MapPin, Utensils, ClipboardList, DoorOpen, QrCode 
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/components/ui/use-toast';
 import CheckoutDialog from '@/components/CheckoutDialog';
+import QRCodeScanner from '@/components/QRCodeScanner';
 
 const OrderSummary = () => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -50,7 +51,8 @@ const OrderSummary = () => {
   };
 
   const handleCheckout = () => {
-    setCheckoutDialogOpen(true);
+    // Open scanner instead of checkout dialog
+    setScannerOpen(true);
   };
 
   const handleCloseCheckoutDialog = () => {
@@ -64,6 +66,21 @@ const OrderSummary = () => {
     
     // Em uma aplicação real, aqui seria registrado o checkout e o cliente seria redirecionado
     navigate('/completed-order/latest');
+  };
+  
+  const handleScanSuccess = () => {
+    // In a real app, we would send this information to the backend
+    setTimeout(() => {
+      navigate('/completed-order/latest');
+    }, 3000);
+  };
+  
+  const handleScanError = () => {
+    // Nothing special needs to happen here, the scanner component already shows an error message
+  };
+  
+  const handleCloseScanner = () => {
+    setScannerOpen(false);
   };
 
   return (
@@ -247,8 +264,8 @@ const OrderSummary = () => {
               size="lg"
               onClick={handleCheckout}
             >
-              <DoorOpen className="mr-2 h-5 w-5" />
-              Sair do Estabelecimento
+              <QrCode className="mr-2 h-5 w-5" />
+              Escanear QR Code da Saída
             </Button>
           )}
           
@@ -260,6 +277,20 @@ const OrderSummary = () => {
           </p>
         </div>
       </div>
+
+      {/* QR Code Scanner */}
+      {scannerOpen && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <QRCodeScanner 
+              orderId={12345}
+              onScanSuccess={handleScanSuccess}
+              onScanError={handleScanError}
+              onClose={handleCloseScanner}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Checkout Dialog */}
       <CheckoutDialog
