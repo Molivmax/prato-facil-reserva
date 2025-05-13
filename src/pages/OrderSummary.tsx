@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -6,13 +7,16 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Clock, CreditCard, Check, 
-  ShoppingBag, MapPin, Utensils, ClipboardList 
+  ShoppingBag, MapPin, Utensils, ClipboardList, DoorOpen 
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
+import CheckoutDialog from '@/components/CheckoutDialog';
 
 const OrderSummary = () => {
   const [isCompleting, setIsCompleting] = useState(false);
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [orderCompleted, setOrderCompleted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,14 +40,30 @@ const OrderSummary = () => {
     // Simula a finalização do pedido
     setTimeout(() => {
       setIsCompleting(false);
+      setOrderCompleted(true);
       
       toast({
         title: "Pedido finalizado com sucesso!",
-        description: "Obrigado por utilizar o Blink.",
+        description: "Você já pode sair do estabelecimento usando o QR code.",
       });
-      
-      navigate('/completed-order/latest');
     }, 1500);
+  };
+
+  const handleCheckout = () => {
+    setCheckoutDialogOpen(true);
+  };
+
+  const handleCloseCheckoutDialog = () => {
+    setCheckoutDialogOpen(false);
+    
+    // Simula o cliente saindo do estabelecimento
+    toast({
+      title: "Checkout realizado!",
+      description: "Obrigado por sua visita. Volte sempre!",
+    });
+    
+    // Em uma aplicação real, aqui seria registrado o checkout e o cliente seria redirecionado
+    navigate('/completed-order/latest');
   };
 
   return (
@@ -69,7 +89,9 @@ const OrderSummary = () => {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-lg">Status do Pedido</CardTitle>
-                <Badge className="bg-green-600">Confirmado</Badge>
+                <Badge className={orderCompleted ? "bg-blue-600" : "bg-green-600"}>
+                  {orderCompleted ? "Finalizado" : "Confirmado"}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
@@ -105,12 +127,16 @@ const OrderSummary = () => {
                   </div>
                 </li>
                 <li className="flex items-center">
-                  <div className="bg-blink-light p-1 rounded-full mr-3">
-                    <Clock className="h-4 w-4 text-blink-primary" />
+                  <div className={`${orderCompleted ? "bg-green-100" : "bg-blink-light"} p-1 rounded-full mr-3`}>
+                    {orderCompleted ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Clock className="h-4 w-4 text-blink-primary" />
+                    )}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium">Preparando pedido</p>
-                    <p className="text-sm text-gray-500">Em andamento</p>
+                    <p className="font-medium">{orderCompleted ? "Pedido finalizado" : "Preparando pedido"}</p>
+                    <p className="text-sm text-gray-500">{orderCompleted ? "Hoje, 20:15" : "Em andamento"}</p>
                   </div>
                 </li>
               </ul>
@@ -205,21 +231,43 @@ const OrderSummary = () => {
         </div>
         
         <div className="space-y-4">
-          <Button 
-            className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
-            size="lg"
-            onClick={handleCompleteOrder}
-            disabled={isCompleting}
-          >
-            <ShoppingBag className="mr-2 h-5 w-5" />
-            {isCompleting ? "Finalizando..." : "Finalizar Pedido"}
-          </Button>
+          {!orderCompleted ? (
+            <Button 
+              className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
+              size="lg"
+              onClick={handleCompleteOrder}
+              disabled={isCompleting}
+            >
+              <ShoppingBag className="mr-2 h-5 w-5" />
+              {isCompleting ? "Finalizando..." : "Finalizar Pedido"}
+            </Button>
+          ) : (
+            <Button 
+              className="w-full bg-blink-primary hover:bg-blink-secondary hover:text-white text-blink-text"
+              size="lg"
+              onClick={handleCheckout}
+            >
+              <DoorOpen className="mr-2 h-5 w-5" />
+              Sair do Estabelecimento
+            </Button>
+          )}
           
           <p className="text-center text-sm text-gray-500">
-            Finalize seu pedido quando terminar sua refeição. Isso liberará a mesa para outros clientes.
+            {!orderCompleted ? 
+              "Finalize seu pedido quando terminar sua refeição. Isso liberará a mesa para outros clientes." :
+              "Escaneie o QR Code na porta para sair do estabelecimento."
+            }
           </p>
         </div>
       </div>
+
+      {/* Checkout Dialog */}
+      <CheckoutDialog
+        isOpen={checkoutDialogOpen}
+        onClose={handleCloseCheckoutDialog}
+        orderId={12345}
+        tableNumber={2}
+      />
     </>
   );
 };
