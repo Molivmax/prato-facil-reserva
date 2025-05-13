@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import { getRestaurantById } from '@/data/mockData';
 import { Restaurant } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const RestaurantDetails = () => {
   const { id } = useParams();
@@ -18,21 +18,57 @@ const RestaurantDetails = () => {
 
   useEffect(() => {
     if (id) {
-      // Simulando uma chamada de API
-      setTimeout(() => {
-        const restaurantData = getRestaurantById(id);
-        if (restaurantData) {
-          setRestaurant(restaurantData);
-        } else {
+      const fetchRestaurantData = async () => {
+        try {
+          // Fetch from Supabase
+          const { data: establishmentData, error } = await supabase
+            .from('establishments')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          if (establishmentData) {
+            // Convert Supabase data to Restaurant type
+            const restaurantData: Restaurant = {
+              id: establishmentData.id,
+              name: establishmentData.name,
+              image: establishmentData.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+              rating: 4.5, // Default value since not in Supabase
+              cuisine: establishmentData.description || 'Variado',
+              distance: '1.2 km', // Default value
+              address: establishmentData.address || 'Endereço não disponível',
+              openingHours: establishmentData.working_hours || 'Horário não disponível',
+              description: establishmentData.description || 'Sem descrição disponível',
+              phoneNumber: establishmentData.contact || 'Telefone não disponível'
+            };
+            
+            setRestaurant(restaurantData);
+          } else {
+            toast({
+              title: "Erro",
+              description: "Restaurante não encontrado",
+              variant: "destructive",
+            });
+            navigate('/search');
+          }
+        } catch (error) {
+          console.error("Erro ao buscar dados do restaurante:", error);
           toast({
             title: "Erro",
-            description: "Restaurante não encontrado",
+            description: "Erro ao buscar dados do restaurante",
             variant: "destructive",
           });
           navigate('/search');
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
-      }, 500);
+      };
+
+      fetchRestaurantData();
     }
   }, [id, navigate, toast]);
 

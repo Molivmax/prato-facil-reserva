@@ -37,7 +37,7 @@ const SearchRestaurants = () => {
         .from('users')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
       
       if (profile) {
         setShowPaymentDialog(true);
@@ -131,12 +131,12 @@ const SearchRestaurants = () => {
                   key={establishment.id}
                   id={establishment.id}
                   name={establishment.name}
-                  image={establishment.image_url || '/placeholder.svg'}
-                  rating={4.5}
-                  cuisine={establishment.description || ''}
-                  distance="1.2 km"
-                  address={establishment.location || ''}
-                  openingHours={establishment.working_hours}
+                  image={establishment.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'}
+                  rating={4.5} // Default rating
+                  cuisine={establishment.description || 'Variado'}
+                  distance="1.2 km" // Default distance
+                  address={establishment.address || establishment.city || 'Endereço não disponível'}
+                  openingHours={establishment.working_hours || 'Horário não disponível'}
                 />
               ))}
             </div>
