@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft, Menu } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Restaurant } from '@/data/types';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import ProductsList from '@/components/ProductsList';
 

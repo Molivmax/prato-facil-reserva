@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 
@@ -41,7 +41,11 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
       setProducts(data || []);
     } catch (error: any) {
       console.error('Error fetching products:', error);
-      toast.error(error.message || 'Erro ao carregar produtos');
+      toast({
+        title: "Erro",
+        description: error.message || 'Erro ao carregar produtos',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -59,11 +63,19 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
           throw error;
         }
 
-        toast.success('Produto excluído com sucesso');
+        toast({
+          title: "Sucesso",
+          description: 'Produto excluído com sucesso',
+          variant: "default",
+        });
         fetchProducts();
       } catch (error: any) {
         console.error('Error deleting product:', error);
-        toast.error(error.message || 'Erro ao excluir produto');
+        toast({
+          title: "Erro",
+          description: error.message || 'Erro ao excluir produto',
+          variant: "destructive",
+        });
       }
     }
   };
