@@ -3,16 +3,18 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft, Menu } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Restaurant } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ProductsList from '@/components/ProductsList';
 
 const RestaurantDetails = () => {
   const { id } = useParams();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showProducts, setShowProducts] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -181,12 +183,38 @@ const RestaurantDetails = () => {
           </Card>
         </div>
         
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">Sobre</h2>
-          <p className="text-gray-700">{restaurant.description}</p>
+        <div className="flex space-x-4 mb-6">
+          <Button
+            variant={showProducts ? "default" : "outline"}
+            className={showProducts ? "bg-restaurant-primary hover:bg-restaurant-dark" : ""}
+            onClick={() => setShowProducts(true)}
+          >
+            <Menu className="mr-2 h-5 w-5" />
+            Cardápio
+          </Button>
+          
+          <Button
+            variant={!showProducts ? "default" : "outline"}
+            className={!showProducts ? "bg-restaurant-primary hover:bg-restaurant-dark" : ""}
+            onClick={() => setShowProducts(false)}
+          >
+            <Star className="mr-2 h-5 w-5" />
+            Sobre
+          </Button>
         </div>
         
-        <div className="flex justify-center">
+        {showProducts ? (
+          <div className="mb-8">
+            {id && <ProductsList establishmentId={id} />}
+          </div>
+        ) : (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-3">Sobre</h2>
+            <p className="text-gray-700">{restaurant.description}</p>
+          </div>
+        )}
+        
+        <div className="flex justify-center mt-6">
           <Button 
             size="lg" 
             className="bg-restaurant-primary hover:bg-restaurant-dark"
