@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft, Menu } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Restaurant } from '@/data/types';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import ProductsList from '@/components/ProductsList';
 
@@ -38,7 +38,8 @@ const RestaurantDetails = () => {
             const restaurantData: Restaurant = {
               id: establishmentData.id,
               name: establishmentData.name,
-              image: establishmentData.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+              // Use a default image since image_url doesn't exist in the establishments table
+              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
               rating: 4.5, // Default value since not in Supabase
               cuisine: establishmentData.description || 'Variado',
               distance: '1.2 km', // Default value
