@@ -128,7 +128,7 @@ const RestaurantDetails = () => {
       <div className="container max-w-4xl mx-auto px-4 py-6">
         <Button 
           variant="ghost" 
-          className="mb-4"
+          className="mb-4 text-black hover:bg-gray-100"
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -149,36 +149,36 @@ const RestaurantDetails = () => {
           </div>
         </div>
         
-        <h1 className="text-3xl font-bold mb-2">{restaurant.name}</h1>
-        <p className="text-gray-600 mb-4">{restaurant.cuisine}</p>
+        <h1 className="text-3xl font-bold mb-2 text-black">{restaurant.name}</h1>
+        <p className="text-gray-700 mb-4 font-medium">{restaurant.cuisine}</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
+          <Card className="bg-white">
             <CardContent className="p-4 flex items-center">
               <MapPin className="h-5 w-5 text-restaurant-primary mr-2" />
               <div>
-                <p className="text-sm font-medium">Endereço</p>
-                <p className="text-sm text-gray-600">{restaurant.address}</p>
+                <p className="text-sm font-medium text-black">Endereço</p>
+                <p className="text-sm text-gray-700">{restaurant.address}</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-white">
             <CardContent className="p-4 flex items-center">
               <Clock className="h-5 w-5 text-restaurant-primary mr-2" />
               <div>
-                <p className="text-sm font-medium">Horário</p>
-                <p className="text-sm text-gray-600">{restaurant.openingHours}</p>
+                <p className="text-sm font-medium text-black">Horário</p>
+                <p className="text-sm text-gray-700">{restaurant.openingHours}</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-white">
             <CardContent className="p-4 flex items-center">
               <Phone className="h-5 w-5 text-restaurant-primary mr-2" />
               <div>
-                <p className="text-sm font-medium">Telefone</p>
-                <p className="text-sm text-gray-600">{restaurant.phoneNumber}</p>
+                <p className="text-sm font-medium text-black">Telefone</p>
+                <p className="text-sm text-gray-700">{restaurant.phoneNumber}</p>
               </div>
             </CardContent>
           </Card>
@@ -187,7 +187,7 @@ const RestaurantDetails = () => {
         <div className="flex space-x-4 mb-6">
           <Button
             variant={showProducts ? "default" : "outline"}
-            className={showProducts ? "bg-restaurant-primary hover:bg-restaurant-dark" : ""}
+            className={showProducts ? "bg-blink-primary text-black hover:bg-blink-secondary font-medium" : "text-black font-medium"}
             onClick={() => setShowProducts(true)}
           >
             <Menu className="mr-2 h-5 w-5" />
@@ -196,7 +196,7 @@ const RestaurantDetails = () => {
           
           <Button
             variant={!showProducts ? "default" : "outline"}
-            className={!showProducts ? "bg-restaurant-primary hover:bg-restaurant-dark" : ""}
+            className={!showProducts ? "bg-blink-primary text-black hover:bg-blink-secondary font-medium" : "text-black font-medium"}
             onClick={() => setShowProducts(false)}
           >
             <Star className="mr-2 h-5 w-5" />
@@ -209,16 +209,16 @@ const RestaurantDetails = () => {
             {id && <ProductsList establishmentId={id} />}
           </div>
         ) : (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-3">Sobre</h2>
-            <p className="text-gray-700">{restaurant.description}</p>
+          <div className="mb-8 bg-white p-4 rounded-lg">
+            <h2 className="text-xl font-semibold mb-3 text-black">Sobre</h2>
+            <p className="text-gray-700 font-medium">{restaurant.description}</p>
           </div>
         )}
         
         <div className="flex justify-center mt-6">
           <Button 
             size="lg" 
-            className="bg-restaurant-primary hover:bg-restaurant-dark"
+            className="bg-blink-primary text-black hover:bg-blink-secondary font-medium"
             onClick={handleReserve}
           >
             <Calendar className="mr-2 h-5 w-5" />
