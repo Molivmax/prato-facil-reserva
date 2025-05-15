@@ -120,3 +120,17 @@
 .glass-effect {
   @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
 }
+
+/* Gradient border effect */
+.gradient-border {
+  position: relative;
+  background-clip: padding-box;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Dark mode styles for the product cards */
+.dark-card {
+  @apply bg-black text-white border-0 shadow-lg;
+}
+
