@@ -134,3 +134,13 @@
   @apply bg-black text-white border-0 shadow-lg;
 }
 
+/* Animation for the added to table message */
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fadeOut {
+  animation: fadeOut 1.5s forwards;
+}
