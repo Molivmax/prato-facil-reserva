@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -141,7 +142,7 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
       {Object.entries(groupedProducts).map(([category, products]) => (
         <div key={category} className="space-y-4">
           <div className="flex items-center space-x-2">
-            <h3 className="text-lg font-medium">{category}</h3>
+            <h3 className="text-lg font-medium text-gray-900">{category}</h3>
             <div className="h-px bg-gray-200 flex-grow"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -164,13 +165,13 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
                     )}
                     <div className="p-4 flex-grow">
                       <div className="flex justify-between items-start">
-                        <h4 className="font-medium text-gray-900">{product.name}</h4>
+                        <h4 className="font-bangers text-lg text-black">{product.name}</h4>
                         <Badge variant="outline" className="bg-blink-light text-blink-text border-blink-primary">
                           {formatPrice(product.price)}
                         </Badge>
                       </div>
                       {product.description && (
-                        <p className="text-sm text-gray-600 mt-1 mb-3 line-clamp-2">
+                        <p className="text-sm text-black mt-1 mb-3 line-clamp-2">
                           {product.description}
                         </p>
                       )}
@@ -178,7 +179,7 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
                         <Button 
                           variant="blink" 
                           size="sm" 
-                          className="flex items-center"
+                          className="flex items-center bg-blink-primary text-black hover:bg-blink-secondary"
                           onClick={() => handleAddToTable(product)}
                         >
                           <PlusCircle className="h-4 w-4 mr-1" />
