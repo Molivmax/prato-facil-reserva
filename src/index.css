@@ -1,146 +1,148 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 225 25% 12%; /* More sophisticated dark background */
-    --foreground: 0 0% 98%;
-
-    --card: 222 25% 16%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 222 25% 16%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 60 100% 50%; /* #faff00 */
-    --primary-foreground: 0 0% 13%;
-
-    --secondary: 25 94% 53%; /* #F97316 */
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 220 25% 20%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 270 80% 56%; /* #9333EA */
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 25% 20%;
-    --input: 220 25% 20%;
-    --ring: 60 100% 50%;
-  }
-
-  .dark {
-    --background: 225 25% 12%; /* More sophisticated dark background */
-    --foreground: 0 0% 98%;
-
-    --card: 222 25% 16%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 222 25% 16%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 60 100% 50%; /* #faff00 */
-    --primary-foreground: 0 0% 13%;
-
-    --secondary: 25 94% 53%; /* #F97316 */
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 220 25% 20%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 270 80% 56%; /* #9333EA */
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 25% 20%;
-    --input: 220 25% 20%;
-    --ring: 60 100% 50%;
-  }
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-gray-50;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
-    background-image: linear-gradient(to right, rgba(250, 255, 0, 0.05), rgba(249, 115, 22, 0.05));
-  }
+/* Restaurant-specific color theme */
+:root {
+  --restaurant-primary: #FFC107;
+  --restaurant-dark: #FFA000;
+  --restaurant-light: #FFF8E1;
+  --blink-primary: #FFC107;
+  --blink-secondary: #FFA000;
+  --blink-light: #FFF8E1;
+  --blink-text: #000000;
 }
 
-.restaurant-card {
-  @apply bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1;
+.bg-restaurant-primary {
+  background-color: var(--restaurant-primary);
 }
 
-.restaurant-logo {
-  @apply w-full h-40 object-cover;
+.bg-restaurant-dark {
+  background-color: var(--restaurant-dark);
 }
 
+.bg-restaurant-light {
+  background-color: var(--restaurant-light);
+}
+
+.text-restaurant-primary {
+  color: var(--restaurant-primary);
+}
+
+.border-restaurant-primary {
+  border-color: var(--restaurant-primary);
+}
+
+.bg-blink-primary {
+  background-color: var(--blink-primary);
+}
+
+.bg-blink-secondary {
+  background-color: var(--blink-secondary);
+}
+
+.bg-blink-light {
+  background-color: var(--blink-light);
+}
+
+.text-blink-primary {
+  color: var(--blink-primary);
+}
+
+.text-blink-text {
+  color: var(--blink-text);
+}
+
+/* Table items */
 .table-item {
-  @apply w-16 h-16 rounded-md flex items-center justify-center cursor-pointer transition-colors;
+  @apply border rounded-lg p-3 flex items-center justify-center cursor-pointer transition-colors duration-200 h-20;
 }
 
 .table-available {
-  @apply bg-blink-light border border-blink-primary hover:bg-blink-primary hover:text-blink-text;
+  @apply bg-restaurant-light border-restaurant-primary text-black hover:bg-restaurant-primary hover:text-white;
 }
 
 .table-unavailable {
-  @apply bg-gray-200 border border-gray-300 text-gray-400 cursor-not-allowed;
+  @apply bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed;
 }
 
 .table-selected {
-  @apply bg-blink-primary text-blink-text;
+  @apply bg-restaurant-primary border-restaurant-primary text-white;
 }
 
-/* Add elegant card styling */
-.elegant-card {
-  @apply bg-white/80 backdrop-blur-sm rounded-lg shadow-md transition-all duration-300 hover:shadow-lg border border-gray-100;
-}
-
-/* Add sophisticated button styling */
-.btn-sophisticated {
-  @apply bg-gradient-to-r from-blink-primary to-blink-secondary text-blink-text font-medium rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-md;
-}
-
-/* Add a subtle gradient background option */
-.subtle-gradient {
-  background-image: linear-gradient(135deg, rgba(250, 255, 0, 0.08) 0%, rgba(249, 115, 22, 0.08) 100%);
-}
-
-/* Add a glass effect for cards */
-.glass-effect {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm;
-}
-
-/* Gradient border effect */
-.gradient-border {
+/* Product cards with gradient borders */
+.product-card {
   position: relative;
-  background-clip: padding-box;
+  background: black;
+  color: white;
   border-radius: 0.5rem;
   overflow: hidden;
+  font-family: 'Bangers', cursive;
 }
 
-/* Dark mode styles for the product cards */
-.dark-card {
-  @apply bg-black text-white border-0 shadow-lg;
+.product-card::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ff0000, #ff8c00, #ffd700, #00ff00, #00ffff, #0000ff, #8b00ff);
+  z-index: -1;
+  border-radius: 0.6rem;
+  background-size: 400% 400%;
+  animation: gradientAnimation 6s ease infinite;
 }
 
-/* Animation for the added to table message */
-@keyframes fadeOut {
-  0% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
-.animate-fadeOut {
-  animation: fadeOut 1.5s forwards;
+.product-name {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 0.5px;
+}
+
+/* Click-location toast */
+.toast-click-location {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: fadeInOut 1.5s ease-in-out forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(10px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* Custom toast container for positioning near click */
+.location-toast-container {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
 }

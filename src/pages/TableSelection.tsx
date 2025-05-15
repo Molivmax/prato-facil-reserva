@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Users, Clock, Navigation } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import TableItem from '@/components/TableItem';
 import { getRestaurantById, getTablesByRestaurantId } from '@/data/mockData';
 import { Restaurant, Table } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const TableSelection = () => {
   const { restaurantId } = useParams();
@@ -16,28 +17,81 @@ const TableSelection = () => {
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [estimatedArrival, setEstimatedArrival] = useState<number | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          
+          // Simulate estimated arrival time (5-15 minutes)
+          setEstimatedArrival(Math.floor(Math.random() * 10) + 5);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Default estimated time if location access is denied
+          setEstimatedArrival(10);
+        }
+      );
+    }
+    
     if (restaurantId) {
-      // Simulando uma chamada de API
-      setTimeout(() => {
-        const restaurantData = getRestaurantById(restaurantId);
-        if (restaurantData) {
+      const fetchData = async () => {
+        setLoading(true);
+        
+        try {
+          // Fetch from Supabase
+          const { data: establishmentData, error } = await supabase
+            .from('establishments')
+            .select('*')
+            .eq('id', restaurantId)
+            .single();
+
+          if (error || !establishmentData) {
+            throw error;
+          }
+
+          // Convert Supabase data to Restaurant type
+          const restaurantData: Restaurant = {
+            id: establishmentData.id,
+            name: establishmentData.name,
+            image: establishmentData.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            rating: 4.5, // Default rating
+            cuisine: establishmentData.description || 'Variado',
+            distance: '1.2 km', // Default distance
+            address: establishmentData.address || 'Endereço não disponível',
+            openingHours: establishmentData.working_hours || 'Horário não disponível',
+            description: establishmentData.description || 'Sem descrição disponível',
+            phoneNumber: establishmentData.contact || 'Telefone não disponível'
+          };
+          
           setRestaurant(restaurantData);
+          
+          // Get tables (still from mock data for now, would be from Supabase in production)
           const tableData = getTablesByRestaurantId(restaurantId);
           setTables(tableData);
-        } else {
+        } catch (error) {
+          console.error("Error fetching restaurant data:", error);
           toast({
             title: "Erro",
             description: "Restaurante não encontrado",
             variant: "destructive",
           });
           navigate('/search');
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
-      }, 500);
+      };
+
+      fetchData();
     }
   }, [restaurantId, navigate, toast]);
 
@@ -47,6 +101,9 @@ const TableSelection = () => {
 
   const handleContinue = () => {
     if (selectedTable && restaurantId) {
+      // Simulate notifying the restaurant about the reservation
+      notifyRestaurant();
+      
       navigate(`/menu-selection/${restaurantId}/${selectedTable}`);
     } else {
       toast({
@@ -55,6 +112,23 @@ const TableSelection = () => {
         variant: "destructive",
       });
     }
+  };
+  
+  const notifyRestaurant = () => {
+    // In a real app, this would send data to a backend service
+    console.log("Notifying restaurant about reservation:", {
+      restaurantId,
+      tableId: selectedTable,
+      estimatedArrival,
+      userLocation
+    });
+    
+    // Show confirmation toast to user
+    toast({
+      title: "Restaurante notificado",
+      description: `${restaurant?.name} foi notificado sobre sua reserva. Tempo estimado de chegada: ${estimatedArrival} minutos.`,
+      variant: "default",
+    });
   };
 
   if (loading) {
@@ -93,6 +167,20 @@ const TableSelection = () => {
         <p className="text-gray-600 mb-6">
           {restaurant?.name} • Selecione uma mesa disponível
         </p>
+        
+        {estimatedArrival && (
+          <Card className="mb-4 bg-restaurant-light border-restaurant-primary">
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <Navigation className="h-5 w-5 text-restaurant-primary mr-2" />
+                <div>
+                  <p className="font-medium">Tempo estimado de chegada:</p>
+                  <p className="text-restaurant-primary font-bold">{estimatedArrival} minutos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <Card className="mb-8">
           <CardContent className="p-6">

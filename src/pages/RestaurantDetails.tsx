@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft, Menu } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft, Menu, ShoppingCart } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Restaurant } from '@/data/types';
 import { useToast } from "@/hooks/use-toast";
@@ -15,10 +15,21 @@ const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
+  const [cartItems, setCartItems] = useState<{id: string, name: string, price: number, quantity: number}[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load cart from localStorage if exists
+    const savedCart = localStorage.getItem('cartItems');
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (e) {
+        console.error("Error parsing saved cart:", e);
+      }
+    }
+
     if (id) {
       const fetchRestaurantData = async () => {
         try {
@@ -39,7 +50,7 @@ const RestaurantDetails = () => {
               id: establishmentData.id,
               name: establishmentData.name,
               // Use a default image since image_url doesn't exist in the establishments table
-              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+              image: establishmentData.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
               rating: 4.5, // Default value since not in Supabase
               cuisine: establishmentData.description || 'Variado',
               distance: '1.2 km', // Default value
@@ -75,8 +86,28 @@ const RestaurantDetails = () => {
     }
   }, [id, navigate, toast]);
 
+  // Calculate total amount
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Add item to cart
+  const addToCart = (item: {id: string, name: string, price: number, quantity: number}) => {
+    const updatedCart = [...cartItems];
+    const existingItemIndex = updatedCart.findIndex(i => i.id === item.id);
+    
+    if (existingItemIndex >= 0) {
+      updatedCart[existingItemIndex].quantity += item.quantity;
+    } else {
+      updatedCart.push(item);
+    }
+    
+    setCartItems(updatedCart);
+    localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+  };
+
   const handleReserve = () => {
     if (id) {
+      // Save cart to localStorage before navigating
+      localStorage.setItem('cartItems', JSON.stringify(cartItems));
       navigate(`/table-selection/${id}`);
     }
   };
@@ -125,7 +156,7 @@ const RestaurantDetails = () => {
   return (
     <>
       <Navbar />
-      <div className="container max-w-4xl mx-auto px-4 py-6">
+      <div className="container max-w-4xl mx-auto px-4 py-6 pb-24">
         <Button 
           variant="ghost" 
           className="mb-4 text-black hover:bg-gray-100"
@@ -206,7 +237,7 @@ const RestaurantDetails = () => {
         
         {showProducts ? (
           <div className="mb-8">
-            {id && <ProductsList establishmentId={id} />}
+            {id && <ProductsList establishmentId={id} onAddToCart={addToCart} />}
           </div>
         ) : (
           <div className="mb-8 bg-white p-4 rounded-lg">
@@ -214,8 +245,27 @@ const RestaurantDetails = () => {
             <p className="text-gray-700 font-medium">{restaurant.description}</p>
           </div>
         )}
-        
-        <div className="flex justify-center mt-6">
+      </div>
+      
+      {/* Fixed cart and reserve button at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md py-3">
+        <div className="container max-w-4xl mx-auto px-4 flex justify-between items-center">
+          <div className="flex items-center">
+            {cartItems.length > 0 ? (
+              <div>
+                <div className="flex items-center">
+                  <ShoppingCart className="h-5 w-5 text-restaurant-primary mr-2" />
+                  <span className="font-medium">{cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'}</span>
+                </div>
+                <div className="text-lg font-bold">
+                  Total: R$ {totalAmount.toFixed(2)}
+                </div>
+              </div>
+            ) : (
+              <span className="text-gray-500">Carrinho vazio</span>
+            )}
+          </div>
+          
           <Button 
             size="lg" 
             className="bg-blink-primary text-black hover:bg-blink-secondary font-medium"
