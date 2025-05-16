@@ -1,18 +1,25 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import TableItem from '@/components/TableItem';
-import { Restaurant, Table } from '@/data/types';
+import { Restaurant } from '@/data/types';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+
+// Define the extended Table type that includes status
+interface ExtendedTable {
+  id: string;
+  number: number;
+  seats: number;
+  status: 'available' | 'unavailable';
+}
 
 const TableSelection = () => {
   const { id: restaurantId } = useParams();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [tables, setTables] = useState<Table[]>([]);
+  const [tables, setTables] = useState<ExtendedTable[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -53,7 +60,7 @@ const TableSelection = () => {
             setRestaurant(restaurantData);
             
             // Fetch or generate mock tables
-            const mockTables: Table[] = [
+            const mockTables: ExtendedTable[] = [
               { id: "table-1", number: 1, seats: 2, status: "available" },
               { id: "table-2", number: 2, seats: 2, status: "available" },
               { id: "table-3", number: 3, seats: 4, status: "available" },
@@ -148,7 +155,7 @@ const TableSelection = () => {
         
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-2">{restaurant.name}</h1>
+            <h1 className="text-2xl font-bold mb-2">{restaurant?.name}</h1>
             <p className="text-gray-600">Selecione uma mesa disponível</p>
           </div>
           
@@ -169,12 +176,22 @@ const TableSelection = () => {
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {tables.map((table) => (
-            <TableItem 
+            <div 
               key={table.id}
-              table={table}
-              selected={selectedTable === table.id}
+              className={`table-item ${
+                table.status === 'available' 
+                  ? selectedTable === table.id 
+                    ? 'table-selected' 
+                    : 'table-available' 
+                  : 'table-unavailable'
+              }`}
               onClick={() => table.status === 'available' ? handleTableSelect(table.id) : null}
-            />
+            >
+              <div className="text-center">
+                <div className="text-xl font-bold">Mesa {table.number}</div>
+                <div className="text-sm">{table.seats} lugares</div>
+              </div>
+            </div>
           ))}
         </div>
         

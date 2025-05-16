@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -71,6 +72,9 @@ const MenuItem = ({
     }
   };
 
+  // Calculate total price based on quantity
+  const totalPrice = price * quantity;
+
   return (
     <div className="border rounded-lg overflow-hidden shadow-sm bg-white" ref={itemRef}>
       <div className="relative">
@@ -112,6 +116,11 @@ const MenuItem = ({
               >
                 <Plus className="h-4 w-4" />
               </Button>
+              {quantity > 0 && (
+                <span className="ml-2 text-sm font-bold text-restaurant-primary">
+                  R$ {totalPrice.toFixed(2)}
+                </span>
+              )}
             </div>
           ) : (
             <div className="h-8"></div> // Placeholder to maintain layout
@@ -129,7 +138,7 @@ const MenuItem = ({
         {/* Added to table message */}
         {showAddedMessage && (
           <div 
-            className="product-name absolute bg-black text-white px-3 py-1 rounded text-sm animate-fadeOut z-10"
+            className="product-name absolute bg-black text-white px-3 py-1 rounded text-sm animate-fadeOut z-10 font-bangers"
             style={{
               top: `${messagePosition.y - 30}px`,
               left: `${messagePosition.x - 50}px`,
