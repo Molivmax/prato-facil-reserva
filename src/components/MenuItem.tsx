@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
 
 interface MenuItemProps {
   id: string;
@@ -119,21 +118,22 @@ const MenuItem = ({
           )}
           <Button 
             variant="default" 
-            className="bg-restaurant-primary hover:bg-restaurant-dark"
+            className="bg-restaurant-primary hover:bg-restaurant-dark font-bangers"
             size="sm"
             onClick={handleAddClick}
           >
-            {showQuantitySelector ? `Adicionar (${quantity})` : 'Adicionar'}
+            {showQuantitySelector ? `Adicionar (${quantity})` : 'Adicionar à Mesa'}
           </Button>
         </div>
         
         {/* Added to table message */}
         {showAddedMessage && (
           <div 
-            className="absolute bg-black text-white px-3 py-1 rounded text-sm font-bangers animate-fadeOut z-10"
+            className="product-name absolute bg-black text-white px-3 py-1 rounded text-sm animate-fadeOut z-10"
             style={{
               top: `${messagePosition.y - 30}px`,
               left: `${messagePosition.x - 50}px`,
+              animation: 'fadeInOut 1.5s ease-in-out forwards'
             }}
           >
             Adicionado à mesa!

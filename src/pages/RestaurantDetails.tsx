@@ -50,7 +50,7 @@ const RestaurantDetails = () => {
               id: establishmentData.id,
               name: establishmentData.name,
               // Use a default image since image_url doesn't exist in the establishments table
-              image: establishmentData.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
               rating: 4.5, // Default value since not in Supabase
               cuisine: establishmentData.description || 'Variado',
               distance: '1.2 km', // Default value
@@ -168,20 +168,20 @@ const RestaurantDetails = () => {
         
         <div className="relative h-64 rounded-lg overflow-hidden mb-6">
           <img 
-            src={restaurant.image} 
-            alt={restaurant.name}
+            src={restaurant?.image} 
+            alt={restaurant?.name}
             className="w-full h-full object-cover"
           />
           <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md">
             <div className="flex items-center">
               <Star className="h-5 w-5 text-yellow-500 fill-current" />
-              <span className="ml-1 font-bold">{restaurant.rating}</span>
+              <span className="ml-1 font-bold">{restaurant?.rating}</span>
             </div>
           </div>
         </div>
         
-        <h1 className="text-3xl font-bold mb-2 text-black">{restaurant.name}</h1>
-        <p className="text-gray-700 mb-4 font-medium">{restaurant.cuisine}</p>
+        <h1 className="text-3xl font-bold mb-2 text-black">{restaurant?.name}</h1>
+        <p className="text-gray-700 mb-4 font-medium">{restaurant?.cuisine}</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="bg-white">
@@ -189,7 +189,7 @@ const RestaurantDetails = () => {
               <MapPin className="h-5 w-5 text-restaurant-primary mr-2" />
               <div>
                 <p className="text-sm font-medium text-black">Endereço</p>
-                <p className="text-sm text-gray-700">{restaurant.address}</p>
+                <p className="text-sm text-gray-700">{restaurant?.address}</p>
               </div>
             </CardContent>
           </Card>
@@ -199,7 +199,7 @@ const RestaurantDetails = () => {
               <Clock className="h-5 w-5 text-restaurant-primary mr-2" />
               <div>
                 <p className="text-sm font-medium text-black">Horário</p>
-                <p className="text-sm text-gray-700">{restaurant.openingHours}</p>
+                <p className="text-sm text-gray-700">{restaurant?.openingHours}</p>
               </div>
             </CardContent>
           </Card>
@@ -209,7 +209,7 @@ const RestaurantDetails = () => {
               <Phone className="h-5 w-5 text-restaurant-primary mr-2" />
               <div>
                 <p className="text-sm font-medium text-black">Telefone</p>
-                <p className="text-sm text-gray-700">{restaurant.phoneNumber}</p>
+                <p className="text-sm text-gray-700">{restaurant?.phoneNumber}</p>
               </div>
             </CardContent>
           </Card>
@@ -242,7 +242,7 @@ const RestaurantDetails = () => {
         ) : (
           <div className="mb-8 bg-white p-4 rounded-lg">
             <h2 className="text-xl font-semibold mb-3 text-black">Sobre</h2>
-            <p className="text-gray-700 font-medium">{restaurant.description}</p>
+            <p className="text-gray-700 font-medium">{restaurant?.description}</p>
           </div>
         )}
       </div>

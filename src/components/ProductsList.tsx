@@ -19,11 +19,13 @@ interface Product {
 
 interface ProductsListProps {
   establishmentId: string;
+  onAddToCart?: (item: {id: string, name: string, price: number, quantity: number}) => void;
 }
 
-const ProductsList = ({ establishmentId }: ProductsListProps) => {
+const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,11 +87,31 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
   };
 
   const handleAddToTable = (product: Product) => {
-    // This would connect to the order functionality in a real app
-    toast({
-      title: "Adicionado à mesa",
-      description: `${product.name} adicionado ao pedido da mesa`,
-      variant: "default",
+    if (onAddToCart) {
+      const quantity = quantities[product.id] || 1;
+      onAddToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity
+      });
+      
+      // Reset quantity
+      setQuantities(prev => ({...prev, [product.id]: 0}));
+      
+      toast({
+        title: "Adicionado à mesa",
+        description: `${product.name} adicionado ao pedido da mesa`,
+        variant: "default",
+      });
+    }
+  };
+
+  const updateQuantity = (productId: string, increment: boolean) => {
+    setQuantities(prev => {
+      const currentQuantity = prev[productId] || 0;
+      const newQuantity = increment ? currentQuantity + 1 : Math.max(0, currentQuantity - 1);
+      return {...prev, [productId]: newQuantity};
     });
   };
 
@@ -206,32 +228,74 @@ const ProductsList = ({ establishmentId }: ProductsListProps) => {
                             </p>
                           )}
                           <div className="flex justify-between mt-2">
-                            <Button 
-                              variant="blink" 
-                              size="sm" 
-                              className="flex items-center bg-blink-primary text-black hover:bg-blink-secondary font-medium"
-                              onClick={() => handleAddToTable(product)}
-                            >
-                              <PlusCircle className="h-4 w-4 mr-1" />
-                              Adicionar à Mesa
-                            </Button>
-                            <div className="flex space-x-2">
+                            {onAddToCart && (
+                              <div className="flex items-center">
+                                {quantities[product.id] ? (
+                                  <>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon" 
+                                      className="h-8 w-8 rounded-full bg-gray-800 border-gray-700 text-white"
+                                      onClick={() => updateQuantity(product.id, false)}
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </Button>
+                                    <span className="mx-2 text-white font-bangers">{quantities[product.id] || 0}</span>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon" 
+                                      className="h-8 w-8 rounded-full bg-gray-800 border-gray-700 text-white"
+                                      onClick={() => updateQuantity(product.id, true)}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button 
+                                    variant="blink" 
+                                    size="sm" 
+                                    className="flex items-center bg-blink-primary text-black hover:bg-blink-secondary font-bangers"
+                                    onClick={() => {
+                                      setQuantities(prev => ({...prev, [product.id]: 1}));
+                                    }}
+                                  >
+                                    <PlusCircle className="h-4 w-4 mr-1" />
+                                    Adicionar à Mesa
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                            
+                            {quantities[product.id] > 0 && onAddToCart && (
                               <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-full text-gray-300 border-gray-700"
+                                variant="blink" 
+                                size="sm" 
+                                className="flex items-center bg-blink-primary text-black hover:bg-blink-secondary font-bangers"
+                                onClick={() => handleAddToTable(product)}
                               >
-                                <Edit className="h-4 w-4" />
+                                Confirmar ({formatPrice(product.price * quantities[product.id])})
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => handleDelete(product.id)}
-                                className="h-8 w-8 rounded-full text-red-400 hover:bg-red-900/30 border-gray-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            )}
+                            
+                            {!onAddToCart && (
+                              <div className="flex space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-8 w-8 rounded-full text-gray-300 border-gray-700"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  onClick={() => handleDelete(product.id)}
+                                  className="h-8 w-8 rounded-full text-red-400 hover:bg-red-900/30 border-gray-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
