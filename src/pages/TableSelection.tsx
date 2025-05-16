@@ -1,12 +1,15 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import TableItem from '@/components/TableItem';
 import { Restaurant } from '@/data/types';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import TableSelectionLoader from '@/components/table/TableSelectionLoader';
+import TableSelectionHeader from '@/components/table/TableSelectionHeader';
+import TableGrid from '@/components/table/TableGrid';
 
 // Define the extended Table type that includes status
 interface ExtendedTable {
@@ -109,14 +112,7 @@ const TableSelection = () => {
   };
 
   if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="container max-w-4xl mx-auto px-4 py-12 flex justify-center items-center min-h-[60vh]">
-          <LoaderCircle className="h-8 w-8 text-restaurant-primary animate-spin" />
-        </div>
-      </>
-    );
+    return <TableSelectionLoader />;
   }
 
   if (!restaurant) {
@@ -153,47 +149,13 @@ const TableSelection = () => {
           Voltar
         </Button>
         
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">{restaurant?.name}</h1>
-            <p className="text-gray-600">Selecione uma mesa disponível</p>
-          </div>
-          
-          <div className="mt-4 md:mt-0">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-restaurant-light border border-restaurant-primary mr-2"></div>
-                <span className="text-sm">Disponível</span>
-              </div>
-              
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-gray-200 border border-gray-300 mr-2"></div>
-                <span className="text-sm">Indisponível</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TableSelectionHeader restaurantName={restaurant.name} />
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {tables.map((table) => (
-            <div 
-              key={table.id}
-              className={`table-item ${
-                table.status === 'available' 
-                  ? selectedTable === table.id 
-                    ? 'table-selected' 
-                    : 'table-available' 
-                  : 'table-unavailable'
-              }`}
-              onClick={() => table.status === 'available' ? handleTableSelect(table.id) : null}
-            >
-              <div className="text-center">
-                <div className="text-xl font-bold">Mesa {table.number}</div>
-                <div className="text-sm">{table.seats} lugares</div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <TableGrid 
+          tables={tables}
+          selectedTable={selectedTable}
+          onTableSelect={handleTableSelect}
+        />
         
         <Button 
           className="w-full md:w-auto bg-restaurant-primary hover:bg-restaurant-dark font-bold"

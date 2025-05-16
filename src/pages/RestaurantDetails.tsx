@@ -2,13 +2,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, Clock, Phone, Calendar, ArrowLeft, Menu, ShoppingCart } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { Restaurant } from '@/data/types';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import ProductsList from '@/components/ProductsList';
+import RestaurantHeader from '@/components/restaurant/RestaurantHeader';
+import RestaurantInfoCards from '@/components/restaurant/RestaurantInfoCards';
+import RestaurantTabs from '@/components/restaurant/RestaurantTabs';
+import RestaurantAbout from '@/components/restaurant/RestaurantAbout';
+import CartFooter from '@/components/cart/CartFooter';
 
 const RestaurantDetails = () => {
   const { id } = useParams();
@@ -166,116 +170,38 @@ const RestaurantDetails = () => {
           Voltar
         </Button>
         
-        <div className="relative h-64 rounded-lg overflow-hidden mb-6">
-          <img 
-            src={restaurant?.image} 
-            alt={restaurant?.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md">
-            <div className="flex items-center">
-              <Star className="h-5 w-5 text-yellow-500 fill-current" />
-              <span className="ml-1 font-bold">{restaurant?.rating}</span>
-            </div>
-          </div>
-        </div>
+        <RestaurantHeader 
+          name={restaurant.name}
+          image={restaurant.image}
+          rating={restaurant.rating}
+          cuisine={restaurant.cuisine}
+        />
         
-        <h1 className="text-3xl font-bold mb-2 text-black">{restaurant?.name}</h1>
-        <p className="text-gray-700 mb-4 font-medium">{restaurant?.cuisine}</p>
+        <RestaurantInfoCards 
+          address={restaurant.address}
+          openingHours={restaurant.openingHours}
+          phoneNumber={restaurant.phoneNumber}
+        />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center">
-              <MapPin className="h-5 w-5 text-restaurant-primary mr-2" />
-              <div>
-                <p className="text-sm font-medium text-black">Endereço</p>
-                <p className="text-sm text-gray-700">{restaurant?.address}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center">
-              <Clock className="h-5 w-5 text-restaurant-primary mr-2" />
-              <div>
-                <p className="text-sm font-medium text-black">Horário</p>
-                <p className="text-sm text-gray-700">{restaurant?.openingHours}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white">
-            <CardContent className="p-4 flex items-center">
-              <Phone className="h-5 w-5 text-restaurant-primary mr-2" />
-              <div>
-                <p className="text-sm font-medium text-black">Telefone</p>
-                <p className="text-sm text-gray-700">{restaurant?.phoneNumber}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="flex space-x-4 mb-6">
-          <Button
-            variant={showProducts ? "default" : "outline"}
-            className={showProducts ? "bg-blink-primary text-black hover:bg-blink-secondary font-medium" : "text-black font-medium"}
-            onClick={() => setShowProducts(true)}
-          >
-            <Menu className="mr-2 h-5 w-5" />
-            Cardápio
-          </Button>
-          
-          <Button
-            variant={!showProducts ? "default" : "outline"}
-            className={!showProducts ? "bg-blink-primary text-black hover:bg-blink-secondary font-medium" : "text-black font-medium"}
-            onClick={() => setShowProducts(false)}
-          >
-            <Star className="mr-2 h-5 w-5" />
-            Sobre
-          </Button>
-        </div>
+        <RestaurantTabs 
+          showProducts={showProducts}
+          setShowProducts={setShowProducts}
+        />
         
         {showProducts ? (
           <div className="mb-8">
             {id && <ProductsList establishmentId={id} onAddToCart={addToCart} />}
           </div>
         ) : (
-          <div className="mb-8 bg-white p-4 rounded-lg">
-            <h2 className="text-xl font-semibold mb-3 text-black">Sobre</h2>
-            <p className="text-gray-700 font-medium">{restaurant?.description}</p>
-          </div>
+          <RestaurantAbout description={restaurant.description} />
         )}
       </div>
       
-      {/* Fixed cart and reserve button at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md py-3">
-        <div className="container max-w-4xl mx-auto px-4 flex justify-between items-center">
-          <div className="flex items-center">
-            {cartItems.length > 0 ? (
-              <div>
-                <div className="flex items-center">
-                  <ShoppingCart className="h-5 w-5 text-restaurant-primary mr-2" />
-                  <span className="font-medium">{cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'}</span>
-                </div>
-                <div className="text-lg font-bold">
-                  Total: R$ {totalAmount.toFixed(2)}
-                </div>
-              </div>
-            ) : (
-              <span className="text-gray-500">Carrinho vazio</span>
-            )}
-          </div>
-          
-          <Button 
-            size="lg" 
-            className="bg-blink-primary text-black hover:bg-blink-secondary font-medium"
-            onClick={handleReserve}
-          >
-            <Calendar className="mr-2 h-5 w-5" />
-            Reservar mesa
-          </Button>
-        </div>
-      </div>
+      <CartFooter
+        cartItems={cartItems}
+        totalAmount={totalAmount}
+        onReserve={handleReserve}
+      />
     </>
   );
 };
