@@ -75,6 +75,11 @@ export default {
 					purple: '#E5DEFF', // Soft purple
 					text: '#222222', // Dark gray for text
 					background: '#F1F1F1' // Light gray for backgrounds
+				},
+				restaurant: {
+					primary: '#FFC107',
+					dark: '#FFA000',
+					light: '#FFF8E1'
 				}
 			},
 			borderRadius: {

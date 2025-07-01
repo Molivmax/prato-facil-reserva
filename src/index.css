@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
 
@@ -10,72 +11,23 @@ body {
   @apply bg-gray-50;
 }
 
-/* Restaurant-specific color theme */
-:root {
-  --restaurant-primary: #FFC107;
-  --restaurant-dark: #FFA000;
-  --restaurant-light: #FFF8E1;
-  --blink-primary: #FFC107;
-  --blink-secondary: #FFA000;
-  --blink-light: #FFF8E1;
-  --blink-text: #000000;
-}
+/* Table items styles using Tailwind classes */
+@layer components {
+  .table-item {
+    @apply border rounded-lg p-3 flex items-center justify-center cursor-pointer transition-colors duration-200 h-20;
+  }
 
-.bg-restaurant-primary {
-  background-color: var(--restaurant-primary);
-}
+  .table-available {
+    @apply bg-restaurant-light border-restaurant-primary text-black hover:bg-restaurant-primary hover:text-white;
+  }
 
-.bg-restaurant-dark {
-  background-color: var(--restaurant-dark);
-}
+  .table-unavailable {
+    @apply bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed;
+  }
 
-.bg-restaurant-light {
-  background-color: var(--restaurant-light);
-}
-
-.text-restaurant-primary {
-  color: var(--restaurant-primary);
-}
-
-.border-restaurant-primary {
-  border-color: var(--restaurant-primary);
-}
-
-.bg-blink-primary {
-  background-color: var(--blink-primary);
-}
-
-.bg-blink-secondary {
-  background-color: var(--blink-secondary);
-}
-
-.bg-blink-light {
-  background-color: var(--blink-light);
-}
-
-.text-blink-primary {
-  color: var(--blink-primary);
-}
-
-.text-blink-text {
-  color: var(--blink-text);
-}
-
-/* Table items */
-.table-item {
-  @apply border rounded-lg p-3 flex items-center justify-center cursor-pointer transition-colors duration-200 h-20;
-}
-
-.table-available {
-  @apply bg-restaurant-light border-restaurant-primary text-black hover:bg-restaurant-primary hover:text-white;
-}
-
-.table-unavailable {
-  @apply bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed;
-}
-
-.table-selected {
-  @apply bg-restaurant-primary border-restaurant-primary text-white;
+  .table-selected {
+    @apply bg-restaurant-primary border-restaurant-primary text-white;
+  }
 }
 
 /* Product cards with gradient borders */
