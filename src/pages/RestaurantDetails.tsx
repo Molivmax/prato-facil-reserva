@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -120,10 +119,28 @@ const RestaurantDetails = () => {
   };
 
   const handleReserve = () => {
+    console.log("HandleReserve called with id:", id);
+    console.log("Current cartItems:", cartItems);
+    
     if (id) {
       // Save cart to localStorage before navigating
       localStorage.setItem('cartItems', JSON.stringify(cartItems));
+      console.log("Navigating to:", `/table-selection/${id}`);
+      
       navigate(`/table-selection/${id}`);
+      
+      toast({
+        title: "Redirecionando",
+        description: "Indo para seleção de mesa...",
+        variant: "default",
+      });
+    } else {
+      console.error("ID is missing, cannot navigate");
+      toast({
+        title: "Erro",
+        description: "ID do restaurante não encontrado",
+        variant: "destructive",
+      });
     }
   };
 
