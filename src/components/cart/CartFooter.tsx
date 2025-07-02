@@ -21,12 +21,12 @@ const CartFooter = ({ cartItems, totalAmount, onReserve, onClearCart }: CartFoot
             {/* Items Summary */}
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
-                <ShoppingCart className="h-4 w-4 text-restaurant-primary mr-2" />
+                <ShoppingCart className="h-4 w-4 text-blue-600 font-bold mr-2" />
                 <span className="font-medium">
                   {totalItems} {totalItems === 1 ? 'item' : 'itens'} no carrinho
                 </span>
               </div>
-              <div className="text-lg font-bold text-restaurant-primary">
+              <div className="text-lg font-bold text-blue-600">
                 Total: R$ {totalAmount.toFixed(2)}
               </div>
             </div>
