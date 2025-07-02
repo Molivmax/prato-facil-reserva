@@ -9,10 +9,10 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  @apply bg-gray-50;
+  @apply bg-black;
 }
 
-/* Restaurant-specific color theme */
+/* Restaurant-specific color theme - Black and Yellow */
 :root {
   --restaurant-primary: #FFC107;
   --restaurant-dark: #FFA000;
@@ -70,15 +70,15 @@ body {
   }
 
   .table-available {
-    @apply bg-restaurant-light border-restaurant-primary text-black hover:bg-restaurant-primary hover:text-white;
+    @apply bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-500 hover:text-black;
   }
 
   .table-unavailable {
-    @apply bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed;
+    @apply bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed;
   }
 
   .table-selected {
-    @apply bg-restaurant-primary border-restaurant-primary text-white;
+    @apply bg-yellow-500 border-yellow-500 text-black;
   }
 }
 
