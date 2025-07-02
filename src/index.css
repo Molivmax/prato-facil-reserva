@@ -1,5 +1,4 @@
 
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
 
@@ -14,12 +13,12 @@ body {
 
 /* Restaurant-specific color theme - Black and Yellow */
 :root {
-  --restaurant-primary: #FFC107;
-  --restaurant-dark: #FFA000;
-  --restaurant-light: #FFF8E1;
-  --blink-primary: #FFC107;
-  --blink-secondary: #FFA000;
-  --blink-light: #FFF8E1;
+  --restaurant-primary: #FFFF00;
+  --restaurant-dark: #CCCC00;
+  --restaurant-light: #FFFF99;
+  --blink-primary: #FFFF00;
+  --blink-secondary: #CCCC00;
+  --blink-light: #FFFF99;
   --blink-text: #000000;
 }
 
@@ -137,4 +136,3 @@ body {
   z-index: 9999;
   pointer-events: none;
 }
-
