@@ -24,10 +24,15 @@ const RestaurantHeader = ({ name, image, rating, cuisine }: RestaurantHeaderProp
             <span className="ml-1 font-bold">{rating}</span>
           </div>
         </div>
+        {/* Nome do bar sobreposto na imagem */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <h1 className="text-4xl font-bold text-white bg-black bg-opacity-70 px-4 py-2 rounded-lg shadow-lg">
+            {name}
+          </h1>
+        </div>
       </div>
       
-      <h1 className="text-3xl font-bold mb-2 text-black">{name}</h1>
-      <p className="text-gray-700 mb-4 font-medium">{cuisine}</p>
+      <p className="text-gray-700 mb-4 font-medium text-lg">{cuisine}</p>
     </>
   );
 };

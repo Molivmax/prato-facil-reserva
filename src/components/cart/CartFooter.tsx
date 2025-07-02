@@ -1,15 +1,16 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Calendar } from 'lucide-react';
+import { ShoppingCart, Calendar, Trash2 } from 'lucide-react';
 
 interface CartFooterProps {
   cartItems: {id: string, name: string, price: number, quantity: number}[];
   totalAmount: number;
   onReserve: () => void;
+  onClearCart?: () => void;
 }
 
-const CartFooter = ({ cartItems, totalAmount, onReserve }: CartFooterProps) => {
+const CartFooter = ({ cartItems, totalAmount, onReserve, onClearCart }: CartFooterProps) => {
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -40,15 +41,31 @@ const CartFooter = ({ cartItems, totalAmount, onReserve }: CartFooterProps) => {
               ))}
             </div>
 
-            {/* Reserve Button */}
-            <Button 
-              size="lg" 
-              className="w-full bg-blink-primary text-black hover:bg-blink-secondary font-medium"
-              onClick={onReserve}
-            >
-              <Calendar className="mr-2 h-5 w-5" />
-              Reservar mesa
-            </Button>
+            {/* Buttons */}
+            <div className="flex gap-2">
+              {/* Clear Cart Button */}
+              {onClearCart && (
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
+                  onClick={onClearCart}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Esvaziar
+                </Button>
+              )}
+
+              {/* Reserve Button */}
+              <Button 
+                size="lg" 
+                className="flex-2 bg-blink-primary text-black hover:bg-blink-secondary font-medium"
+                onClick={onReserve}
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Reservar mesa
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-between">

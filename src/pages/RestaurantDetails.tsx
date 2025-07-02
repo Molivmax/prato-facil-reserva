@@ -108,6 +108,17 @@ const RestaurantDetails = () => {
     localStorage.setItem('cartItems', JSON.stringify(updatedCart));
   };
 
+  // Clear cart function
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem('cartItems');
+    toast({
+      title: "Carrinho esvaziado",
+      description: "Todos os itens foram removidos do carrinho",
+      variant: "default",
+    });
+  };
+
   const handleReserve = () => {
     if (id) {
       // Save cart to localStorage before navigating
@@ -201,6 +212,7 @@ const RestaurantDetails = () => {
         cartItems={cartItems}
         totalAmount={totalAmount}
         onReserve={handleReserve}
+        onClearCart={clearCart}
       />
     </>
   );
