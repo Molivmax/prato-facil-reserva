@@ -67,19 +67,16 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				blink: {
-					primary: '#faff00', // Bright yellow
-					secondary: '#F97316', // Bright orange for call-to-actions
-					accent: '#9333EA', // Purple for attraction/highlights
-					light: '#FEF7CD', // Soft yellow
-					peach: '#FDE1D3', // Soft peach
-					purple: '#E5DEFF', // Soft purple
-					text: '#222222', // Dark gray for text
-					background: '#F1F1F1' // Light gray for backgrounds
+					primary: 'hsl(var(--blink-primary))',
+					secondary: 'hsl(var(--blink-secondary))',
+					light: 'hsl(var(--blink-light))',
+					text: 'hsl(var(--blink-text))'
 				},
 				restaurant: {
-					primary: '#FFC107',
-					dark: '#FFA000',
-					light: '#FFF8E1'
+					primary: 'hsl(var(--restaurant-primary))',
+					dark: 'hsl(var(--restaurant-dark))',
+					light: 'hsl(var(--restaurant-light))',
+					text: 'hsl(var(--foreground))'
 				}
 			},
 			borderRadius: {

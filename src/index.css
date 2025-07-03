@@ -11,15 +11,38 @@ body {
   @apply bg-black;
 }
 
-/* Restaurant-specific color theme - Black and Yellow */
+/* Design System Colors - HSL format for consistency */
 :root {
-  --restaurant-primary: #FFFF00;
-  --restaurant-dark: #CCCC00;
-  --restaurant-light: #FFFF99;
-  --blink-primary: #FFFF00;
-  --blink-secondary: #CCCC00;
-  --blink-light: #FFFF99;
-  --blink-text: #000000;
+  /* Shadcn UI base colors */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+
+  /* Restaurant brand colors in HSL */
+  --restaurant-primary: 60 100% 50%;
+  --restaurant-dark: 60 100% 40%;
+  --restaurant-light: 60 100% 80%;
+  --blink-primary: 59 100% 50%;
+  --blink-secondary: 39 95% 50%;
+  --blink-light: 60 100% 90%;
+  --blink-text: 0 0% 13%;
 }
 
 .bg-restaurant-primary {
