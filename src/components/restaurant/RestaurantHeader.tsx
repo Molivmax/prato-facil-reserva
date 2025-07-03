@@ -10,6 +10,7 @@ interface RestaurantHeaderProps {
 }
 
 const RestaurantHeader = ({ name, image, rating, cuisine }: RestaurantHeaderProps) => {
+  console.log("RestaurantHeader props:", { name, image, rating, cuisine });
   return (
     <>
       <div className="relative h-64 rounded-lg overflow-hidden mb-6">
