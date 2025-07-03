@@ -36,12 +36,15 @@ const RestaurantDetails = () => {
     if (id) {
       const fetchRestaurantData = async () => {
         try {
+          console.log("Fetching restaurant data for ID:", id);
           // Fetch from Supabase
           const { data: establishmentData, error } = await supabase
             .from('establishments')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();
+
+          console.log("Supabase response:", { establishmentData, error });
 
           if (error) {
             throw error;
@@ -63,6 +66,7 @@ const RestaurantDetails = () => {
               phoneNumber: establishmentData.contact || 'Telefone não disponível'
             };
             
+            console.log("Restaurant data created:", restaurantData);
             setRestaurant(restaurantData);
           } else {
             toast({
