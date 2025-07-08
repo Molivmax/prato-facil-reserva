@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowRight, ShoppingCart } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import MenuItem from '@/components/MenuItem';
+import ReserveOptionsDialog from '@/components/ReserveOptionsDialog';
 import { getRestaurantById, getMenuItemsByRestaurantId, getTablesByRestaurantId } from '@/data/mockData';
 import { Restaurant, MenuItem as MenuItemType, OrderItem, Table } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ const MenuSelection = () => {
   const [menuItems, setMenuItems] = useState<MenuItemType[]>([]);
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showReserveDialog, setShowReserveDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -80,7 +82,7 @@ const MenuSelection = () => {
     });
   };
 
-  const handleContinue = () => {
+  const handleReserve = () => {
     if (cart.length === 0) {
       toast({
         title: "Carrinho vazio",
@@ -89,7 +91,49 @@ const MenuSelection = () => {
       });
       return;
     }
+    setShowReserveDialog(true);
+  };
+
+  const handleChooseDessert = () => {
+    setShowReserveDialog(false);
+    // Navegar para a aba de sobremesas
+    const dessertsTab = document.querySelector('[value="desserts"]') as HTMLButtonElement;
+    if (dessertsTab) {
+      dessertsTab.click();
+    }
+  };
+
+  const handlePayNow = () => {
+    setShowReserveDialog(false);
+    proceedToPayment();
+  };
+
+  const handlePayLater = () => {
+    setShowReserveDialog(false);
+    // Salvar pedido com status "pagar depois"
+    const orderDetails = {
+      items: cart,
+      restaurantId: restaurantId,
+      tableId: tableId,
+      total: totalAmount,
+      restaurantName: restaurant?.name || "",
+      tableNumber: table?.number || 0,
+      paymentStatus: "pay_later"
+    };
     
+    localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+    
+    toast({
+      title: "Reserva confirmada!",
+      description: "Você poderá pagar no estabelecimento.",
+    });
+    
+    // Navegar para resumo do pedido ou página de confirmação
+    const tempOrderId = "order-" + Date.now();
+    navigate(`/order-summary/${tempOrderId}`);
+  };
+
+  const proceedToPayment = () => {
     // Calcular o valor total do pedido
     const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     
@@ -100,7 +144,8 @@ const MenuSelection = () => {
       tableId: tableId,
       total: totalAmount,
       restaurantName: restaurant?.name || "",
-      tableNumber: table?.number || 0
+      tableNumber: table?.number || 0,
+      paymentStatus: "pay_now"
     };
     
     // Salvar detalhes do pedido no localStorage (abordagem simples para o MVP)
@@ -137,6 +182,9 @@ const MenuSelection = () => {
   const mains = menuItems.filter(item => item.category === 'Prato Principal');
   const desserts = menuItems.filter(item => item.category === 'Sobremesa');
   const drinks = menuItems.filter(item => item.category === 'Bebida');
+  
+  // Verificar se o restaurante tem sobremesas cadastradas
+  const hasDesserts = desserts.length > 0;
 
   return (
     <>
@@ -250,15 +298,24 @@ const MenuSelection = () => {
             <Button 
               size="lg" 
               className="bg-restaurant-primary hover:bg-restaurant-dark"
-              onClick={handleContinue}
+              onClick={handleReserve}
               disabled={cart.length === 0}
             >
-              Continuar
+              Reservar mesa
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
+
+      <ReserveOptionsDialog
+        isOpen={showReserveDialog}
+        onClose={() => setShowReserveDialog(false)}
+        hasDesserts={hasDesserts}
+        onChooseDessert={handleChooseDessert}
+        onPayNow={handlePayNow}
+        onPayLater={handlePayLater}
+      />
     </>
   );
 };
