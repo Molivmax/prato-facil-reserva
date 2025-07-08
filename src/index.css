@@ -46,43 +46,43 @@ body {
 }
 
 .bg-restaurant-primary {
-  background-color: var(--restaurant-primary);
+  background-color: hsl(var(--restaurant-primary));
 }
 
 .bg-restaurant-dark {
-  background-color: var(--restaurant-dark);
+  background-color: hsl(var(--restaurant-dark));
 }
 
 .bg-restaurant-light {
-  background-color: var(--restaurant-light);
+  background-color: hsl(var(--restaurant-light));
 }
 
 .text-restaurant-primary {
-  color: var(--restaurant-primary);
+  color: hsl(var(--restaurant-primary));
 }
 
 .border-restaurant-primary {
-  border-color: var(--restaurant-primary);
+  border-color: hsl(var(--restaurant-primary));
 }
 
 .bg-blink-primary {
-  background-color: var(--blink-primary);
+  background-color: hsl(var(--blink-primary));
 }
 
 .bg-blink-secondary {
-  background-color: var(--blink-secondary);
+  background-color: hsl(var(--blink-secondary));
 }
 
 .bg-blink-light {
-  background-color: var(--blink-light);
+  background-color: hsl(var(--blink-light));
 }
 
 .text-blink-primary {
-  color: var(--blink-primary);
+  color: hsl(var(--blink-primary));
 }
 
 .text-blink-text {
-  color: var(--blink-text);
+  color: hsl(var(--blink-text));
 }
 
 /* Table items styles using Tailwind classes */
