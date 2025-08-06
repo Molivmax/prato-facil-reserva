@@ -1,0 +1,161 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-background;
+}
+
+/* Design System Colors - HSL format for consistency */
+:root {
+  /* Shadcn UI base colors */
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 60 100% 50%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 60 100% 50%;
+  --radius: 0.5rem;
+
+  /* Restaurant brand colors in HSL */
+  --restaurant-primary: 60 100% 50%;
+  --restaurant-dark: 60 100% 40%;
+  --restaurant-light: 60 100% 80%;
+  --blink-primary: 59 100% 50%;
+  --blink-secondary: 39 95% 50%;
+  --blink-light: 60 100% 90%;
+  --blink-text: 0 0% 13%;
+}
+
+.bg-restaurant-primary {
+  background-color: hsl(var(--restaurant-primary));
+}
+
+.bg-restaurant-dark {
+  background-color: hsl(var(--restaurant-dark));
+}
+
+.bg-restaurant-light {
+  background-color: hsl(var(--restaurant-light));
+}
+
+.text-restaurant-primary {
+  color: hsl(var(--restaurant-primary));
+}
+
+.border-restaurant-primary {
+  border-color: hsl(var(--restaurant-primary));
+}
+
+.bg-blink-primary {
+  background-color: hsl(var(--blink-primary));
+}
+
+.bg-blink-secondary {
+  background-color: hsl(var(--blink-secondary));
+}
+
+.bg-blink-light {
+  background-color: hsl(var(--blink-light));
+}
+
+.text-blink-primary {
+  color: hsl(var(--blink-primary));
+}
+
+.text-blink-text {
+  color: hsl(var(--blink-text));
+}
+
+/* Table items styles using Tailwind classes */
+@layer components {
+  .table-item {
+    @apply border rounded-lg p-3 flex items-center justify-center cursor-pointer transition-colors duration-200 h-20;
+  }
+
+  .table-available {
+    @apply bg-yellow-400 border-yellow-500 text-black hover:bg-yellow-500 hover:text-black;
+  }
+
+  .table-unavailable {
+    @apply bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed;
+  }
+
+  .table-selected {
+    @apply bg-yellow-500 border-yellow-500 text-black;
+  }
+}
+
+/* Product cards with gradient borders */
+.product-card {
+  position: relative;
+  background: black;
+  color: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  font-family: 'Bangers', cursive;
+}
+
+.product-card::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ff0000, #ff8c00, #ffd700, #00ff00, #00ffff, #0000ff, #8b00ff);
+  z-index: -1;
+  border-radius: 0.6rem;
+  background-size: 400% 400%;
+  animation: gradientAnimation 6s ease infinite;
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.product-name {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 0.5px;
+}
+
+/* Animation for added to table message */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(10px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* Custom toast container for positioning near click */
+.location-toast-container {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+}
