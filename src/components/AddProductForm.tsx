@@ -123,9 +123,9 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome do Produto</FormLabel>
+              <FormLabel className="text-white">Nome do Produto</FormLabel>
               <FormControl>
-                <Input placeholder="Nome do produto" {...field} />
+                <Input placeholder="Nome do produto" {...field} className="bg-gray-700 border-gray-600 text-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -137,11 +137,11 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição (opcional)</FormLabel>
+              <FormLabel className="text-white">Descrição (opcional)</FormLabel>
               <FormControl>
                 <Textarea 
                   placeholder="Descreva o produto..." 
-                  className="resize-none" 
+                  className="resize-none bg-gray-700 border-gray-600 text-white" 
                   {...field} 
                 />
               </FormControl>
@@ -155,7 +155,7 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           name="price"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preço</FormLabel>
+              <FormLabel className="text-white">Preço</FormLabel>
               <FormControl>
                 <Input 
                   type="number"
@@ -164,6 +164,7 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
                   placeholder="0.00" 
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  className="bg-gray-700 border-gray-600 text-white"
                 />
               </FormControl>
               <FormMessage />
@@ -176,17 +177,17 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Categoria</FormLabel>
+              <FormLabel className="text-white">Categoria</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-gray-700 border-gray-600">
                   <SelectItem value="Entrada">Entrada</SelectItem>
                   <SelectItem value="Prato Principal">Prato Principal</SelectItem>
                   <SelectItem value="Sobremesa">Sobremesa</SelectItem>
@@ -199,20 +200,20 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
         />
         
         <div>
-          <FormLabel>Imagem do Produto (opcional)</FormLabel>
+          <FormLabel className="text-white">Imagem do Produto (opcional)</FormLabel>
           <div className="mt-2">
             <Input
               type="file"
               accept="image/*"
               onChange={handleImageChange}
-              className="mb-3"
+              className="mb-3 bg-gray-700 border-gray-600 text-white"
             />
             {imageUrl && (
               <div className="mt-2 w-full max-w-xs">
                 <img
                   src={imageUrl}
                   alt="Preview"
-                  className="w-full h-32 object-cover rounded-md border"
+                  className="w-full h-32 object-cover rounded-md border border-gray-600"
                 />
               </div>
             )}
@@ -222,7 +223,7 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="w-full"
+          className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black"
         >
           {isLoading ? 'Salvando...' : 'Salvar Produto'}
         </Button>
