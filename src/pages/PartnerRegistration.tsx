@@ -151,7 +151,7 @@ const PartnerRegistration: React.FC = () => {
         toast.success('Cadastro realizado com sucesso!');
         
         // If email confirmation is required, redirect to login after 5 seconds
-        // Otherwise, redirect to dashboard immediately
+        // Otherwise, redirect to products setup page immediately
         if (needsEmailConfirmation) {
           setTimeout(() => {
             navigate('/establishment-login');
