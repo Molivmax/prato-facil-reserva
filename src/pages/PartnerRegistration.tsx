@@ -142,23 +142,23 @@ const PartnerRegistration: React.FC = () => {
         const needsEmailConfirmation = authData.session === null;
         
         setRegistrationStatus('success');
-        setStatusMessage(
-          needsEmailConfirmation 
-            ? 'Cadastro realizado com sucesso! Por favor, verifique seu email para confirmar o registro antes de fazer login.' 
-            : 'Cadastro realizado com sucesso!'
-        );
+        setStatusMessage('Cadastro realizado com sucesso! Agora você pode cadastrar seus produtos.');
         
         toast.success('Cadastro realizado com sucesso!');
         
-        // If email confirmation is required, redirect to login after 5 seconds
-        // Otherwise, redirect to products setup page immediately
-        if (needsEmailConfirmation) {
-          setTimeout(() => {
-            navigate('/establishment-login');
-          }, 5000);
-        } else {
-          navigate('/establishment-dashboard');
-        }
+        // Get the establishment data to pass the ID
+        const { data: establishmentData } = await supabase
+          .from('establishments')
+          .select('id')
+          .eq('user_id', authData.user.id)
+          .single();
+
+        // Always redirect to product registration after establishment creation
+        setTimeout(() => {
+          navigate('/product-registration', { 
+            state: { establishmentId: establishmentData?.id } 
+          });
+        }, 2000);
       }
     } catch (error) {
       console.error('Registration error:', error);
