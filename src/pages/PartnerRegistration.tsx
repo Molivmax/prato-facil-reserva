@@ -226,7 +226,7 @@ const PartnerRegistration: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">Cadastro de Parceiro</h1>
+      <h1 className="text-2xl font-bold mb-6 text-primary">Cadastro de Parceiro</h1>
       
       {registrationStatus === 'success' && (
         <Alert className="mb-6 bg-green-900/20 border-green-600">
@@ -251,7 +251,7 @@ const PartnerRegistration: React.FC = () => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="bg-muted/30 p-6 rounded-lg mb-6">
-            <h2 className="text-xl font-semibold mb-4">Dados do Estabelecimento</h2>
+            <h2 className="text-xl font-semibold mb-4 text-primary">Dados do Estabelecimento</h2>
             
             <FormField
               control={form.control}
@@ -355,7 +355,7 @@ const PartnerRegistration: React.FC = () => {
           </div>
 
           <div className="bg-muted/30 p-6 rounded-lg mb-6">
-            <h2 className="text-xl font-semibold mb-4">Dados Pessoais</h2>
+            <h2 className="text-xl font-semibold mb-4 text-primary">Dados Pessoais</h2>
             
             <FormField
               control={form.control}
@@ -483,10 +483,10 @@ const PartnerRegistration: React.FC = () => {
           </div>
 
           <div className="bg-muted/30 p-6 rounded-lg mb-6">
-            <h2 className="text-xl font-semibold mb-4">Endereço e Localização</h2>
+            <h2 className="text-xl font-semibold mb-4 text-primary">Endereço e Localização</h2>
             
             <div className="bg-muted/50 p-4 rounded-md mb-4">
-              <h3 className="font-medium mb-2">Localização do Estabelecimento</h3>
+              <h3 className="font-medium mb-2 text-primary">Localização do Estabelecimento</h3>
               <p className="text-sm text-muted-foreground mb-3">
                 Por favor, forneça o endereço completo do seu estabelecimento ou use a geolocalização automática.
               </p>
