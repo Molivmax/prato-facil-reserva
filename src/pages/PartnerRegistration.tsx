@@ -229,20 +229,20 @@ const PartnerRegistration: React.FC = () => {
       <h1 className="text-2xl font-bold mb-6">Cadastro de Parceiro</h1>
       
       {registrationStatus === 'success' && (
-        <Alert className="mb-6 bg-green-50 border-green-200">
-          <CheckCircle className="h-5 w-5 text-green-500" />
-          <AlertTitle className="text-green-800">Cadastro realizado com sucesso!</AlertTitle>
-          <AlertDescription className="text-green-700">
+        <Alert className="mb-6 bg-green-900/20 border-green-600">
+          <CheckCircle className="h-5 w-5 text-green-400" />
+          <AlertTitle className="text-green-300">Cadastro realizado com sucesso!</AlertTitle>
+          <AlertDescription className="text-green-200">
             {statusMessage}
           </AlertDescription>
         </Alert>
       )}
       
       {registrationStatus === 'error' && (
-        <Alert className="mb-6 bg-red-50 border-red-200" variant="destructive">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <AlertTitle className="text-red-800">Erro no cadastro</AlertTitle>
-          <AlertDescription className="text-red-700">
+        <Alert className="mb-6 bg-red-900/20 border-red-600" variant="destructive">
+          <AlertCircle className="h-5 w-5 text-red-400" />
+          <AlertTitle className="text-red-300">Erro no cadastro</AlertTitle>
+          <AlertDescription className="text-red-200">
             {statusMessage}
           </AlertDescription>
         </Alert>
@@ -292,11 +292,26 @@ const PartnerRegistration: React.FC = () => {
                 <FormItem>
                   <FormLabel>Horário de funcionamento</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Ex: Seg-Sex: 8h às 18h, Sáb: 9h às 13h" 
-                      {...field} 
-                    />
+                    <select
+                      className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md text-foreground"
+                      {...field}
+                    >
+                      <option value="">Selecione o horário</option>
+                      <option value="Segunda a Quinta: 17h às 01h, Sexta e Sábado: 17h às 02h">Segunda a Quinta: 17h às 01h, Sexta e Sábado: 17h às 02h</option>
+                      <option value="Terça a Domingo: 18h às 02h">Terça a Domingo: 18h às 02h</option>
+                      <option value="Quinta a Sábado: 19h às 03h, Domingo: 19h às 00h">Quinta a Sábado: 19h às 03h, Domingo: 19h às 00h</option>
+                      <option value="Segunda a Sábado: 16h às 01h">Segunda a Sábado: 16h às 01h</option>
+                      <option value="Todos os dias: 18h às 02h">Todos os dias: 18h às 02h</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
                   </FormControl>
+                  {field.value === 'custom' && (
+                    <Input 
+                      placeholder="Digite o horário personalizado" 
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -417,11 +432,11 @@ const PartnerRegistration: React.FC = () => {
                     <FormLabel>Tipo de documento</FormLabel>
                     <FormControl>
                       <select
-                        className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md"
+                        className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md text-foreground"
                         {...field}
                       >
-                        <option value="cpf">CPF</option>
-                        <option value="cnpj">CNPJ</option>
+                        <option value="cpf">CPF (Pessoa Física)</option>
+                        <option value="cnpj">CNPJ (Pessoa Jurídica)</option>
                       </select>
                     </FormControl>
                     <FormMessage />
