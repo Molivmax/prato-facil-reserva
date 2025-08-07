@@ -258,7 +258,7 @@ const PartnerRegistration: React.FC = () => {
               name="establishmentName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do estabelecimento</FormLabel>
+                  <FormLabel className="text-primary font-medium">Nome do estabelecimento</FormLabel>
                   <FormControl>
                     <Input placeholder="Nome do estabelecimento" {...field} />
                   </FormControl>
@@ -272,7 +272,7 @@ const PartnerRegistration: React.FC = () => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel className="text-primary font-medium">Descrição</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Descrição do estabelecimento (opcional)" 
@@ -290,18 +290,32 @@ const PartnerRegistration: React.FC = () => {
               name="workingHours"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Horário de funcionamento</FormLabel>
+                  <FormLabel className="text-primary font-medium">Horário de funcionamento</FormLabel>
                   <FormControl>
                     <select
                       className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md text-foreground"
                       {...field}
                     >
                       <option value="">Selecione o horário</option>
-                      <option value="Segunda a Quinta: 17h às 01h, Sexta e Sábado: 17h às 02h">Segunda a Quinta: 17h às 01h, Sexta e Sábado: 17h às 02h</option>
-                      <option value="Terça a Domingo: 18h às 02h">Terça a Domingo: 18h às 02h</option>
-                      <option value="Quinta a Sábado: 19h às 03h, Domingo: 19h às 00h">Quinta a Sábado: 19h às 03h, Domingo: 19h às 00h</option>
-                      <option value="Segunda a Sábado: 16h às 01h">Segunda a Sábado: 16h às 01h</option>
-                      <option value="Todos os dias: 18h às 02h">Todos os dias: 18h às 02h</option>
+                      <optgroup label="Café da Manhã e Almoço">
+                        <option value="Todos os dias: 06h às 22h">Todos os dias: 06h às 22h</option>
+                        <option value="Segunda a Sábado: 07h às 15h, Domingo: 08h às 14h">Segunda a Sábado: 07h às 15h, Domingo: 08h às 14h</option>
+                        <option value="Todos os dias: 06h às 14h">Todos os dias: 06h às 14h</option>
+                        <option value="Segunda a Sexta: 07h às 16h">Segunda a Sexta: 07h às 16h</option>
+                      </optgroup>
+                      <optgroup label="Almoço e Jantar">
+                        <option value="Todos os dias: 11h às 22h">Todos os dias: 11h às 22h</option>
+                        <option value="Segunda a Domingo: 11h às 23h">Segunda a Domingo: 11h às 23h</option>
+                        <option value="Terça a Domingo: 12h às 22h">Terça a Domingo: 12h às 22h</option>
+                      </optgroup>
+                      <optgroup label="Bares e Vida Noturna">
+                        <option value="Segunda a Quinta: 17h às 01h, Sexta e Sábado: 17h às 02h">Segunda a Quinta: 17h às 01h, Sexta e Sábado: 17h às 02h</option>
+                        <option value="Terça a Domingo: 18h às 02h">Terça a Domingo: 18h às 02h</option>
+                        <option value="Quinta a Sábado: 19h às 03h, Domingo: 19h às 00h">Quinta a Sábado: 19h às 03h, Domingo: 19h às 00h</option>
+                        <option value="Segunda a Sábado: 16h às 01h">Segunda a Sábado: 16h às 01h</option>
+                        <option value="Todos os dias: 18h às 02h">Todos os dias: 18h às 02h</option>
+                        <option value="Todos os dias: 11h às 00h">Todos os dias: 11h às 00h</option>
+                      </optgroup>
                       <option value="custom">Personalizado</option>
                     </select>
                   </FormControl>
@@ -322,7 +336,7 @@ const PartnerRegistration: React.FC = () => {
               name="contact"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contato adicional (opcional)</FormLabel>
+                  <FormLabel className="text-primary font-medium">Contato adicional (opcional)</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Contato adicional" 
@@ -348,7 +362,7 @@ const PartnerRegistration: React.FC = () => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome completo</FormLabel>
+                  <FormLabel className="text-primary font-medium">Nome completo</FormLabel>
                   <FormControl>
                     <Input placeholder="Nome completo" {...field} />
                   </FormControl>
@@ -362,7 +376,7 @@ const PartnerRegistration: React.FC = () => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-mail</FormLabel>
+                  <FormLabel className="text-primary font-medium">E-mail</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="E-mail" {...field} />
                   </FormControl>
@@ -376,7 +390,7 @@ const PartnerRegistration: React.FC = () => {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone</FormLabel>
+                  <FormLabel className="text-primary font-medium">Telefone</FormLabel>
                   <FormControl>
                     <Input 
                       type="tel" 
@@ -399,7 +413,7 @@ const PartnerRegistration: React.FC = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel className="text-primary font-medium">Senha</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="Senha" {...field} />
                     </FormControl>
@@ -413,7 +427,7 @@ const PartnerRegistration: React.FC = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirmar senha</FormLabel>
+                    <FormLabel className="text-primary font-medium">Confirmar senha</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="Confirmar senha" {...field} />
                     </FormControl>
@@ -429,7 +443,7 @@ const PartnerRegistration: React.FC = () => {
                 name="documentType"
                 render={({ field }) => (
                   <FormItem className="md:w-1/3">
-                    <FormLabel>Tipo de documento</FormLabel>
+                    <FormLabel className="text-primary font-medium">Tipo de documento</FormLabel>
                     <FormControl>
                       <select
                         className="w-full h-10 px-3 py-2 bg-background border border-input rounded-md text-foreground"
@@ -449,7 +463,7 @@ const PartnerRegistration: React.FC = () => {
                 name="documentNumber"
                 render={({ field }) => (
                   <FormItem className="md:w-2/3">
-                    <FormLabel>Número do documento</FormLabel>
+                    <FormLabel className="text-primary font-medium">Número do documento</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder={form.watch('documentType') === 'cpf' ? "000.000.000-00" : "00.000.000/0000-00"}
@@ -497,7 +511,7 @@ const PartnerRegistration: React.FC = () => {
               name="zipCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CEP</FormLabel>
+                  <FormLabel className="text-primary font-medium">CEP</FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
                       <Input 
@@ -531,7 +545,7 @@ const PartnerRegistration: React.FC = () => {
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logradouro</FormLabel>
+                  <FormLabel className="text-primary font-medium">Logradouro</FormLabel>
                   <FormControl>
                     <Input placeholder="Rua, Avenida, etc" {...field} />
                   </FormControl>
@@ -546,7 +560,7 @@ const PartnerRegistration: React.FC = () => {
                 name="addressNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Número</FormLabel>
+                    <FormLabel className="text-primary font-medium">Número</FormLabel>
                     <FormControl>
                       <Input id="addressNumber" placeholder="Número" {...field} />
                     </FormControl>
@@ -560,7 +574,7 @@ const PartnerRegistration: React.FC = () => {
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cidade</FormLabel>
+                    <FormLabel className="text-primary font-medium">Cidade</FormLabel>
                     <FormControl>
                       <Input placeholder="Cidade" {...field} />
                     </FormControl>
@@ -574,7 +588,7 @@ const PartnerRegistration: React.FC = () => {
                 name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estado</FormLabel>
+                    <FormLabel className="text-primary font-medium">Estado</FormLabel>
                     <FormControl>
                       <Input placeholder="Estado" {...field} />
                     </FormControl>
