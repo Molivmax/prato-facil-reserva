@@ -32,7 +32,11 @@ const ProductRegistration = () => {
       toast.error('Adicione pelo menos um produto antes de finalizar');
       return;
     }
-    navigate('/establishment-login');
+    navigate('/establishment-dashboard');
+  };
+
+  const handleFinishFromForm = () => {
+    navigate('/establishment-dashboard');
   };
 
   const handleSkipProducts = () => {
@@ -64,6 +68,7 @@ const ProductRegistration = () => {
           <AddProductForm
             establishmentId={establishmentId}
             onSuccess={handleProductAdded}
+            onFinishRegistration={handleFinishFromForm}
           />
           
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
