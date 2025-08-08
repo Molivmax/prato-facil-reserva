@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Store, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Store, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
 const EstablishmentLogin = () => {
@@ -14,12 +15,14 @@ const EstablishmentLogin = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -53,10 +56,16 @@ const EstablishmentLogin = () => {
         navigate('/establishment-dashboard');
       }
     } catch (error: any) {
+      const raw = error?.message || '';
+      const message =
+        (typeof raw === 'string' && raw.toLowerCase().includes('invalid')) || error?.status === 400
+          ? 'Email ou senha inválidos'
+          : raw || 'Verifique suas credenciais e tente novamente';
+      setErrorMessage(message);
       toast({
-        title: "Erro ao fazer login",
-        description: error.message || "Verifique suas credenciais e tente novamente",
-        variant: "destructive",
+        title: 'Erro ao fazer login',
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -78,6 +87,13 @@ const EstablishmentLogin = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erro ao fazer login</AlertTitle>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-200">Email</Label>
