@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -58,6 +58,27 @@ const PartnerRegistration: React.FC = () => {
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkExisting = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: establishment, error } = await supabase
+        .from('establishments')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+      if (error && (error as any).code !== 'PGRST116') {
+        return;
+      }
+      if (isMounted && establishment) {
+        navigate('/establishment-dashboard', { replace: true });
+      }
+    };
+    checkExisting();
+    return () => { isMounted = false; };
+  }, [navigate]);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),

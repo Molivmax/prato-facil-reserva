@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Zap, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import type { Session, User } from '@supabase/supabase-js';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,21 +17,68 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulação de login
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Login realizado com sucesso",
-        description: "Bem-vindo de volta ao Blink!",
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      navigate('/search');
-    }, 1500);
+
+      if (error) {
+        const message = error.message?.toLowerCase().includes('invalid')
+          ? 'Email ou senha inválidos'
+          : error.message;
+        toast({
+          title: 'Erro ao fazer login',
+          description: message || 'Verifique suas credenciais e tente novamente',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Login realizado com sucesso',
+        description: 'Bem-vindo de volta ao Blink!',
+      });
+      // Navegação ocorrerá via onAuthStateChange
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao fazer login',
+        description: err.message || 'Verifique suas credenciais e tente novamente',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        navigate('/search', { replace: true });
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        navigate('/search', { replace: true });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-black/70 p-4">
