@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Zap, ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -19,10 +20,12 @@ const Login = () => {
   const { toast } = useToast();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -34,6 +37,7 @@ const Login = () => {
         const message = error.message?.toLowerCase().includes('invalid')
           ? 'Email ou senha inválidos'
           : error.message;
+        setErrorMessage(message || 'Verifique suas credenciais e tente novamente');
         toast({
           title: 'Erro ao fazer login',
           description: message || 'Verifique suas credenciais e tente novamente',
@@ -48,6 +52,7 @@ const Login = () => {
       });
       // Navegação ocorrerá via onAuthStateChange
     } catch (err: any) {
+      setErrorMessage(err?.message || 'Verifique suas credenciais e tente novamente');
       toast({
         title: 'Erro ao fazer login',
         description: err.message || 'Verifique suas credenciais e tente novamente',
@@ -95,6 +100,13 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erro ao fazer login</AlertTitle>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-200">Email</Label>

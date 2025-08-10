@@ -102,6 +102,18 @@ const PartnerRegistration: React.FC = () => {
     }
   });
 
+  // Prefill form fields from current session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user;
+      if (!u) return;
+      if (u.email) form.setValue('email', u.email);
+      const meta: any = u.user_metadata || {};
+      if (meta.name) form.setValue('name', meta.name);
+      if (meta.phone) form.setValue('phone', meta.phone);
+    });
+  }, [form]);
+
   const onSubmit = async (data: RegistrationFormData) => {
     setIsLoading(true);
     setRegistrationStatus('idle');
