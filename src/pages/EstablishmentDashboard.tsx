@@ -98,18 +98,19 @@ const EstablishmentDashboard = () => {
         .from('establishments')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         throw error;
       }
 
-      if (data) {
-        setEstablishment(data);
-      } else {
-        toast.error('Estabelecimento não encontrado');
+      if (!data) {
+        setEstablishment(null);
         navigate('/partner-registration');
+        return;
       }
+
+      setEstablishment(data);
     } catch (error: any) {
       console.error('Error fetching establishment:', error);
       toast.error(error.message || 'Erro ao carregar dados do estabelecimento');
@@ -368,7 +369,22 @@ const EstablishmentDashboard = () => {
                     </Button>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <ProductsList establishmentId={establishment.id} />
+                    {establishment?.id ? (
+                      <ProductsList establishmentId={establishment.id} />
+                    ) : (
+                      <Alert className="bg-gray-700 border-gray-600">
+                        <AlertCircle className="h-4 w-4 text-gray-400" />
+                        <AlertTitle className="text-gray-200">Estabelecimento não encontrado</AlertTitle>
+                        <AlertDescription className="text-gray-300">
+                          Cadastre seu estabelecimento para gerenciar produtos.
+                        </AlertDescription>
+                        <div className="mt-4">
+                          <Button className="bg-blink-primary hover:bg-blink-primary/90 text-black" onClick={() => navigate('/partner-registration')}>
+                            Cadastrar estabelecimento
+                          </Button>
+                        </div>
+                      </Alert>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -383,13 +399,28 @@ const EstablishmentDashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <AddProductForm 
-                    establishmentId={establishment.id} 
-                    onSuccess={() => {
-                      setActiveTab('products');
-                      toast.success('Produto adicionado com sucesso!');
-                    }}
-                  />
+                  {establishment?.id ? (
+                    <AddProductForm 
+                      establishmentId={establishment.id} 
+                      onSuccess={() => {
+                        setActiveTab('products');
+                        toast.success('Produto adicionado com sucesso!');
+                      }}
+                    />
+                  ) : (
+                    <Alert className="bg-gray-700 border-gray-600">
+                      <AlertCircle className="h-4 w-4 text-gray-400" />
+                      <AlertTitle className="text-gray-200">Estabelecimento não encontrado</AlertTitle>
+                      <AlertDescription className="text-gray-300">
+                        Cadastre seu estabelecimento para adicionar produtos.
+                      </AlertDescription>
+                      <div className="mt-4">
+                        <Button className="bg-blink-primary hover:bg-blink-primary/90 text-black" onClick={() => navigate('/partner-registration')}>
+                          Cadastrar estabelecimento
+                        </Button>
+                      </div>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             )}
