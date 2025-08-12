@@ -28,9 +28,10 @@ interface AddProductFormProps {
   establishmentId: string;
   onSuccess?: () => void;
   onFinishRegistration?: () => void;
+  onToggleSuccessView?: (visible: boolean) => void;
 }
 
-const AddProductForm = ({ establishmentId, onSuccess, onFinishRegistration }: AddProductFormProps) => {
+const AddProductForm = ({ establishmentId, onSuccess, onFinishRegistration, onToggleSuccessView }: AddProductFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -107,6 +108,7 @@ const AddProductForm = ({ establishmentId, onSuccess, onFinishRegistration }: Ad
       setImageUrl(null);
       setImageFile(null);
       setShowSuccessActions(true);
+      onToggleSuccessView?.(true);
       
       if (onSuccess) {
         onSuccess();
@@ -121,6 +123,7 @@ const AddProductForm = ({ establishmentId, onSuccess, onFinishRegistration }: Ad
 
   const handleAddAnother = () => {
     setShowSuccessActions(false);
+    onToggleSuccessView?.(false);
   };
 
   const handleFinishRegistration = () => {
@@ -146,7 +149,7 @@ const AddProductForm = ({ establishmentId, onSuccess, onFinishRegistration }: Ad
             variant="outline"
             className="flex-1"
           >
-            Finalizar Cadastro
+            Finalizar e ir para pedidos
           </Button>
         </div>
       </div>

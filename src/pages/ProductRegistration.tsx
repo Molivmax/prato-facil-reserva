@@ -10,6 +10,7 @@ const ProductRegistration = () => {
   const location = useLocation();
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [productCount, setProductCount] = useState(0);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   useEffect(() => {
     // Get establishment ID from navigation state
@@ -69,28 +70,31 @@ const ProductRegistration = () => {
             establishmentId={establishmentId}
             onSuccess={handleProductAdded}
             onFinishRegistration={handleFinishFromForm}
+            onToggleSuccessView={setSuccessVisible}
           />
           
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button
-              onClick={handleFinishRegistration}
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-              disabled={productCount === 0}
-            >
-              Finalizar Cadastro ({productCount} produtos)
-            </Button>
-            
-            <Button
-              onClick={handleSkipProducts}
-              variant="outline"
-              className="flex-1"
-            >
-              Pular por Agora
-            </Button>
-          </div>
+          {!successVisible && (
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                onClick={handleFinishRegistration}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={productCount === 0}
+              >
+                Finalizar cadastro de produtos e ir para pedidos
+              </Button>
+              
+              <Button
+                onClick={handleSkipProducts}
+                variant="outline"
+                className="flex-1"
+              >
+                Pular por Agora
+              </Button>
+            </div>
+          )}
           
           <p className="text-xs text-muted-foreground text-center">
-            Após finalizar, você será direcionado para a página de login do estabelecimento.
+            Após finalizar, você será direcionado para a página de pedidos do estabelecimento.
           </p>
         </CardContent>
       </Card>

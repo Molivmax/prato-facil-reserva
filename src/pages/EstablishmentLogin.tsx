@@ -37,9 +37,9 @@ const EstablishmentLogin = () => {
         .from('establishments')
         .select('id')
         .eq('user_id', data.user.id)
-        .single();
+        .maybeSingle();
 
-      if (establishmentError && establishmentError.code !== 'PGRST116') {
+      if (establishmentError) {
         throw establishmentError;
       }
 
@@ -52,8 +52,21 @@ const EstablishmentLogin = () => {
       if (!establishment) {
         navigate('/partner-registration');
       } else {
-        // Redirect to establishment dashboard
-        navigate('/establishment-dashboard');
+        // Check if establishment has products
+        const { count, error: productsError } = await supabase
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('establishment_id', establishment.id);
+
+        if (productsError) throw productsError;
+
+        if (!count || count === 0) {
+          // No products yet: go to product registration
+          navigate('/product-registration', { state: { establishmentId: establishment.id } });
+        } else {
+          // Has products: go to dashboard
+          navigate('/establishment-dashboard');
+        }
       }
     } catch (error: any) {
       const raw = error?.message || '';
