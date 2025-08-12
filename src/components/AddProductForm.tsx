@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CurrencyInput from '@/components/CurrencyInput';
 
 // Zod schema for product validation
 const productSchema = z.object({
   name: z.string().min(2, "Nome é obrigatório"),
   description: z.string().optional(),
-  price: z.coerce.number().positive("O preço deve ser maior que zero"),
+  price: z.string().min(1, "Preço é obrigatório"),
   category: z.string().min(1, "Categoria é obrigatória"),
   image_url: z.string().optional(),
 });
@@ -26,19 +27,21 @@ type ProductFormData = z.infer<typeof productSchema>;
 interface AddProductFormProps {
   establishmentId: string;
   onSuccess?: () => void;
+  onFinishRegistration?: () => void;
 }
 
-const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => {
+const AddProductForm = ({ establishmentId, onSuccess, onFinishRegistration }: AddProductFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [showSuccessActions, setShowSuccessActions] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
       description: '',
-      price: 0,
+      price: '0',
       category: '',
       image_url: '',
     }
@@ -90,7 +93,7 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
         .insert({
           name: data.name,
           description: data.description || null,
-          price: data.price,
+          price: parseFloat(data.price) / 100, // Convert from cents to reais
           category: data.category,
           establishment_id: establishmentId,
           image_url: finalImageUrl || null,
@@ -103,6 +106,7 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
       form.reset();
       setImageUrl(null);
       setImageFile(null);
+      setShowSuccessActions(true);
       
       if (onSuccess) {
         onSuccess();
@@ -115,15 +119,79 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
     }
   };
 
+  const handleAddAnother = () => {
+    setShowSuccessActions(false);
+  };
+
+  const handleFinishRegistration = () => {
+    if (onFinishRegistration) {
+      onFinishRegistration();
+    }
+  };
+
+  if (showSuccessActions) {
+    return (
+      <div className="text-center space-y-4 p-6 bg-muted/30 rounded-lg">
+        <h3 className="text-lg font-semibold text-primary">Produto salvo com sucesso!</h3>
+        <p className="text-muted-foreground">O que deseja fazer agora?</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button 
+            onClick={handleAddAnother}
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Adicionar Outro Produto
+          </Button>
+          <Button 
+            onClick={handleFinishRegistration}
+            variant="outline"
+            className="flex-1"
+          >
+            Finalizar Cadastro
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Categoria - Primeiro campo */}
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-primary">Categoria</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-background border-border z-50">
+                  <SelectItem value="Entrada">Entrada</SelectItem>
+                  <SelectItem value="Prato Principal">Prato Principal</SelectItem>
+                  <SelectItem value="Sobremesa">Sobremesa</SelectItem>
+                  <SelectItem value="Bebida">Bebida</SelectItem>
+                  <SelectItem value="Combo">Combo</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Nome do Produto - Segundo campo */}
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome do Produto</FormLabel>
+              <FormLabel className="text-primary">Nome do Produto</FormLabel>
               <FormControl>
                 <Input placeholder="Nome do produto" {...field} />
               </FormControl>
@@ -132,12 +200,13 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           )}
         />
         
+        {/* Descrição - Terceiro campo */}
         <FormField
           control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição (opcional)</FormLabel>
+              <FormLabel className="text-primary">Descrição (opcional)</FormLabel>
               <FormControl>
                 <Textarea 
                   placeholder="Descreva o produto..." 
@@ -150,20 +219,18 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           )}
         />
         
+        {/* Preço - Quarto campo */}
         <FormField
           control={form.control}
           name="price"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Preço</FormLabel>
+              <FormLabel className="text-primary">Preço</FormLabel>
               <FormControl>
-                <Input 
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00" 
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                <CurrencyInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="R$ 0,00"
                 />
               </FormControl>
               <FormMessage />
@@ -171,35 +238,9 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Categoria</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Entrada">Entrada</SelectItem>
-                  <SelectItem value="Prato Principal">Prato Principal</SelectItem>
-                  <SelectItem value="Sobremesa">Sobremesa</SelectItem>
-                  <SelectItem value="Bebida">Bebida</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
+        {/* Imagem - Quinto campo */}
         <div>
-          <FormLabel>Imagem do Produto (opcional)</FormLabel>
+          <FormLabel className="text-primary">Imagem do Produto (opcional)</FormLabel>
           <div className="mt-2">
             <Input
               type="file"
@@ -219,10 +260,11 @@ const AddProductForm = ({ establishmentId, onSuccess }: AddProductFormProps) => 
           </div>
         </div>
         
+        {/* Botão Salvar */}
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="w-full"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           {isLoading ? 'Salvando...' : 'Salvar Produto'}
         </Button>

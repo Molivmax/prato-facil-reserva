@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatPrice, groupProductsByCategory, Product } from '@/utils/productUtils';
 import ProductCategorySection from './product/ProductCategorySection';
 import EmptyProductsList from './product/EmptyProductsList';
+import EditProductForm from './EditProductForm';
 
 interface ProductsListProps {
   establishmentId: string;
@@ -18,6 +19,7 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,6 +80,19 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+  };
+
+  const handleEditSuccess = () => {
+    setEditingProduct(null);
+    fetchProducts();
+  };
+
+  const handleEditCancel = () => {
+    setEditingProduct(null);
+  };
+
   const handleAddToTable = (product: Product) => {
     if (onAddToCart) {
       const quantity = quantities[product.id] || 1;
@@ -119,6 +134,29 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
     );
   }
 
+  if (editingProduct) {
+    return (
+      <div>
+        <Button 
+          variant="ghost" 
+          className="mb-4 text-white hover:bg-gray-800"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+        
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <EditProductForm
+            product={editingProduct}
+            onSuccess={handleEditSuccess}
+            onCancel={handleEditCancel}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Button 
@@ -143,6 +181,7 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
               updateQuantity={updateQuantity}
               handleAddToTable={onAddToCart ? handleAddToTable : undefined}
               handleDelete={!onAddToCart ? handleDelete : undefined}
+              handleEdit={!onAddToCart ? handleEdit : undefined}
               onAddToCart={!!onAddToCart}
               formatPrice={formatPrice}
             />

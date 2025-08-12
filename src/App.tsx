@@ -20,6 +20,7 @@ import PartnerRegistration from "./pages/PartnerRegistration";
 import PaymentSetup from "./pages/PaymentSetup";
 import EstablishmentLogin from "./pages/EstablishmentLogin";
 import EstablishmentDashboard from "./pages/EstablishmentDashboard";
+import ProductRegistration from "./pages/ProductRegistration";
 
 // Configure a queryClient com retry para as chamadas de API, incluindo a função edge
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
           <Route path="/completed-order/:orderId" element={<CompletedOrder />} />
           <Route path="/partner-registration" element={<PartnerRegistration />} />
+          <Route path="/product-registration" element={<ProductRegistration />} />
           <Route path="/establishment-login" element={<EstablishmentLogin />} />
           <Route path="/establishment-dashboard" element={<EstablishmentDashboard />} />
           <Route path="*" element={<NotFound />} />

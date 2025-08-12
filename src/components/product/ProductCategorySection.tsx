@@ -10,6 +10,7 @@ interface ProductCategorySectionProps {
   updateQuantity: (productId: string, increment: boolean) => void;
   handleAddToTable?: (product: Product) => void;
   handleDelete?: (id: string) => void;
+  handleEdit?: (product: Product) => void;
   onAddToCart?: boolean;
   formatPrice: (price: number) => string;
 }
@@ -21,6 +22,7 @@ const ProductCategorySection = ({
   updateQuantity,
   handleAddToTable,
   handleDelete,
+  handleEdit,
   onAddToCart,
   formatPrice
 }: ProductCategorySectionProps) => {
@@ -39,6 +41,7 @@ const ProductCategorySection = ({
             updateQuantity={updateQuantity}
             handleAddToTable={handleAddToTable}
             handleDelete={handleDelete}
+            handleEdit={handleEdit}
             onAddToCart={onAddToCart}
             formatPrice={formatPrice}
           />

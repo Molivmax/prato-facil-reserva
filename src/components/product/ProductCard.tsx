@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit } from 'lucide-react';
 import { Product } from '@/utils/productUtils';
 import AdvancedQuantitySelector from './AdvancedQuantitySelector';
 
@@ -12,6 +12,7 @@ interface ProductCardProps {
   updateQuantity: (productId: string, increment: boolean) => void;
   handleAddToTable?: (product: Product) => void;
   handleDelete?: (id: string) => void;
+  handleEdit?: (product: Product) => void;
   onAddToCart?: boolean;
   formatPrice: (price: number) => string;
 }
@@ -22,6 +23,7 @@ const ProductCard = ({
   updateQuantity,
   handleAddToTable,
   handleDelete,
+  handleEdit,
   onAddToCart,
   formatPrice
 }: ProductCardProps) => {
@@ -66,7 +68,7 @@ const ProductCard = ({
 
       {/* Actions */}
       <div className="flex justify-between items-end">
-        {/* Quantity Selector or Delete Button */}
+        {/* Quantity Selector or Edit/Delete Buttons */}
         <div className="flex-1">
           {onAddToCart ? (
             <AdvancedQuantitySelector
@@ -79,17 +81,30 @@ const ProductCard = ({
               showAddButton={true}
             />
           ) : (
-            handleDelete && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(product.id)}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </Button>
-            )
+            <div className="flex gap-2">
+              {handleEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(product)}
+                  className="border-blue-500 text-blue-400 hover:bg-blue-900/20"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+              )}
+              {handleDelete && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(product.id)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
