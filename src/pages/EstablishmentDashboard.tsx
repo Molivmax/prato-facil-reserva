@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +50,7 @@ const EstablishmentDashboard = () => {
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -61,14 +62,21 @@ const EstablishmentDashboard = () => {
       }
       
       setUser(data.session.user);
-      fetchEstablishmentData(data.session.user.id);
+      
+      // Check if we have establishment ID from navigation state (coming from product registration)
+      const state = location.state as { establishmentId?: string };
+      if (state?.establishmentId) {
+        fetchEstablishmentById(state.establishmentId);
+      } else {
+        fetchEstablishmentData(data.session.user.id);
+      }
     };
 
     checkAuth();
 
     // Generate mock orders
     generateMockData();
-  }, [navigate]);
+  }, [navigate, location]);
 
   const generateMockData = () => {
     // Generate random number of mock orders
@@ -114,6 +122,28 @@ const EstablishmentDashboard = () => {
     } catch (error: any) {
       console.error('Error fetching establishment:', error);
       toast.error(error.message || 'Erro ao carregar dados do estabelecimento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEstablishmentById = async (establishmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('establishments')
+        .select('*')
+        .eq('id', establishmentId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setEstablishment(data);
+    } catch (error: any) {
+      console.error('Error fetching establishment by ID:', error);
+      toast.error(error.message || 'Erro ao carregar dados do estabelecimento');
+      navigate('/partner-registration');
     } finally {
       setLoading(false);
     }

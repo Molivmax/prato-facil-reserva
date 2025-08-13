@@ -33,11 +33,17 @@ const ProductRegistration = () => {
       toast.error('Adicione pelo menos um produto antes de finalizar');
       return;
     }
-    navigate('/establishment-dashboard');
+    // Navigate to dashboard with establishment ID
+    navigate('/establishment-dashboard', { 
+      state: { establishmentId } 
+    });
   };
 
   const handleFinishFromForm = () => {
-    navigate('/establishment-dashboard');
+    // Navigate to dashboard with establishment ID
+    navigate('/establishment-dashboard', { 
+      state: { establishmentId } 
+    });
   };
 
   const handleSkipProducts = () => {
