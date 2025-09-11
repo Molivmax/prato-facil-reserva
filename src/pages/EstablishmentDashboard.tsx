@@ -47,6 +47,7 @@ const EstablishmentDashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [arrivingCustomers, setArrivingCustomers] = useState(0);
+  const [attendingCustomers, setAttendingCustomers] = useState<any[]>([]);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const navigate = useNavigate();
@@ -98,6 +99,21 @@ const EstablishmentDashboard = () => {
     
     // Generate random number of arriving customers
     setArrivingCustomers(Math.floor(Math.random() * 3));
+    
+    // Generate mock attending customers
+    const attendingCount = Math.floor(Math.random() * 2);
+    const mockAttending = [];
+    for (let i = 0; i < attendingCount; i++) {
+      mockAttending.push({
+        id: Math.floor(Math.random() * 1000) + 2000,
+        tableNumber: Math.floor(Math.random() * 20) + 1,
+        people: Math.floor(Math.random() * 4) + 1,
+        startTime: new Date(Date.now() - Math.random() * 3600000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        pendingAmount: parseFloat((Math.random() * 50 + 10).toFixed(2)),
+        status: 'attending'
+      });
+    }
+    setAttendingCustomers(mockAttending);
   };
 
   const fetchEstablishmentData = async (userId: string) => {
@@ -199,6 +215,39 @@ const EstablishmentDashboard = () => {
       prevOrders.filter(order => order.id !== orderId)
     );
     toast.success(`Pedido #${orderId} removido da lista.`);
+  };
+
+  // Function to handle preparing a table (customer arrives)
+  const handlePrepareTable = (customerIndex: number) => {
+    // Move customer from arriving to attending
+    const newCustomer = {
+      id: Math.floor(Math.random() * 1000) + 3000,
+      tableNumber: Math.floor(Math.random() * 20) + 1,
+      people: Math.floor(Math.random() * 4) + 1,
+      startTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      pendingAmount: 0, // No pending amount initially
+      status: 'attending'
+    };
+    
+    setAttendingCustomers(prev => [...prev, newCustomer]);
+    setArrivingCustomers(prev => Math.max(0, prev - 1));
+    
+    toast.success(`Mesa #${newCustomer.tableNumber} preparada! Cliente está sendo atendido.`);
+  };
+
+  // Function to handle finalizing a table (send payment reminder)
+  const handleFinalizeTable = (customerId: number) => {
+    const customer = attendingCustomers.find(c => c.id === customerId);
+    if (!customer) return;
+    
+    // Simulate sending payment reminder to customer's app
+    toast.success(`Lembrete de pagamento enviado para o cliente da mesa #${customer.tableNumber}! Valor pendente: R$ ${customer.pendingAmount.toFixed(2)}`);
+    
+    // Remove customer from attending list after a short delay (simulating payment process)
+    setTimeout(() => {
+      setAttendingCustomers(prev => prev.filter(c => c.id !== customerId));
+      toast.success(`Mesa #${customer.tableNumber} finalizada e liberada!`);
+    }, 2000);
   };
 
   // Function to allow customer to add more items to an accepted order
@@ -303,6 +352,21 @@ const EstablishmentDashboard = () => {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
                 <Users className="h-5 w-5 mr-2 text-blink-primary" />
+                Clientes Atendendo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{attendingCustomers.length}</div>
+              <p className="text-sm text-gray-300 mt-1">
+                {attendingCustomers.length === 0 ? 'Nenhum cliente sendo atendido' : 'Atualmente nas mesas'}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Users className="h-5 w-5 mr-2 text-blink-primary" />
                 Clientes Chegando
               </CardTitle>
             </CardHeader>
@@ -366,12 +430,12 @@ const EstablishmentDashboard = () => {
                     onClick={() => setActiveTab('customers')}
                   >
                     <Users className="h-4 w-4 mr-2" />
-                    Clientes
-                    {arrivingCustomers > 0 && (
-                      <span className="ml-2 bg-blink-primary text-black text-xs py-0.5 px-2 rounded-full">
-                        {arrivingCustomers}
-                      </span>
-                    )}
+                     Clientes
+                     {(arrivingCustomers + attendingCustomers.length) > 0 && (
+                       <span className="ml-2 bg-blink-primary text-black text-xs py-0.5 px-2 rounded-full">
+                         {arrivingCustomers + attendingCustomers.length}
+                       </span>
+                     )}
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -593,52 +657,113 @@ const EstablishmentDashboard = () => {
             )}
 
             {activeTab === 'customers' && (
-              <Card className="border-0 shadow-md bg-gray-800 text-white">
-                <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
-                  <CardTitle className="text-xl text-white">Clientes Chegando</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Veja quem está a caminho do seu estabelecimento
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {arrivingCustomers > 0 ? (
-                    <div className="space-y-4">
-                      {Array.from({ length: arrivingCustomers }).map((_, index) => (
-                        <Card key={index} className="border border-gray-700 bg-gray-700/50 hover:bg-gray-700 cursor-pointer transition-all duration-200">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between">
-                              <CardTitle className="text-lg text-white">Cliente #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
-                              <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium">
-                                Chegando
-                              </span>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-2 text-white">
-                              <p className="text-sm text-gray-300">Horário estimado: {new Date().getHours()}:{new Date().getMinutes() + Math.floor(Math.random() * 30)}</p>
-                              <p className="font-medium">Pessoas: {Math.floor(Math.random() * 4) + 1}</p>
-                              <p className="font-medium">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
-                              <div className="flex space-x-2 pt-2">
-                                <Button size="sm" className="bg-blink-primary hover:bg-blink-primary/90 text-black">
-                                  Preparar Mesa
-                                </Button>
+              <div className="space-y-6">
+                {/* Clientes Atendendo */}
+                <Card className="border-0 shadow-md bg-gray-800 text-white">
+                  <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                    <CardTitle className="text-xl text-white">Clientes Sendo Atendidos</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Mesas ocupadas e em atendimento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {attendingCustomers.length > 0 ? (
+                      <div className="space-y-4">
+                        {attendingCustomers.map((customer) => (
+                          <Card key={customer.id} className="border border-green-500/50 bg-green-950/20 hover:bg-green-950/30 cursor-pointer transition-all duration-200">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between">
+                                <CardTitle className="text-lg text-white">Mesa #{customer.tableNumber}</CardTitle>
+                                <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-md font-medium">
+                                  Atendendo
+                                </span>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert className="bg-gray-700 border-gray-600">
-                      <Info className="h-4 w-4 text-gray-400" />
-                      <AlertTitle className="text-gray-200">Nenhum cliente a caminho</AlertTitle>
-                      <AlertDescription className="text-gray-300">
-                        Os clientes que estiverem a caminho aparecerão aqui quando confirmarem sua reserva.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2 text-white">
+                                <p className="text-sm text-gray-300">Início do atendimento: {customer.startTime}</p>
+                                <p className="font-medium">Pessoas: {customer.people}</p>
+                                <p className="font-medium">Pendente: R$ {customer.pendingAmount.toFixed(2)}</p>
+                                <div className="flex space-x-2 pt-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="border-blue-500 text-blue-400 hover:bg-blue-900/20"
+                                    onClick={() => handleFinalizeTable(customer.id)}
+                                  >
+                                    <DoorOpen size={16} className="mr-1" />
+                                    Finalizar Mesa
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert className="bg-gray-700 border-gray-600">
+                        <Info className="h-4 w-4 text-gray-400" />
+                        <AlertTitle className="text-gray-200">Nenhum cliente sendo atendido</AlertTitle>
+                        <AlertDescription className="text-gray-300">
+                          As mesas ocupadas aparecerão aqui quando você preparar as mesas para os clientes.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Clientes Chegando */}
+                <Card className="border-0 shadow-md bg-gray-800 text-white">
+                  <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                    <CardTitle className="text-xl text-white">Clientes Chegando</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Veja quem está a caminho do seu estabelecimento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {arrivingCustomers > 0 ? (
+                      <div className="space-y-4">
+                        {Array.from({ length: arrivingCustomers }).map((_, index) => (
+                          <Card key={index} className="border border-gray-700 bg-gray-700/50 hover:bg-gray-700 cursor-pointer transition-all duration-200">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between">
+                                <CardTitle className="text-lg text-white">Cliente #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
+                                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium">
+                                  Chegando
+                                </span>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2 text-white">
+                                <p className="text-sm text-gray-300">Horário estimado: {new Date().getHours()}:{new Date().getMinutes() + Math.floor(Math.random() * 30)}</p>
+                                <p className="font-medium">Pessoas: {Math.floor(Math.random() * 4) + 1}</p>
+                                <p className="font-medium">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
+                                <div className="flex space-x-2 pt-2">
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-blink-primary hover:bg-blink-primary/90 text-black"
+                                    onClick={() => handlePrepareTable(index)}
+                                  >
+                                    Preparar Mesa
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert className="bg-gray-700 border-gray-600">
+                        <Info className="h-4 w-4 text-gray-400" />
+                        <AlertTitle className="text-gray-200">Nenhum cliente a caminho</AlertTitle>
+                        <AlertDescription className="text-gray-300">
+                          Os clientes que estiverem a caminho aparecerão aqui quando confirmarem sua reserva.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {activeTab === 'notifications' && (
