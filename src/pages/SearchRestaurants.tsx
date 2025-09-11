@@ -145,7 +145,7 @@ const SearchRestaurants = () => {
               <p className="text-gray-500">Nenhum estabelecimento encontrado.</p>
               <Button 
                 variant="link" 
-                className="text-primary mt-2"
+                className="text-blue-600 hover:text-blue-800 mt-2"
                 onClick={() => {
                   setSearchTerm('');
                   setActiveTab('all');
