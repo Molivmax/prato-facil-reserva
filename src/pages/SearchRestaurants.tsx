@@ -145,7 +145,7 @@ const SearchRestaurants = () => {
               <p className="text-gray-500">Nenhum estabelecimento encontrado.</p>
               <Button 
                 variant="link" 
-                className="text-restaurant-primary mt-2"
+                className="text-primary mt-2"
                 onClick={() => {
                   setSearchTerm('');
                   setActiveTab('all');
@@ -170,7 +170,6 @@ const SearchRestaurants = () => {
             <Button
               variant="default"
               onClick={handleSetupPayment}
-              className="bg-restaurant-primary hover:bg-restaurant-dark"
             >
               Configurar Agora
             </Button>
