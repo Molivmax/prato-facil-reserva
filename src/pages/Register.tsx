@@ -103,8 +103,8 @@ const Register = () => {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-2">
-            <div className="bg-restaurant-primary rounded-full p-3 inline-block">
-              <UtensilsCrossed className="h-6 w-6 text-white" />
+            <div className="bg-primary rounded-full p-3 inline-block">
+              <UtensilsCrossed className="h-6 w-6 text-primary-foreground" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Cadastro</CardTitle>
