@@ -193,6 +193,14 @@ const EstablishmentDashboard = () => {
     toast.success(`Pedido #${orderId} finalizado com sucesso!`);
   };
 
+  // Function to handle deleting a rejected order
+  const handleDeleteOrder = (orderId: number) => {
+    setPendingOrders(prevOrders =>
+      prevOrders.filter(order => order.id !== orderId)
+    );
+    toast.success(`Pedido #${orderId} removido da lista.`);
+  };
+
   // Function to allow customer to add more items to an accepted order
   const handleAllowMoreItems = (orderId: number) => {
     // In a real application, this would send a notification to the customer's app
@@ -550,8 +558,22 @@ const EstablishmentDashboard = () => {
                                     <DoorOpen size={16} className="mr-1" />
                                     Liberar Cliente
                                   </Button>
-                                </div>
-                              )}
+                                 </div>
+                               )}
+
+                               {order.status === 'rejected' && (
+                                 <div className="flex pt-2">
+                                   <Button 
+                                     size="sm"
+                                     variant="outline"
+                                     className="border-red-500 text-red-400 hover:bg-red-900/20"
+                                     onClick={() => handleDeleteOrder(order.id)}
+                                   >
+                                     <X size={16} className="mr-1" />
+                                     Excluir Pedido
+                                   </Button>
+                                 </div>
+                               )}
                             </div>
                           </CardContent>
                         </Card>
