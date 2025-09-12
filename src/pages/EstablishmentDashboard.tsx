@@ -18,7 +18,8 @@ import {
   Check,
   X,
   Package,
-  DoorOpen
+  DoorOpen,
+  Settings
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ import ProductsList from '@/components/ProductsList';
 import AddProductForm from '@/components/AddProductForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import CheckoutDialog from '@/components/CheckoutDialog';
+import EstablishmentSettings from '@/components/EstablishmentSettings';
 
 // Define order status type
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
@@ -445,6 +447,14 @@ const EstablishmentDashboard = () => {
                     <Bell className="h-4 w-4 mr-2" />
                     Notificações
                   </Button>
+                  <Button 
+                    variant="ghost" 
+                    className={`justify-start rounded-none border-l-4 ${activeTab === 'settings' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
+                    onClick={() => setActiveTab('settings')}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurações
+                  </Button>
                 </nav>
               </CardContent>
             </Card>
@@ -784,6 +794,13 @@ const EstablishmentDashboard = () => {
                   </Alert>
                 </CardContent>
               </Card>
+            )}
+
+            {activeTab === 'settings' && (
+              <EstablishmentSettings 
+                establishment={establishment}
+                onEstablishmentUpdate={setEstablishment}
+              />
             )}
           </div>
         </div>
