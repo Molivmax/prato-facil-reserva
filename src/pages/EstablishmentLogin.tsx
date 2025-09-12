@@ -43,18 +43,19 @@ const EstablishmentLogin = () => {
         throw establishmentError;
       }
 
+      // If no establishment yet, show error message
+      if (!establishment) {
+        setErrorMessage('Você ainda não possui um estabelecimento cadastrado. Por favor, faça o cadastro primeiro.');
+        return;
+      }
+
       toast({
         title: "Login realizado com sucesso",
         description: "Bem-vindo de volta ao Blink!",
       });
 
-      // If no establishment yet, go to partner registration
-      if (!establishment) {
-        navigate('/partner-registration');
-      } else {
-        // Go directly to dashboard
-        navigate('/establishment-dashboard');
-      }
+      // Go directly to dashboard
+      navigate('/establishment-dashboard');
     } catch (error: any) {
       const raw = error?.message || '';
       const message =
