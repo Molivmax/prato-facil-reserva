@@ -52,21 +52,8 @@ const EstablishmentLogin = () => {
       if (!establishment) {
         navigate('/partner-registration');
       } else {
-        // Check if establishment has products
-        const { count, error: productsError } = await supabase
-          .from('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('establishment_id', establishment.id);
-
-        if (productsError) throw productsError;
-
-        if (!count || count === 0) {
-          // No products yet: go to product registration
-          navigate('/product-registration', { state: { establishmentId: establishment.id } });
-        } else {
-          // Has products: go to dashboard
-          navigate('/establishment-dashboard');
-        }
+        // Go directly to dashboard
+        navigate('/establishment-dashboard');
       }
     } catch (error: any) {
       const raw = error?.message || '';
