@@ -50,6 +50,7 @@ const EstablishmentDashboard = () => {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [arrivingCustomers, setArrivingCustomers] = useState(0);
   const [attendingCustomers, setAttendingCustomers] = useState<any[]>([]);
+  const [finalizedCustomers, setFinalizedCustomers] = useState(0);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const navigate = useNavigate();
@@ -116,6 +117,9 @@ const EstablishmentDashboard = () => {
       });
     }
     setAttendingCustomers(mockAttending);
+    
+    // Initialize finalized customers counter
+    setFinalizedCustomers(Math.floor(Math.random() * 15) + 5);
   };
 
   const fetchEstablishmentData = async (userId: string) => {
@@ -248,6 +252,7 @@ const EstablishmentDashboard = () => {
     // Remove customer from attending list after a short delay (simulating payment process)
     setTimeout(() => {
       setAttendingCustomers(prev => prev.filter(c => c.id !== customerId));
+      setFinalizedCustomers(prev => prev + 1);
       toast.success(`Mesa #${customer.tableNumber} finalizada e liberada!`);
     }, 2000);
   };
@@ -334,7 +339,7 @@ const EstablishmentDashboard = () => {
 
       <main className="container max-w-7xl mx-auto px-4 py-6">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
@@ -383,14 +388,14 @@ const EstablishmentDashboard = () => {
           <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center">
-                <BarChart className="h-5 w-5 mr-2 text-blink-primary" />
-                Desempenho
+                <Check className="h-5 w-5 mr-2 text-green-400" />
+                Clientes Finalizados
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">Bom</div>
+              <div className="text-3xl font-bold text-white">{finalizedCustomers}</div>
               <p className="text-sm text-gray-300 mt-1">
-                Avaliação média: 4.8/5
+                Total atendido hoje
               </p>
             </CardContent>
           </Card>
