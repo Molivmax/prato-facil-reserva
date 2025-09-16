@@ -63,6 +63,7 @@ const Register = () => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/search`,
           data: {
             name,
             phone,

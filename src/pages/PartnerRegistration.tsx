@@ -124,6 +124,7 @@ const PartnerRegistration: React.FC = () => {
         email: data.email,
         password: data.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/establishment-dashboard`,
           data: {
             name: data.name,
             phone: data.phone,
