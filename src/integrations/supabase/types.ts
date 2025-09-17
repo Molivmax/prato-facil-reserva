@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_transactions: {
+        Row: {
+          created_at: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          establishment_id: string
+          id: string
+          order_items: Json | null
+          payment_method: string | null
+          status: string | null
+          table_number: number
+          total_amount: number
+          transaction_date: string
+          transaction_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          establishment_id: string
+          id?: string
+          order_items?: Json | null
+          payment_method?: string | null
+          status?: string | null
+          table_number: number
+          total_amount: number
+          transaction_date?: string
+          transaction_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          establishment_id?: string
+          id?: string
+          order_items?: Json | null
+          payment_method?: string | null
+          status?: string | null
+          table_number?: number
+          total_amount?: number
+          transaction_date?: string
+          transaction_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_transactions_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishments: {
         Row: {
           address: string | null

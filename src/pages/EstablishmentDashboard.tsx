@@ -28,6 +28,7 @@ import AddProductForm from '@/components/AddProductForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import CheckoutDialog from '@/components/CheckoutDialog';
 import EstablishmentSettings from '@/components/EstablishmentSettings';
+import DailyRevenue from '@/components/DailyRevenue';
 
 // Define order status type
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
@@ -446,6 +447,14 @@ const EstablishmentDashboard = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
+                    className={`justify-start rounded-none border-l-4 ${activeTab === 'revenue' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
+                    onClick={() => setActiveTab('revenue')}
+                  >
+                    <BarChart className="h-4 w-4 mr-2" />
+                    Valores do Dia
+                  </Button>
+                  <Button 
+                    variant="ghost" 
                     className={`justify-start rounded-none border-l-4 ${activeTab === 'notifications' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
                     onClick={() => setActiveTab('notifications')}
                   >
@@ -500,6 +509,36 @@ const EstablishmentDashboard = () => {
                             Cadastrar estabelecimento
                           </Button>
                         </div>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Revenue Tab */}
+            {activeTab === 'revenue' && (
+              <div className="space-y-6">
+                <Card className="border-0 shadow-md bg-gray-800 text-white">
+                  <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
+                    <CardTitle className="text-xl text-white flex items-center">
+                      <BarChart className="h-5 w-5 mr-2 text-blink-primary" />
+                      Controle de Valores Diários
+                    </CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Acompanhe os valores recebidos, filtrados por mesa e cliente
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {establishment?.id ? (
+                      <DailyRevenue establishmentId={establishment.id} />
+                    ) : (
+                      <Alert className="bg-gray-700 border-gray-600">
+                        <AlertCircle className="h-4 w-4 text-gray-400" />
+                        <AlertTitle className="text-gray-200">Estabelecimento não encontrado</AlertTitle>
+                        <AlertDescription className="text-gray-300">
+                          Cadastre seu estabelecimento para acessar o controle de valores.
+                        </AlertDescription>
                       </Alert>
                     )}
                   </CardContent>
