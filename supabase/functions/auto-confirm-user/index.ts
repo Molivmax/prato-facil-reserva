@@ -25,7 +25,6 @@ serve(async (req) => {
     const { error } = await supabaseServiceRole.auth.admin.updateUserById(
       record.id,
       { 
-        email_confirm: true,
         email_confirmed_at: new Date().toISOString()
       }
     )
