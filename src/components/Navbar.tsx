@@ -52,7 +52,7 @@ const Navbar = () => {
               className="bg-blink-secondary text-white hover:bg-blink-secondary/90"
               asChild
             >
-              <Link to="/login">
+              <Link to="/account">
                 <User className="mr-2 h-4 w-4" />
                 Conta
               </Link>
@@ -105,7 +105,7 @@ const Navbar = () => {
               </div>
             </Link>
             <Link
-              to="/login"
+              to="/account"
               className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
