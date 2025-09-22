@@ -298,6 +298,9 @@ const EstablishmentDashboard = () => {
     
     // In a real app, we would mark the table as available after checkout
     toast.success("Mesa liberada para novos clientes!");
+    
+    // Redirect to daily revenue tab after releasing customer
+    setActiveTab('revenue');
   };
 
   if (loading) {
