@@ -84,43 +84,11 @@ const EstablishmentDashboard = () => {
   }, [navigate, location]);
 
   const generateMockData = () => {
-    // Generate random number of mock orders
-    const orderCount = Math.floor(Math.random() * 5);
-    const mockOrders: Order[] = [];
-    
-    for (let i = 0; i < orderCount; i++) {
-      mockOrders.push({
-        id: Math.floor(Math.random() * 1000) + 1000,
-        tableNumber: Math.floor(Math.random() * 20) + 1,
-        itemCount: Math.floor(Math.random() * 5) + 1,
-        total: parseFloat((Math.random() * 100 + 20).toFixed(2)),
-        status: 'pending',
-        canAddMore: false
-      });
-    }
-    
-    setPendingOrders(mockOrders);
-    
-    // Generate random number of arriving customers
-    setArrivingCustomers(Math.floor(Math.random() * 3));
-    
-    // Generate mock attending customers
-    const attendingCount = Math.floor(Math.random() * 2);
-    const mockAttending = [];
-    for (let i = 0; i < attendingCount; i++) {
-      mockAttending.push({
-        id: Math.floor(Math.random() * 1000) + 2000,
-        tableNumber: Math.floor(Math.random() * 20) + 1,
-        people: Math.floor(Math.random() * 4) + 1,
-        startTime: new Date(Date.now() - Math.random() * 3600000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        pendingAmount: parseFloat((Math.random() * 50 + 10).toFixed(2)),
-        status: 'attending'
-      });
-    }
-    setAttendingCustomers(mockAttending);
-    
-    // Initialize finalized customers counter
-    setFinalizedCustomers(Math.floor(Math.random() * 15) + 5);
+    // Clear all mock data for testing real flow
+    setPendingOrders([]);
+    setArrivingCustomers(0);
+    setAttendingCustomers([]);
+    setFinalizedCustomers(0);
   };
 
   const fetchEstablishmentData = async (userId: string) => {
