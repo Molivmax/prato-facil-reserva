@@ -118,6 +118,54 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          created_at: string
+          customer_location: Json | null
+          establishment_id: string
+          estimated_arrival_time: string | null
+          id: string
+          items: Json
+          order_status: string | null
+          payment_method: string | null
+          payment_status: string | null
+          table_number: number
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_location?: Json | null
+          establishment_id: string
+          estimated_arrival_time?: string | null
+          id?: string
+          items: Json
+          order_status?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          table_number: number
+          total_amount: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_location?: Json | null
+          establishment_id?: string
+          estimated_arrival_time?: string | null
+          id?: string
+          items?: Json
+          order_status?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          table_number?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string

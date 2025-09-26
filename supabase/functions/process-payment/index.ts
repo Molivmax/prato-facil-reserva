@@ -48,17 +48,14 @@ serve(async (req) => {
       throw new Error("Formato de dados inválido");
     });
     
-    const { amount, orderDetails, restaurantId, tableId, paymentMethod } = requestData;
+    const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId } = requestData;
 
-    if (!amount || !orderDetails || !restaurantId || !tableId || !paymentMethod) {
+    if (!amount || !orderDetails || !restaurantId || !tableId || !paymentMethod || !orderId) {
       throw new Error("Dados incompletos para o pagamento");
     }
 
-    // Generate a unique order ID
-    const orderId = `order-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-
     // Handle payment based on the method
-    if (paymentMethod === "credit" || paymentMethod === "app") {
+    if (paymentMethod === "credit") {
       try {
         // Create a payment intent with Stripe for card or app payments
         const paymentIntent = await stripe.paymentIntents.create({
@@ -75,10 +72,26 @@ serve(async (req) => {
           },
         });
 
+        // Update order in database
+        const { error: updateError } = await supabaseClient
+          .from('orders')
+          .update({
+            payment_method: paymentMethod,
+            payment_status: 'paid',
+            order_status: 'confirmed'
+          })
+          .eq('id', orderId)
+          .eq('user_id', userData.user.id);
+
+        if (updateError) {
+          console.error('Erro ao atualizar pedido:', updateError);
+        }
+
         return new Response(
           JSON.stringify({
             clientSecret: paymentIntent.client_secret,
             orderId: orderId,
+            success: true
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -89,8 +102,79 @@ serve(async (req) => {
         console.error("Erro Stripe:", stripeError);
         throw new Error(`Erro no processamento do pagamento: ${stripeError.message}`);
       }
+    } else if (paymentMethod === "pix") {
+      // For PIX payment, update order status
+      const { error: updateError } = await supabaseClient
+        .from('orders')
+        .update({
+          payment_method: 'pix',
+          payment_status: 'paid',
+          order_status: 'confirmed'
+        })
+        .eq('id', orderId)
+        .eq('user_id', userData.user.id);
+
+      if (updateError) {
+        console.error('Erro ao atualizar pedido:', updateError);
+        throw new Error('Erro ao confirmar pagamento PIX');
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentMethod: "pix",
+          orderId: orderId,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    } else if (paymentMethod === "pindura") {
+      // For Pindura payment, update order status
+      const { error: updateError } = await supabaseClient
+        .from('orders')
+        .update({
+          payment_method: 'pindura',
+          payment_status: 'pindura',
+          order_status: 'confirmed'
+        })
+        .eq('id', orderId)
+        .eq('user_id', userData.user.id);
+
+      if (updateError) {
+        console.error('Erro ao atualizar pedido:', updateError);
+        throw new Error('Erro ao confirmar Pindura');
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentMethod: "pindura",
+          orderId: orderId,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
     } else if (paymentMethod === "local") {
       // For local payment, just confirm the order without payment processing
+      const { error: updateError } = await supabaseClient
+        .from('orders')
+        .update({
+          payment_method: 'local',
+          payment_status: 'pay_later',
+          order_status: 'confirmed'
+        })
+        .eq('id', orderId)
+        .eq('user_id', userData.user.id);
+
+      if (updateError) {
+        console.error('Erro ao atualizar pedido:', updateError);
+        throw new Error('Erro ao confirmar pedido');
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -108,7 +192,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Erro no processamento do pagamento:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Erro desconhecido no processamento do pagamento" }),
+      JSON.stringify({ error: (error as Error).message || "Erro desconhecido no processamento do pagamento" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,

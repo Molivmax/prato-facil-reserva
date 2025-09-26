@@ -10,6 +10,7 @@ import ReserveOptionsDialog from '@/components/ReserveOptionsDialog';
 import { getRestaurantById, getMenuItemsByRestaurantId, getTablesByRestaurantId } from '@/data/mockData';
 import { Restaurant, MenuItem as MenuItemType, OrderItem, Table } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const MenuSelection = () => {
   const { restaurantId, tableId } = useParams();
@@ -103,34 +104,133 @@ const MenuSelection = () => {
     }
   };
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
     setShowReserveDialog(false);
-    proceedToPayment();
+    
+    // Criar pedido no Supabase antes de ir para pagamento
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Acesso necessário",
+          description: "Você precisa estar logado para fazer um pedido",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      // Criar pedido no banco de dados
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          user_id: session.user.id,
+          establishment_id: restaurantId!,
+          table_number: table?.number || 0,
+          items: cart as any,
+          total_amount: totalAmount,
+          payment_status: 'pending',
+          order_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar pedido:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar o pedido. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Salvar também no localStorage como fallback
+      const orderDetails = {
+        id: order.id,
+        items: cart,
+        restaurantId: restaurantId,
+        tableId: tableId,
+        total: totalAmount,
+        restaurantName: restaurant?.name || "",
+        tableNumber: table?.number || 0,
+        paymentStatus: "pending"
+      };
+      
+      localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
+      
+      // Navegar para página de pagamento
+      navigate(`/payment/${order.id}`);
+      
+    } catch (error) {
+      console.error('Erro ao processar pedido:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handlePayLater = () => {
+  const handlePayLater = async () => {
     setShowReserveDialog(false);
-    // Salvar pedido com status "pagar depois"
-    const orderDetails = {
-      items: cart,
-      restaurantId: restaurantId,
-      tableId: tableId,
-      total: totalAmount,
-      restaurantName: restaurant?.name || "",
-      tableNumber: table?.number || 0,
-      paymentStatus: "pay_later"
-    };
     
-    localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
-    
-    toast({
-      title: "Reserva confirmada!",
-      description: "Você poderá pagar no estabelecimento.",
-    });
-    
-    // Navegar para resumo do pedido ou página de confirmação
-    const tempOrderId = "order-" + Date.now();
-    navigate(`/order-summary/${tempOrderId}`);
+    // Criar pedido no Supabase com status "pay_later"
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Acesso necessário",
+          description: "Você precisa estar logado para fazer um pedido",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      // Criar pedido no banco de dados
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          user_id: session.user.id,
+          establishment_id: restaurantId!,
+          table_number: table?.number || 0,
+          items: cart as any,
+          total_amount: totalAmount,
+          payment_status: 'pay_later',
+          order_status: 'confirmed'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar pedido:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar o pedido. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Reserva confirmada!",
+        description: "Você poderá pagar no estabelecimento.",
+      });
+      
+      // Navegar para página de acompanhamento do pedido
+      navigate(`/order-tracking/${order.id}`);
+      
+    } catch (error) {
+      console.error('Erro ao processar pedido:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const proceedToPayment = () => {

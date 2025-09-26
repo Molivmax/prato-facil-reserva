@@ -13,6 +13,7 @@ import MenuSelection from "./pages/MenuSelection";
 import PaymentOptions from "./pages/PaymentOptions";
 import CheckIn from "./pages/CheckIn";
 import OrderSummary from "./pages/OrderSummary";
+import OrderTracking from "./pages/OrderTracking";
 import CompletedOrder from "./pages/CompletedOrder";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/payment/:orderId" element={<PaymentOptions />} />
           <Route path="/check-in/:orderId" element={<CheckIn />} />
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
+          <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
           <Route path="/completed-order/:orderId" element={<CompletedOrder />} />
           <Route path="/partner-registration" element={<PartnerRegistration />} />
           <Route path="/product-registration" element={<ProductRegistration />} />

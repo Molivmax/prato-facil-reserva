@@ -21,11 +21,11 @@ serve(async (req) => {
     const { record } = await req.json()
     console.log('User created:', record)
 
-    // Auto-confirm the user by updating their email_confirmed_at field
+    // Auto-confirm the user by updating their email_confirm field
     const { error } = await supabaseServiceRole.auth.admin.updateUserById(
       record.id,
       { 
-        email_confirmed_at: new Date().toISOString()
+        email_confirm: true
       }
     )
 
@@ -53,7 +53,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in auto-confirm-user function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

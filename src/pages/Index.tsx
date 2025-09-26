@@ -1,10 +1,49 @@
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Zap, Store, ChevronDown, ChevronUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Verificar se o usuário está logado
+    const checkUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+
+      // Se estiver logado, verificar se tem algum pedido ativo
+      if (session?.user) {
+        const { data: activeOrders } = await supabase
+          .from('orders')
+          .select('id, order_status')
+          .eq('user_id', session.user.id)
+          .in('order_status', ['pending', 'confirmed', 'preparing'])
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        // Se tiver pedido ativo, redirecionar para tracking
+        if (activeOrders && activeOrders.length > 0) {
+          navigate(`/order-tracking/${activeOrders[0].id}`);
+          return;
+        }
+      }
+    };
+
+    checkUserSession();
+
+    // Listener para mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
   const [showEstablishmentArea, setShowEstablishmentArea] = useState(false);
   
   return (

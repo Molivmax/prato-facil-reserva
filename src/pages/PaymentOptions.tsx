@@ -91,7 +91,8 @@ const PaymentOptions = () => {
           orderDetails: orderDetails.items,
           restaurantId: orderDetails.restaurantId,
           tableId: orderDetails.tableId,
-          paymentMethod: paymentMethod
+          paymentMethod: paymentMethod,
+          orderId: orderId
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`
@@ -107,14 +108,22 @@ const PaymentOptions = () => {
       }
 
       // Processar a resposta com base no método de pagamento
-      if (paymentMethod === "credit" || paymentMethod === "app") {
-        // Para o MVP, simular o pagamento bem-sucedido
+      if (paymentMethod === "credit" || paymentMethod === "pix") {
+        // Para pagamento com cartão ou PIX
         toast({
           title: "Pagamento confirmado!",
           description: "Seu pedido foi recebido pelo restaurante.",
         });
         
-        navigate(`/check-in/${data.orderId || orderId}`);
+        navigate(`/order-tracking/${data.orderId || orderId}`);
+      } else if (paymentMethod === "pindura") {
+        // Para pagamento via "pindura" (mini crédito)
+        toast({
+          title: "Pindura confirmada!",
+          description: "Você pagará quando usar o app novamente.",
+        });
+        
+        navigate(`/order-tracking/${data.orderId || orderId}`);
       } else if (paymentMethod === "local") {
         // Para pagamento no local
         toast({
@@ -122,7 +131,7 @@ const PaymentOptions = () => {
           description: "Você pagará diretamente no estabelecimento.",
         });
         
-        navigate(`/check-in/${data.orderId}`);
+        navigate(`/order-tracking/${data.orderId || orderId}`);
       }
       
       // Simular envio de notificação ao restaurante quando estiver a 5min de distância
@@ -211,13 +220,26 @@ const PaymentOptions = () => {
               </div>
               
               <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                <RadioGroupItem value="app" id="payment-app" />
-                <Label htmlFor="payment-app" className="flex-1 cursor-pointer">
+                <RadioGroupItem value="pix" id="payment-pix" />
+                <Label htmlFor="payment-pix" className="flex-1 cursor-pointer">
                   <div className="flex items-center">
                     <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
                     <div>
-                      <p className="font-medium text-white">Pagar pelo App</p>
-                      <p className="text-sm text-gray-400">Use seu saldo ou cartões salvos no app</p>
+                      <p className="font-medium text-white">PIX</p>
+                      <p className="text-sm text-gray-400">Pagamento instantâneo via PIX</p>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
+                <RadioGroupItem value="pindura" id="payment-pindura" />
+                <Label htmlFor="payment-pindura" className="flex-1 cursor-pointer">
+                  <div className="flex items-center">
+                    <Banknote className="h-5 w-5 text-blink-primary mr-3" />
+                    <div>
+                      <p className="font-medium text-white">Pindura</p>
+                      <p className="text-sm text-gray-400">Mini crédito do app - pague depois</p>
                     </div>
                   </div>
                 </Label>
