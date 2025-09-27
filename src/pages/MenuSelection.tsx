@@ -7,7 +7,6 @@ import { ArrowLeft, ArrowRight, ShoppingCart } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import MenuItem from '@/components/MenuItem';
 import ReserveOptionsDialog from '@/components/ReserveOptionsDialog';
-import { getRestaurantById, getMenuItemsByRestaurantId, getTablesByRestaurantId } from '@/data/mockData';
 import { Restaurant, MenuItem as MenuItemType, OrderItem, Table } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,27 +26,86 @@ const MenuSelection = () => {
 
   useEffect(() => {
     if (restaurantId && tableId) {
-      // Simulando uma chamada de API
-      setTimeout(() => {
-        const restaurantData = getRestaurantById(restaurantId);
-        if (restaurantData) {
-          setRestaurant(restaurantData);
-          const menuItemsData = getMenuItemsByRestaurantId(restaurantId);
-          setMenuItems(menuItemsData);
+      const fetchData = async () => {
+        try {
+          setLoading(true);
           
-          const tablesData = getTablesByRestaurantId(restaurantId);
-          const selectedTable = tablesData.find(t => t.id === tableId);
-          setTable(selectedTable || null);
-        } else {
+          // Fetch establishment data
+          const { data: establishmentData, error: establishmentError } = await supabase
+            .from('establishments')
+            .select('*')
+            .eq('id', restaurantId)
+            .single();
+            
+          if (establishmentError) {
+            throw establishmentError;
+          }
+          
+          if (establishmentData) {
+            // Create restaurant object from establishment data
+            const restaurantData: Restaurant = {
+              id: establishmentData.id,
+              name: establishmentData.name,
+              image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+              rating: 4.5,
+              cuisine: establishmentData.description || 'Variado',
+              distance: '1.2 km',
+              address: establishmentData.address || 'Endereço não disponível',
+              openingHours: establishmentData.working_hours || 'Horário não disponível',
+              description: establishmentData.description || 'Sem descrição disponível',
+              phoneNumber: establishmentData.contact || 'Telefone não disponível'
+            };
+            
+            setRestaurant(restaurantData);
+            
+            // Fetch products (menu items)
+            const { data: productsData, error: productsError } = await supabase
+              .from('products')
+              .select('*')
+              .eq('establishment_id', restaurantId);
+              
+            if (productsError) {
+              throw productsError;
+            }
+            
+            // Convert products to menu items
+            const menuItemsData: MenuItemType[] = productsData.map(product => ({
+              id: product.id,
+              name: product.name,
+              description: product.description || '',
+              price: Number(product.price),
+              image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+              category: product.category as 'Entrada' | 'Prato Principal' | 'Sobremesa' | 'Bebida',
+              restaurantId: product.establishment_id
+            }));
+            
+            setMenuItems(menuItemsData);
+            
+            // Create mock table from tableId (since we don't have a tables table yet)
+            const mockTable: Table = {
+              id: tableId,
+              restaurantId: restaurantId,
+              number: parseInt(tableId.replace('table-', '')) || 1,
+              seats: 4,
+              available: true
+            };
+            
+            setTable(mockTable);
+          }
+        } catch (error) {
+          console.error('Error fetching restaurant data:', error);
           toast({
             title: "Erro",
-            description: "Restaurante não encontrado",
+            description: "Não foi possível carregar os dados do restaurante",
             variant: "destructive",
           });
           navigate('/search');
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
-      }, 500);
+      };
+      
+      fetchData();
     }
   }, [restaurantId, tableId, navigate, toast]);
 
