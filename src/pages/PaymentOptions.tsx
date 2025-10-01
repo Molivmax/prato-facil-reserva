@@ -13,33 +13,48 @@ import { supabase } from '@/integrations/supabase/client';
 const PaymentOptions = () => {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch order details
+  // Fetch order details from Supabase
   useEffect(() => {
-    const getOrderDetails = () => {
+    const getOrderDetails = async () => {
+      if (!orderId) {
+        toast({
+          title: "Erro",
+          description: "ID do pedido não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
       try {
-        // For MVP, we're using localStorage to store order details
-        const savedOrder = localStorage.getItem('currentOrder');
-        if (savedOrder) {
-          setOrderDetails(JSON.parse(savedOrder));
-        } else {
-          // If no order details in localStorage, use mock data
-          const mockOrderDetails = {
-            items: [
-              { id: '1', name: 'Isca de Tilápia', price: 45.90, quantity: 1 },
-              { id: '2', name: 'Chopp Artesanal', price: 14.90, quantity: 2 }
-            ],
-            restaurantId: 'restaurante-123',
-            tableId: 'mesa-45',
-            total: 75.70
-          };
-          setOrderDetails(mockOrderDetails);
+        const { data: order, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
+        if (error) {
+          console.error("Erro ao buscar pedido:", error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar os detalhes do pedido",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (order) {
+          setOrderDetails({
+            items: order.items,
+            restaurantId: order.establishment_id,
+            tableId: order.table_number,
+            total: order.total_amount
+          });
         }
       } catch (err) {
         console.error("Erro ao buscar detalhes do pedido:", err);

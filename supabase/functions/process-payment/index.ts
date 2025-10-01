@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -15,15 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Stripe with the secret key
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY não está configurado");
+    // Initialize Mercado Pago with access token
+    const mercadoPagoToken = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
+    if (!mercadoPagoToken) {
+      throw new Error("MERCADO_PAGO_ACCESS_TOKEN não está configurado");
     }
-    
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
-    });
 
     // Get user authentication from request
     const supabaseClient = createClient(
@@ -57,20 +52,38 @@ serve(async (req) => {
     // Handle payment based on the method
     if (paymentMethod === "credit") {
       try {
-        // Create a payment intent with Stripe for card or app payments
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: Math.round(amount * 100), // Convert to cents for Stripe
-          currency: "brl",
-          automatic_payment_methods: {
-            enabled: true,
+        // Create a payment with Mercado Pago
+        const paymentData = {
+          transaction_amount: amount,
+          description: `Pedido #${orderId}`,
+          payment_method_id: "credit_card",
+          payer: {
+            email: userData.user.email,
           },
           metadata: {
-            userId: userData.user.id,
-            restaurantId,
-            tableId,
-            orderDetailsJson: JSON.stringify(orderDetails),
+            user_id: userData.user.id,
+            restaurant_id: restaurantId,
+            table_id: tableId,
+            order_id: orderId,
           },
+        };
+
+        const mercadoPagoResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${mercadoPagoToken}`,
+          },
+          body: JSON.stringify(paymentData),
         });
+
+        if (!mercadoPagoResponse.ok) {
+          const errorData = await mercadoPagoResponse.json();
+          console.error("Erro Mercado Pago:", errorData);
+          throw new Error("Erro ao processar pagamento no Mercado Pago");
+        }
+
+        const paymentResult = await mercadoPagoResponse.json();
 
         // Update order in database
         const { error: updateError } = await supabaseClient
@@ -89,7 +102,8 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify({
-            clientSecret: paymentIntent.client_secret,
+            paymentId: paymentResult.id,
+            status: paymentResult.status,
             orderId: orderId,
             success: true
           }),
@@ -98,9 +112,9 @@ serve(async (req) => {
             status: 200,
           }
         );
-      } catch (stripeError: any) {
-        console.error("Erro Stripe:", stripeError);
-        throw new Error(`Erro no processamento do pagamento: ${stripeError.message}`);
+      } catch (mpError: any) {
+        console.error("Erro Mercado Pago:", mpError);
+        throw new Error(`Erro no processamento do pagamento: ${mpError.message}`);
       }
     } else if (paymentMethod === "pix") {
       // For PIX payment, update order status
