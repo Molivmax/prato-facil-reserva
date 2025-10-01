@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowRight, ShoppingCart } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import MenuItem from '@/components/MenuItem';
-import ReserveOptionsDialog from '@/components/ReserveOptionsDialog';
+
 import { Restaurant, MenuItem as MenuItemType, OrderItem, Table } from '@/data/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +18,7 @@ const MenuSelection = () => {
   const [menuItems, setMenuItems] = useState<MenuItemType[]>([]);
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showReserveDialog, setShowReserveDialog] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -141,7 +141,7 @@ const MenuSelection = () => {
     });
   };
 
-  const handleReserve = () => {
+  const handleReserve = async () => {
     if (cart.length === 0) {
       toast({
         title: "Carrinho vazio",
@@ -150,22 +150,9 @@ const MenuSelection = () => {
       });
       return;
     }
-    setShowReserveDialog(true);
-  };
 
-  const handleChooseDessert = () => {
-    setShowReserveDialog(false);
-    // Navegar para a aba de sobremesas
-    const dessertsTab = document.querySelector('[value="desserts"]') as HTMLButtonElement;
-    if (dessertsTab) {
-      dessertsTab.click();
-    }
-  };
-
-  const handlePayNow = async () => {
-    setShowReserveDialog(false);
+    setIsCreatingOrder(true);
     
-    // Criar pedido no Supabase antes de ir para pagamento
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -204,7 +191,7 @@ const MenuSelection = () => {
         return;
       }
 
-      // Salvar também no localStorage como fallback
+      // Salvar também no localStorage
       const orderDetails = {
         id: order.id,
         items: cart,
@@ -228,92 +215,9 @@ const MenuSelection = () => {
         description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsCreatingOrder(false);
     }
-  };
-
-  const handlePayLater = async () => {
-    setShowReserveDialog(false);
-    
-    // Criar pedido no Supabase com status "pay_later"
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "Acesso necessário",
-          description: "Você precisa estar logado para fazer um pedido",
-          variant: "destructive",
-        });
-        navigate('/login');
-        return;
-      }
-
-      // Criar pedido no banco de dados
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: session.user.id,
-          establishment_id: restaurantId!,
-          table_number: table?.number || 0,
-          items: cart as any,
-          total_amount: totalAmount,
-          payment_status: 'pay_later',
-          order_status: 'confirmed'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Erro ao criar pedido:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível criar o pedido. Tente novamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Reserva confirmada!",
-        description: "Você poderá pagar no estabelecimento.",
-      });
-      
-      // Navegar para página de acompanhamento do pedido
-      navigate(`/order-tracking/${order.id}`);
-      
-    } catch (error) {
-      console.error('Erro ao processar pedido:', error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const proceedToPayment = () => {
-    // Calcular o valor total do pedido
-    const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    
-    // Criar um objeto com os detalhes do pedido para passar para a página de pagamento
-    const orderDetails = {
-      items: cart,
-      restaurantId: restaurantId,
-      tableId: tableId,
-      total: totalAmount,
-      restaurantName: restaurant?.name || "",
-      tableNumber: table?.number || 0,
-      paymentStatus: "pay_now"
-    };
-    
-    // Salvar detalhes do pedido no localStorage (abordagem simples para o MVP)
-    localStorage.setItem('currentOrder', JSON.stringify(orderDetails));
-    
-    // Gerar um ID de pedido temporário
-    const tempOrderId = "order-" + Date.now();
-    
-    // Navegar para a página de pagamento
-    navigate(`/payment/${tempOrderId}`);
   };
 
   if (loading) {
@@ -457,23 +361,15 @@ const MenuSelection = () => {
               size="lg" 
               className="bg-restaurant-primary hover:bg-restaurant-dark"
               onClick={handleReserve}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isCreatingOrder}
             >
-              Reservar mesa
+              {isCreatingOrder ? "Processando..." : "Reservar mesa"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
 
-      <ReserveOptionsDialog
-        isOpen={showReserveDialog}
-        onClose={() => setShowReserveDialog(false)}
-        hasDesserts={hasDesserts}
-        onChooseDessert={handleChooseDessert}
-        onPayNow={handlePayNow}
-        onPayLater={handlePayLater}
-      />
     </>
   );
 };
