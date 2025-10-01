@@ -122,27 +122,73 @@ const RestaurantDetails = () => {
     });
   };
 
-  const handleReserve = () => {
-    console.log("HandleReserve called with id:", id);
-    console.log("Current cartItems:", cartItems);
-    
-    if (id) {
-      // Save cart to localStorage before navigating
-      localStorage.setItem('cartItems', JSON.stringify(cartItems));
-      console.log("Navigating to:", `/table-selection/${id}`);
-      
-      navigate(`/table-selection/${id}`);
-      
+  const handleReserve = async () => {
+    if (cartItems.length === 0) {
       toast({
-        title: "Redirecionando",
-        description: "Indo para seleção de mesa...",
-        variant: "default",
+        title: "Carrinho vazio",
+        description: "Adicione pelo menos um item ao seu pedido",
+        variant: "destructive",
       });
-    } else {
-      console.error("ID is missing, cannot navigate");
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Acesso necessário",
+          description: "Você precisa estar logado para fazer um pedido",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      // Criar pedido no banco de dados
+      const orderItems = cartItems.map(item => ({
+        menuItemId: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }));
+
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          user_id: session.user.id,
+          establishment_id: id!,
+          table_number: 0, // Sem mesa específica neste fluxo
+          items: orderItems as any,
+          total_amount: totalAmount,
+          payment_status: 'pending',
+          order_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar pedido:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar o pedido. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Limpar carrinho
+      localStorage.removeItem('cartItems');
+      setCartItems([]);
+
+      // Navegar para página de pagamento
+      navigate(`/payment/${order.id}`);
+      
+    } catch (error) {
+      console.error('Erro ao processar pedido:', error);
       toast({
         title: "Erro",
-        description: "ID do restaurante não encontrado",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
     }
