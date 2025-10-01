@@ -24,6 +24,26 @@ const MenuSelection = () => {
 
   const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cartItems');
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        // Convert cartItems format to OrderItem format
+        const orderItems = parsedCart.map((item: any) => ({
+          menuItemId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }));
+        setCart(orderItems);
+      } catch (e) {
+        console.error("Error parsing saved cart:", e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (restaurantId && tableId) {
       const fetchData = async () => {

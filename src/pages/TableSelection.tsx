@@ -107,7 +107,7 @@ const TableSelection = () => {
     }
 
     if (restaurantId) {
-      navigate(`/restaurant/${restaurantId}/menu/${selectedTable}`);
+      navigate(`/menu-selection/${restaurantId}/${selectedTable}`);
     }
   };
 
