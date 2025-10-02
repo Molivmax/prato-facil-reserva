@@ -36,23 +36,31 @@ const OrderTracking = () => {
           // Buscar detalhes do pedido no Supabase
           const { data: order, error } = await supabase
             .from('orders')
-            .select('*, establishments(name)')
+            .select('*')
             .eq('id', orderId)
             .eq('user_id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (error) {
             console.error('Erro ao buscar pedido:', error);
-            // Fallback para localStorage se não encontrar no Supabase
-            const savedOrder = localStorage.getItem('currentOrder');
-            if (savedOrder) {
-              setOrderDetails(JSON.parse(savedOrder));
-            } else {
-              throw new Error('Pedido não encontrado');
-            }
-          } else {
-            setOrderDetails(order);
+            throw new Error('Pedido não encontrado');
           }
+
+          if (!order) {
+            throw new Error('Pedido não encontrado');
+          }
+
+          // Buscar dados do estabelecimento separadamente
+          const { data: establishment } = await supabase
+            .from('establishments')
+            .select('name')
+            .eq('id', order.establishment_id)
+            .maybeSingle();
+
+          setOrderDetails({
+            ...order,
+            establishments: establishment ? { name: establishment.name } : null
+          });
         }
       } catch (error) {
         console.error('Erro ao carregar pedido:', error);
