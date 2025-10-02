@@ -18,7 +18,8 @@ import {
   Upload,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  ShoppingBag
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -43,6 +44,7 @@ const Account = () => {
     new: false,
     confirm: false
   });
+  const [orders, setOrders] = useState<any[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,6 +89,19 @@ const Account = () => {
           .from('avatars')
           .getPublicUrl(`${session.user.id}/${avatarData[0].name}`);
         setProfileImage(publicUrl);
+      }
+
+      // Fetch user orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+      } else {
+        setOrders(ordersData || []);
       }
 
     } catch (error: any) {
@@ -268,10 +283,14 @@ const Account = () => {
 
         {/* Settings Tabs */}
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-800">
             <TabsTrigger value="profile" className="data-[state=active]:bg-primary">
               <User className="h-4 w-4 mr-2" />
               Perfil
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="data-[state=active]:bg-primary">
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              Pedidos
             </TabsTrigger>
             <TabsTrigger value="security" className="data-[state=active]:bg-primary">
               <Lock className="h-4 w-4 mr-2" />
@@ -336,6 +355,79 @@ const Account = () => {
                   <Save className="h-4 w-4 mr-2" />
                   Salvar Alterações
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Orders Tab */}
+          <TabsContent value="orders" className="space-y-6">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white">Meus Pedidos</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Histórico de pedidos realizados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {orders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Nenhum pedido encontrado</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div 
+                        key={order.id}
+                        className="bg-gray-700 rounded-lg p-4 border border-gray-600"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="text-white font-semibold">
+                              Pedido #{order.id.slice(0, 8)}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              Mesa {order.table_number}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white font-bold">
+                              R$ {Number(order.total_amount).toFixed(2)}
+                            </p>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              order.order_status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                              order.order_status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                              order.order_status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                              'bg-blue-500/20 text-blue-400'
+                            }`}>
+                              {order.order_status === 'completed' ? 'Concluído' :
+                               order.order_status === 'pending' ? 'Pendente' :
+                               order.order_status === 'rejected' ? 'Rejeitado' :
+                               order.order_status}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                          {new Date(order.created_at).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 border-gray-600 text-gray-300 hover:bg-gray-600"
+                          onClick={() => navigate(`/order-tracking/${order.id}`)}
+                        >
+                          Ver Detalhes
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
