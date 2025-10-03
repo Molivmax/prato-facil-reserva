@@ -32,8 +32,43 @@ const OrderTracking = () => {
           return;
         }
 
-        if (orderId) {
-          // Buscar detalhes do pedido no Supabase
+        if (orderId === 'latest') {
+          // Buscar o pedido mais recente do usuário
+          const { data: latestOrder, error: latestError } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestError) {
+            console.error('Erro ao buscar pedido:', latestError);
+            throw new Error('Nenhum pedido encontrado');
+          }
+
+          if (!latestOrder) {
+            toast({
+              title: "Nenhum pedido encontrado",
+              description: "Você ainda não fez nenhum pedido",
+            });
+            navigate('/');
+            return;
+          }
+
+          // Buscar dados do estabelecimento
+          const { data: establishment } = await supabase
+            .from('establishments')
+            .select('name')
+            .eq('id', latestOrder.establishment_id)
+            .maybeSingle();
+
+          setOrderDetails({
+            ...latestOrder,
+            establishments: establishment ? { name: establishment.name } : null
+          });
+        } else if (orderId) {
+          // Buscar detalhes do pedido específico
           const { data: order, error } = await supabase
             .from('orders')
             .select('*')
@@ -47,10 +82,15 @@ const OrderTracking = () => {
           }
 
           if (!order) {
-            throw new Error('Pedido não encontrado');
+            toast({
+              title: "Pedido não encontrado",
+              description: "Este pedido não existe ou você não tem permissão para visualizá-lo",
+            });
+            navigate('/');
+            return;
           }
 
-          // Buscar dados do estabelecimento separadamente
+          // Buscar dados do estabelecimento
           const { data: establishment } = await supabase
             .from('establishments')
             .select('name')
