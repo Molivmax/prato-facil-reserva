@@ -45,7 +45,7 @@ serve(async (req) => {
     
     const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId } = requestData;
 
-    if (!amount || !orderDetails || !restaurantId || !tableId || !paymentMethod || !orderId) {
+    if (!amount || !orderDetails || !restaurantId || tableId === undefined || tableId === null || !paymentMethod || !orderId) {
       throw new Error("Dados incompletos para o pagamento");
     }
 

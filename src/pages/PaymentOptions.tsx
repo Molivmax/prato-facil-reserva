@@ -284,7 +284,7 @@ const PaymentOptions = () => {
         
         <div className="space-y-4">
           <Button 
-            className="w-full btn-sophisticated py-6"
+            className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 py-6 font-semibold"
             onClick={handleContinue}
             disabled={!paymentMethod || isProcessing}
           >
@@ -296,6 +296,15 @@ const PaymentOptions = () => {
             ) : (
               "Confirmar Pagamento"
             )}
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 py-6"
+            onClick={() => navigate(-1)}
+            disabled={isProcessing}
+          >
+            Deixar para depois
           </Button>
           
           <p className="text-center text-sm text-gray-400">
