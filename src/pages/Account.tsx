@@ -19,7 +19,8 @@ import {
   Save,
   Eye,
   EyeOff,
-  ShoppingBag
+  ShoppingBag,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -45,6 +46,7 @@ const Account = () => {
     confirm: false
   });
   const [orders, setOrders] = useState<any[]>([]);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -132,6 +134,34 @@ const Account = () => {
       toast.error('Erro ao atualizar perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este pedido?')) {
+      return;
+    }
+
+    try {
+      setDeletingOrderId(orderId);
+      
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Remove da lista local
+      setOrders(orders.filter(order => order.id !== orderId));
+      
+      toast.success('Pedido excluído com sucesso!');
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      toast.error('Erro ao excluir pedido');
+    } finally {
+      setDeletingOrderId(null);
     }
   };
 
@@ -416,14 +446,29 @@ const Account = () => {
                             minute: '2-digit'
                           })}
                         </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2 border-gray-600 text-gray-300 hover:bg-gray-600"
-                          onClick={() => navigate(`/order-tracking/${order.id}`)}
-                        >
-                          Ver Detalhes
-                        </Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-600"
+                            onClick={() => navigate(`/order-tracking/${order.id}`)}
+                          >
+                            Ver Detalhes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                            onClick={() => handleDeleteOrder(order.id)}
+                            disabled={deletingOrderId === order.id}
+                          >
+                            {deletingOrderId === order.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
