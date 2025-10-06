@@ -1,0 +1,184 @@
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface MercadoPagoPixCheckoutProps {
+  amount: number;
+  orderId: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: MercadoPagoPixCheckoutProps) => {
+  const [loading, setLoading] = useState(true);
+  const [pixData, setPixData] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    initMercadoPago();
+  }, []);
+
+  const initMercadoPago = async () => {
+    try {
+      const publicKey = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || 'APP_USR-62aa0dde-b47c-4f82-bf5e-4c24c5f36db3';
+      
+      // Create payment preference
+      const preference = {
+        transaction_amount: amount,
+        description: `Pedido #${orderId.slice(0, 8)}`,
+        payment_method_id: 'pix',
+        payer: {
+          email: 'customer@example.com', // This should come from the user
+        },
+      };
+
+      const response = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicKey}`,
+        },
+        body: JSON.stringify(preference),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar pagamento PIX');
+      }
+
+      const data = await response.json();
+      
+      if (data.point_of_interaction?.transaction_data) {
+        setPixData({
+          qrCode: data.point_of_interaction.transaction_data.qr_code_base64,
+          qrCodeText: data.point_of_interaction.transaction_data.qr_code,
+          paymentId: data.id,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar Mercado Pago:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o código PIX. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyPixCode = async () => {
+    if (pixData?.qrCodeText) {
+      try {
+        await navigator.clipboard.writeText(pixData.qrCodeText);
+        setCopied(true);
+        toast({
+          title: "Código copiado!",
+          description: "Cole no seu app de pagamento para finalizar.",
+        });
+        setTimeout(() => setCopied(false), 3000);
+      } catch (error) {
+        toast({
+          title: "Erro ao copiar",
+          description: "Tente novamente",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="bg-black/50 backdrop-blur-md border border-white/10">
+        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+          <Loader2 className="h-8 w-8 animate-spin text-blink-primary mb-4" />
+          <p className="text-white">Gerando código PIX...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!pixData) {
+    return (
+      <Card className="bg-black/50 backdrop-blur-md border border-white/10">
+        <CardContent className="p-6">
+          <p className="text-white text-center mb-4">Erro ao gerar código PIX</p>
+          <Button 
+            onClick={onCancel}
+            variant="outline"
+            className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+          >
+            Voltar
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-black/50 backdrop-blur-md border border-white/10">
+      <CardContent className="p-6">
+        <h3 className="text-xl font-bold text-white text-center mb-4">
+          Pagar com PIX
+        </h3>
+        
+        <div className="bg-white p-4 rounded-lg mb-4">
+          {pixData.qrCode && (
+            <img 
+              src={`data:image/png;base64,${pixData.qrCode}`}
+              alt="QR Code PIX"
+              className="w-full max-w-[250px] mx-auto"
+            />
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+            <p className="text-xs text-gray-400 mb-1">Código PIX Copia e Cola</p>
+            <p className="text-white text-xs break-all font-mono">
+              {pixData.qrCodeText?.substring(0, 50)}...
+            </p>
+          </div>
+
+          <Button
+            onClick={copyPixCode}
+            className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold"
+          >
+            {copied ? (
+              <>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Copiado!
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar código PIX
+              </>
+            )}
+          </Button>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-400 mb-2">
+              Total: R$ {amount.toFixed(2)}
+            </p>
+            <p className="text-xs text-gray-500">
+              Após o pagamento, seu pedido será confirmado automaticamente
+            </p>
+          </div>
+
+          <Button
+            onClick={onCancel}
+            variant="outline"
+            className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+          >
+            Cancelar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default MercadoPagoPixCheckout;

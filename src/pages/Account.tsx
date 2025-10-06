@@ -265,7 +265,7 @@ const Account = () => {
               variant="ghost" 
               size="icon"
               onClick={() => navigate(-1)}
-              className="text-white hover:bg-gray-800"
+              className="text-blink-primary hover:bg-gray-800"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>

@@ -83,12 +83,22 @@ const PaymentSetup = () => {
               </div>
             </RadioGroup>
 
-            <Button
-              className="w-full mt-6 bg-restaurant-primary hover:bg-restaurant-dark"
-              onClick={handleSubmit}
-            >
-              Salvar Forma de Pagamento
-            </Button>
+            <div className="flex flex-col gap-3 mt-6">
+              <Button
+                className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold"
+                onClick={handleSubmit}
+              >
+                Configurar Agora
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold border-blink-primary"
+                onClick={() => navigate('/search')}
+              >
+                Deixar para depois
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

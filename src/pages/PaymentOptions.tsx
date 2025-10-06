@@ -9,12 +9,14 @@ import { ArrowLeft, CreditCard, WalletCards, Banknote, Loader2 } from 'lucide-re
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import MercadoPagoPixCheckout from '@/components/MercadoPagoPixCheckout';
 
 const PaymentOptions = () => {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [showPixCheckout, setShowPixCheckout] = useState(false);
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -123,8 +125,13 @@ const PaymentOptions = () => {
       }
 
       // Processar a resposta com base no método de pagamento
-      if (paymentMethod === "credit" || paymentMethod === "pix") {
-        // Para pagamento com cartão ou PIX
+      if (paymentMethod === "pix") {
+        // Para PIX, mostrar o componente de checkout
+        setShowPixCheckout(true);
+        setIsProcessing(false);
+        return;
+      } else if (paymentMethod === "credit") {
+        // Para pagamento com cartão
         toast({
           title: "Pagamento confirmado!",
           description: "Seu pedido foi recebido pelo restaurante.",
@@ -174,6 +181,28 @@ const PaymentOptions = () => {
         <div className="container max-w-md mx-auto px-4 py-6 flex justify-center items-center">
           <Loader2 className="h-8 w-8 animate-spin text-blink-primary" />
           <p className="ml-2 text-white">Carregando detalhes do pedido...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showPixCheckout) {
+    return (
+      <div className="bg-background min-h-screen">
+        <Navbar />
+        <div className="container max-w-md mx-auto px-4 py-6">
+          <MercadoPagoPixCheckout
+            amount={orderDetails.total}
+            orderId={orderId!}
+            onSuccess={() => {
+              toast({
+                title: "Pagamento confirmado!",
+                description: "Seu pedido foi recebido pelo restaurante.",
+              });
+              navigate(`/order-tracking/${orderId}`);
+            }}
+            onCancel={() => setShowPixCheckout(false)}
+          />
         </div>
       </div>
     );

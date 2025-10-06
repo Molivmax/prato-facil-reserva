@@ -117,33 +117,75 @@ serve(async (req) => {
         throw new Error(`Erro no processamento do pagamento: ${mpError.message}`);
       }
     } else if (paymentMethod === "pix") {
-      // For PIX payment, update order status
-      const { error: updateError } = await supabaseClient
-        .from('orders')
-        .update({
-          payment_method: 'pix',
-          payment_status: 'paid',
-          order_status: 'confirmed'
-        })
-        .eq('id', orderId)
-        .eq('user_id', userData.user.id);
+      try {
+        // Create PIX payment with Mercado Pago
+        const pixPaymentData = {
+          transaction_amount: amount,
+          description: `Pedido #${orderId}`,
+          payment_method_id: "pix",
+          payer: {
+            email: userData.user.email,
+          },
+          metadata: {
+            user_id: userData.user.id,
+            restaurant_id: restaurantId,
+            table_id: tableId,
+            order_id: orderId,
+          },
+        };
 
-      if (updateError) {
-        console.error('Erro ao atualizar pedido:', updateError);
-        throw new Error('Erro ao confirmar pagamento PIX');
-      }
+        const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${mercadoPagoToken}`,
+          },
+          body: JSON.stringify(pixPaymentData),
+        });
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          paymentMethod: "pix",
-          orderId: orderId,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
+        if (!mpResponse.ok) {
+          const errorData = await mpResponse.json();
+          console.error("Erro Mercado Pago PIX:", errorData);
+          throw new Error("Erro ao processar pagamento PIX no Mercado Pago");
         }
-      );
+
+        const pixResult = await mpResponse.json();
+
+        // Update order status
+        const { error: updateError } = await supabaseClient
+          .from('orders')
+          .update({
+            payment_method: 'pix',
+            payment_status: 'pending',
+            order_status: 'pending'
+          })
+          .eq('id', orderId)
+          .eq('user_id', userData.user.id);
+
+        if (updateError) {
+          console.error('Erro ao atualizar pedido:', updateError);
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            paymentMethod: "pix",
+            orderId: orderId,
+            pixData: {
+              qrCode: pixResult.point_of_interaction?.transaction_data?.qr_code_base64,
+              qrCodeText: pixResult.point_of_interaction?.transaction_data?.qr_code,
+              paymentId: pixResult.id,
+            }
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      } catch (mpError: any) {
+        console.error("Erro PIX Mercado Pago:", mpError);
+        throw new Error(`Erro no processamento do PIX: ${mpError.message}`);
+      }
     } else if (paymentMethod === "pindura") {
       // For Pindura payment, update order status
       const { error: updateError } = await supabaseClient
