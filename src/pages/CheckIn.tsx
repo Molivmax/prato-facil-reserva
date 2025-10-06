@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +9,46 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const CheckIn = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadLatestOrder = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: latestOrder } = await supabase
+          .from('orders')
+          .select('*, establishments(name, address)')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestOrder) {
+          setOrderDetails(latestOrder);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar pedido:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLatestOrder();
+  }, []);
 
   const handleCheckIn = () => {
     setIsProcessing(true);
@@ -66,8 +100,12 @@ const CheckIn = () => {
               <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                 <MapPin className="h-5 w-5 text-restaurant-primary mr-3" />
                 <div>
-                  <p className="font-medium">Boteco Tal</p>
-                  <p className="text-sm text-gray-500">Rua das Flores, 123</p>
+                  <p className="font-medium">
+                    {orderDetails?.establishments?.name || 'Carregando...'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {orderDetails?.establishments?.address || 'Endereço não disponível'}
+                  </p>
                 </div>
               </div>
               
@@ -82,8 +120,10 @@ const CheckIn = () => {
               <div className="flex items-center p-3 bg-gray-50 rounded-lg">
                 <Utensils className="h-5 w-5 text-restaurant-primary mr-3" />
                 <div>
-                  <p className="font-medium">Mesa 2</p>
-                  <p className="text-sm text-gray-500">4 pessoas</p>
+                  <p className="font-medium">
+                    Mesa {orderDetails?.table_number || '-'}
+                  </p>
+                  <p className="text-sm text-gray-500">Sua reserva</p>
                 </div>
               </div>
             </div>

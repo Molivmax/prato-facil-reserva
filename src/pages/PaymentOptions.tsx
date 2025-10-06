@@ -300,7 +300,7 @@ const PaymentOptions = () => {
           
           <Button 
             variant="outline"
-            className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 py-6"
+            className="w-full border-white/20 bg-transparent text-white hover:bg-white/10 py-6"
             onClick={() => navigate(-1)}
             disabled={isProcessing}
           >

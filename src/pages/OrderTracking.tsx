@@ -230,9 +230,12 @@ const OrderTracking = () => {
                 </div>
               ))}
               <div className="border-t border-gray-600 pt-2 flex justify-between font-semibold text-white">
-                <span>Total</span>
+                <span>Total Acumulado</span>
                 <span>R$ {(orderDetails?.total_amount || orderDetails?.total)?.toFixed(2)}</span>
               </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Inclui todos os pedidos realizados nesta mesa
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -303,7 +306,7 @@ const OrderTracking = () => {
               onClick={handleAddMoreItems}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Ver Cardápio
+              Adicionar Mais Itens
             </Button>
           </CardContent>
         </Card>
