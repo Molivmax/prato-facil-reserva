@@ -85,15 +85,14 @@ const PaymentSetup = () => {
 
             <div className="flex flex-col gap-3 mt-6">
               <Button
-                className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold"
+                className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold transition-colors"
                 onClick={handleSubmit}
               >
                 Configurar Agora
               </Button>
               
               <Button
-                variant="outline"
-                className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold border-blink-primary"
+                className="w-full bg-blink-primary hover:bg-blink-primary/80 text-black font-semibold transition-colors"
                 onClick={() => navigate('/search')}
               >
                 Deixar para depois

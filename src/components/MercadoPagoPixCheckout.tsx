@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MercadoPagoPixCheckoutProps {
   amount: number;
@@ -23,45 +24,47 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
 
   const initMercadoPago = async () => {
     try {
-      const publicKey = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || 'APP_USR-62aa0dde-b47c-4f82-bf5e-4c24c5f36db3';
+      // Get user session
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Create payment preference
-      const preference = {
-        transaction_amount: amount,
-        description: `Pedido #${orderId.slice(0, 8)}`,
-        payment_method_id: 'pix',
-        payer: {
-          email: 'customer@example.com', // This should come from the user
-        },
-      };
+      if (!session) {
+        throw new Error('Você precisa estar logado');
+      }
 
-      const response = await fetch('https://api.mercadopago.com/v1/payments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicKey}`,
+      // Call edge function to create PIX payment
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: {
+          amount,
+          orderId,
+          paymentMethod: 'pix'
         },
-        body: JSON.stringify(preference),
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao criar pagamento PIX');
+      if (error) {
+        throw error;
       }
 
-      const data = await response.json();
-      
-      if (data.point_of_interaction?.transaction_data) {
-        setPixData({
-          qrCode: data.point_of_interaction.transaction_data.qr_code_base64,
-          qrCodeText: data.point_of_interaction.transaction_data.qr_code,
-          paymentId: data.id,
-        });
+      if (data?.error) {
+        throw new Error(data.error);
       }
-    } catch (error) {
+      
+      if (data?.pixData) {
+        setPixData({
+          qrCode: data.pixData.qrCode,
+          qrCodeText: data.pixData.qrCodeText,
+          paymentId: data.pixData.paymentId,
+        });
+      } else {
+        throw new Error('Dados do PIX não recebidos');
+      }
+    } catch (error: any) {
       console.error('Erro ao inicializar Mercado Pago:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível gerar o código PIX. Tente novamente.",
+        description: error.message || "Não foi possível gerar o código PIX. Tente novamente.",
         variant: "destructive",
       });
     } finally {

@@ -47,19 +47,18 @@ const CartFooter = ({ cartItems, totalAmount, onReserve, onClearCart }: CartFoot
               {onClearCart && (
                 <Button 
                   variant="outline" 
-                  size="lg" 
-                  className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
+                  size="sm" 
+                  className="border-red-500 text-red-500 hover:bg-red-50"
                   onClick={onClearCart}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Esvaziar
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
 
               {/* Reserve Button */}
               <Button 
                 size="lg" 
-                className="flex-2 bg-blink-primary text-black hover:bg-blink-secondary font-medium"
+                className="flex-1 bg-blink-primary text-black hover:bg-blink-secondary font-medium"
                 onClick={onReserve}
               >
                 <Calendar className="mr-2 h-5 w-5" />

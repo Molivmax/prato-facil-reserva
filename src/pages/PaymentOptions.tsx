@@ -328,8 +328,7 @@ const PaymentOptions = () => {
           </Button>
           
           <Button 
-            variant="outline"
-            className="w-full border-white/20 bg-transparent text-white hover:bg-white/10 py-6"
+            className="w-full bg-blink-primary text-black hover:bg-blink-primary/80 py-6 font-semibold transition-colors"
             onClick={() => navigate(-1)}
             disabled={isProcessing}
           >

@@ -31,7 +31,7 @@ const CheckIn = () => {
 
         const { data: latestOrder } = await supabase
           .from('orders')
-          .select('*, establishments(name, address)')
+          .select('*, establishments(name, address, city, state, zip_code)')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -104,7 +104,9 @@ const CheckIn = () => {
                     {orderDetails?.establishments?.name || 'Carregando...'}
                   </p>
                   <p className="text-sm text-gray-400">
-                    {orderDetails?.establishments?.address || 'Endereço não disponível'}
+                    {orderDetails?.establishments?.address 
+                      ? `${orderDetails.establishments.address}${orderDetails.establishments.city ? `, ${orderDetails.establishments.city}` : ''}${orderDetails.establishments.state ? ` - ${orderDetails.establishments.state}` : ''}`
+                      : 'Endereço não disponível'}
                   </p>
                 </div>
               </div>

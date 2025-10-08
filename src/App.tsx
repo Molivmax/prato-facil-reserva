@@ -24,6 +24,7 @@ import EstablishmentLogin from "./pages/EstablishmentLogin";
 import EstablishmentDashboard from "./pages/EstablishmentDashboard";
 import ProductRegistration from "./pages/ProductRegistration";
 import Account from "./pages/Account";
+import MyOrders from "./pages/MyOrders";
 
 // Configure a queryClient com retry para as chamadas de API, incluindo a função edge
 const queryClient = new QueryClient({
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
           <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
           <Route path="/completed-order/:orderId" element={<CompletedOrder />} />
+          <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/partner-registration" element={<PartnerRegistration />} />
           <Route path="/product-registration" element={<ProductRegistration />} />
           <Route path="/establishment-login" element={<EstablishmentLogin />} />

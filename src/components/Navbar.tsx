@@ -42,7 +42,7 @@ const Navbar = () => {
               Check-in
             </Link>
             <Link 
-              to="/order-summary/latest" 
+              to="/my-orders" 
               className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blink-secondary hover:text-white"
             >
               Meus Pedidos
@@ -95,7 +95,7 @@ const Navbar = () => {
               </div>
             </Link>
             <Link
-              to="/order-summary/latest"
+              to="/my-orders"
               className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
