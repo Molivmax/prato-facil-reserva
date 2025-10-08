@@ -92,8 +92,8 @@ const PaymentSetup = () => {
               </Button>
               
               <Button
-                variant="outline"
-                className="w-full border-blink-primary/50 bg-transparent text-blink-primary hover:bg-blink-primary/10 font-semibold transition-colors"
+                variant="default"
+                className="w-full bg-white text-black hover:bg-white/90 font-semibold transition-colors"
                 onClick={() => navigate('/search')}
               >
                 Deixar para depois

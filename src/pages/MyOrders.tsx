@@ -70,11 +70,13 @@ const MyOrders = () => {
 
       if (error) {
         console.error('Delete error:', error);
-        throw error;
+        toast.error('Erro ao excluir pedido: ' + error.message);
+        setDeletingOrderId(null);
+        return;
       }
 
-      // Recarregar a lista de pedidos após exclusão
-      await loadOrders();
+      // Remove o pedido da lista localmente
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
       toast.success('Pedido excluído com sucesso!');
     } catch (error: any) {
       console.error('Error deleting order:', error);
