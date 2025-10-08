@@ -118,21 +118,20 @@ serve(async (req) => {
       }
     } else if (paymentMethod === "pix") {
       try {
+        console.log('Iniciando pagamento PIX para pedido:', orderId);
+        console.log('Valor:', amount);
+        
         // Create PIX payment with Mercado Pago
         const pixPaymentData = {
-          transaction_amount: amount,
-          description: `Pedido #${orderId}`,
+          transaction_amount: Number(amount),
+          description: `Pedido #${orderId.substring(0, 8)}`,
           payment_method_id: "pix",
           payer: {
-            email: userData.user.email,
-          },
-          metadata: {
-            user_id: userData.user.id,
-            restaurant_id: restaurantId,
-            table_id: tableId,
-            order_id: orderId,
+            email: userData.user.email || 'customer@email.com',
           },
         };
+
+        console.log('Dados do pagamento PIX:', JSON.stringify(pixPaymentData));
 
         const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
           method: "POST",
@@ -143,13 +142,14 @@ serve(async (req) => {
           body: JSON.stringify(pixPaymentData),
         });
 
-        if (!mpResponse.ok) {
-          const errorData = await mpResponse.json();
-          console.error("Erro Mercado Pago PIX:", errorData);
-          throw new Error("Erro ao processar pagamento PIX no Mercado Pago");
-        }
-
         const pixResult = await mpResponse.json();
+        console.log('Resposta Mercado Pago - Status:', mpResponse.status);
+        console.log('Resposta Mercado Pago - Body:', JSON.stringify(pixResult));
+
+        if (!mpResponse.ok) {
+          console.error("Erro Mercado Pago PIX:", pixResult);
+          throw new Error(`Erro PIX: ${pixResult.message || JSON.stringify(pixResult.cause || pixResult)}`);
+        }
 
         // Update order status
         const { error: updateError } = await supabaseClient
@@ -166,14 +166,20 @@ serve(async (req) => {
           console.error('Erro ao atualizar pedido:', updateError);
         }
 
+        const qrCodeBase64 = pixResult.point_of_interaction?.transaction_data?.qr_code_base64;
+        const qrCodeText = pixResult.point_of_interaction?.transaction_data?.qr_code;
+
+        console.log('QR Code Base64 presente:', !!qrCodeBase64);
+        console.log('QR Code Text presente:', !!qrCodeText);
+
         return new Response(
           JSON.stringify({
             success: true,
             paymentMethod: "pix",
             orderId: orderId,
             pixData: {
-              qrCode: pixResult.point_of_interaction?.transaction_data?.qr_code_base64,
-              qrCodeText: pixResult.point_of_interaction?.transaction_data?.qr_code,
+              qrCode: qrCodeBase64,
+              qrCodeText: qrCodeText,
               paymentId: pixResult.id,
             }
           }),

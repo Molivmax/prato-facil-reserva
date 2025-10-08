@@ -92,7 +92,8 @@ const PaymentSetup = () => {
               </Button>
               
               <Button
-                className="w-full bg-blink-primary hover:bg-blink-primary/80 text-black font-semibold transition-colors"
+                variant="outline"
+                className="w-full border-blink-primary/50 bg-transparent text-blink-primary hover:bg-blink-primary/10 font-semibold transition-colors"
                 onClick={() => navigate('/search')}
               >
                 Deixar para depois

@@ -29,7 +29,7 @@ const CheckIn = () => {
           return;
         }
 
-        const { data: latestOrder } = await supabase
+        const { data: latestOrder, error } = await supabase
           .from('orders')
           .select('*, establishments(name, address, city, state, zip_code)')
           .eq('user_id', session.user.id)
@@ -37,7 +37,12 @@ const CheckIn = () => {
           .limit(1)
           .maybeSingle();
 
+        if (error) {
+          console.error('Erro ao carregar pedido:', error);
+        }
+
         if (latestOrder) {
+          console.log('Order loaded:', latestOrder);
           setOrderDetails(latestOrder);
         }
       } catch (error) {
@@ -98,15 +103,19 @@ const CheckIn = () => {
             
             <div className="space-y-4 mb-6">
               <div className="flex items-center p-3 bg-white/5 border border-white/10 rounded-lg">
-                <MapPin className="h-5 w-5 text-blink-primary mr-3" />
-                <div>
+                <MapPin className="h-5 w-5 text-blink-primary mr-3 flex-shrink-0" />
+                <div className="flex-1">
                   <p className="font-medium text-white">
                     {orderDetails?.establishments?.name || 'Carregando...'}
                   </p>
                   <p className="text-sm text-gray-400">
-                    {orderDetails?.establishments?.address 
-                      ? `${orderDetails.establishments.address}${orderDetails.establishments.city ? `, ${orderDetails.establishments.city}` : ''}${orderDetails.establishments.state ? ` - ${orderDetails.establishments.state}` : ''}`
-                      : 'Endereço não disponível'}
+                    {orderDetails?.establishments ? 
+                      [
+                        orderDetails.establishments.address,
+                        orderDetails.establishments.city,
+                        orderDetails.establishments.state
+                      ].filter(Boolean).join(', ') || 'Endereço não disponível'
+                      : 'Carregando endereço...'}
                   </p>
                 </div>
               </div>

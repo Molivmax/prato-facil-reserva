@@ -68,13 +68,17 @@ const MyOrders = () => {
         .eq('id', orderId)
         .eq('user_id', session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
 
-      setOrders(orders.filter(order => order.id !== orderId));
+      // Recarregar a lista de pedidos após exclusão
+      await loadOrders();
       toast.success('Pedido excluído com sucesso!');
     } catch (error: any) {
       console.error('Error deleting order:', error);
-      toast.error('Erro ao excluir pedido');
+      toast.error('Erro ao excluir pedido: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setDeletingOrderId(null);
     }
