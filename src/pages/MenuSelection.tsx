@@ -379,11 +379,11 @@ const MenuSelection = () => {
             </div>
             <Button 
               size="lg" 
-              className="bg-restaurant-primary hover:bg-restaurant-dark"
+              className="bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold"
               onClick={handleReserve}
               disabled={cart.length === 0 || isCreatingOrder}
             >
-              {isCreatingOrder ? "Processando..." : "Reservar mesa"}
+              {isCreatingOrder ? "Processando..." : "Adicionar"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>

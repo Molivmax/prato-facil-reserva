@@ -16,8 +16,20 @@ serve(async (req) => {
   try {
     // Initialize Mercado Pago with access token
     const mercadoPagoToken = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
+    console.log('Mercado Pago token configurado:', !!mercadoPagoToken);
+    
     if (!mercadoPagoToken) {
-      throw new Error("MERCADO_PAGO_ACCESS_TOKEN não está configurado");
+      console.error("MERCADO_PAGO_ACCESS_TOKEN não configurado");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Configuração de pagamento incompleta. Entre em contato com o estabelecimento." 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500 
+        }
+      );
     }
 
     // Get user authentication from request
@@ -253,11 +265,17 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error("Erro no processamento do pagamento:", error);
+    const errorMessage = (error as Error).message || "Erro desconhecido no processamento do pagamento";
+    console.error("Mensagem de erro:", errorMessage);
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message || "Erro desconhecido no processamento do pagamento" }),
+      JSON.stringify({ 
+        success: false,
+        error: errorMessage 
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: 200, // Mudando para 200 para que o frontend possa processar o erro
       }
     );
   }

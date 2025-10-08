@@ -24,6 +24,8 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
 
   const initMercadoPago = async () => {
     try {
+      setLoading(true);
+      
       // Get user session
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -31,42 +33,55 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
         throw new Error('Você precisa estar logado');
       }
 
+      console.log('Iniciando pagamento PIX para pedido:', orderId);
+
       // Call edge function to create PIX payment
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
           amount,
           orderId,
-          paymentMethod: 'pix'
+          paymentMethod: 'pix',
+          orderDetails: [], // Adicionar detalhes vazios por enquanto
+          restaurantId: 'temp', // Será preenchido pela edge function
+          tableId: 0 // Será preenchido pela edge function
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
       });
 
+      console.log('Resposta do process-payment:', data);
+      console.log('Erro do process-payment:', error);
+
       if (error) {
-        throw error;
+        console.error('Erro na invocação:', error);
+        throw new Error(error.message || 'Erro ao processar pagamento');
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      if (data?.success === false || data?.error) {
+        console.error('Erro retornado pela função:', data.error);
+        throw new Error(data.error || 'Erro ao processar pagamento');
       }
       
       if (data?.pixData) {
+        console.log('PIX data recebido:', data.pixData);
         setPixData({
           qrCode: data.pixData.qrCode,
           qrCodeText: data.pixData.qrCodeText,
           paymentId: data.pixData.paymentId,
         });
       } else {
-        throw new Error('Dados do PIX não recebidos');
+        console.error('Dados do PIX não encontrados na resposta:', data);
+        throw new Error('Dados do PIX não recebidos. Verifique a configuração do Mercado Pago.');
       }
     } catch (error: any) {
       console.error('Erro ao inicializar Mercado Pago:', error);
       toast({
-        title: "Erro",
-        description: error.message || "Não foi possível gerar o código PIX. Tente novamente.",
+        title: "Erro no PIX",
+        description: error.message || "Não foi possível gerar o código PIX. Verifique se o Mercado Pago está configurado.",
         variant: "destructive",
       });
+      setPixData(null); // Garantir que o estado está limpo
     } finally {
       setLoading(false);
     }
