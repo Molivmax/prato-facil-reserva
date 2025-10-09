@@ -19,15 +19,26 @@ serve(async (req) => {
     // Verificar autenticação
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Não autorizado');
+      console.error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: true, message: 'Não autorizado' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      throw new Error('Não autorizado');
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: true, message: 'Não autorizado' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
+
+    const requestBody = await req.json();
+    console.log('Request body received:', JSON.stringify(requestBody, null, 2));
 
     const { 
       amount, 
@@ -38,7 +49,7 @@ serve(async (req) => {
       orderId,
       payer,
       cardToken 
-    } = await req.json();
+    } = requestBody;
 
     console.log('Processing payment:', { amount, restaurantId, paymentMethod, orderId });
 
@@ -296,16 +307,25 @@ serve(async (req) => {
       );
     }
 
-    throw new Error('Método de pagamento inválido');
-
-  } catch (error) {
-    console.error('Error in process-payment:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ 
+        error: true,
+        message: 'Método de pagamento inválido' 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    );
+
+  } catch (error: any) {
+    console.error('Error in process-payment function:', error);
+    console.error('Error stack:', error.stack);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: true, 
+        message: error.message || 'Erro ao processar pagamento',
+        details: error.toString()
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
