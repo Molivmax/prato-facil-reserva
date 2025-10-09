@@ -54,6 +54,8 @@ const EstablishmentDashboard = () => {
   const [finalizedCustomers, setFinalizedCustomers] = useState(0);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [hasMPCredentials, setHasMPCredentials] = useState<boolean>(false);
+  const [checkingCredentials, setCheckingCredentials] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -110,6 +112,11 @@ const EstablishmentDashboard = () => {
       }
 
       setEstablishment(data);
+      
+      // Check for MP credentials
+      if (data?.id) {
+        checkMPCredentials(data.id);
+      }
     } catch (error: any) {
       console.error('Error fetching establishment:', error);
       toast.error(error.message || 'Erro ao carregar dados do estabelecimento');
@@ -131,12 +138,38 @@ const EstablishmentDashboard = () => {
       }
 
       setEstablishment(data);
+      
+      // Check for MP credentials
+      if (data?.id) {
+        checkMPCredentials(data.id);
+      }
     } catch (error: any) {
       console.error('Error fetching establishment by ID:', error);
       toast.error(error.message || 'Erro ao carregar dados do estabelecimento');
       navigate('/partner-registration');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkMPCredentials = async (establishmentId: string) => {
+    try {
+      setCheckingCredentials(true);
+      const { data, error } = await supabase
+        .from('establishment_mp_credentials')
+        .select('id')
+        .eq('establishment_id', establishmentId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setHasMPCredentials(!!data);
+    } catch (error) {
+      console.error('Error checking MP credentials:', error);
+    } finally {
+      setCheckingCredentials(false);
     }
   };
 
@@ -310,6 +343,25 @@ const EstablishmentDashboard = () => {
       </header>
 
       <main className="container max-w-7xl mx-auto px-4 py-6">
+        {/* Mercado Pago Alert */}
+        {!checkingCredentials && !hasMPCredentials && (
+          <Alert className="mb-6 bg-yellow-500/10 border-yellow-500/50">
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertTitle className="text-yellow-500">Configuração de Pagamentos Necessária</AlertTitle>
+            <AlertDescription className="text-yellow-200">
+              Você ainda não configurou sua conta do Mercado Pago. Configure agora para começar a receber pagamentos dos seus clientes.
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-4 border-yellow-500 text-yellow-500 hover:bg-yellow-500/20"
+                onClick={() => navigate('/payment-setup')}
+              >
+                Configurar Agora
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-gray-800 border-gray-700 hover:shadow-md transition-shadow text-white">
