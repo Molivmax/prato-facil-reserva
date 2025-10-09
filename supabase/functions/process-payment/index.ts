@@ -137,6 +137,7 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${platformAccessToken}`,
+          'X-Idempotency-Key': `${orderId}-${Date.now()}`,
         },
         body: JSON.stringify(pixPaymentData),
       });
@@ -217,6 +218,7 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${platformAccessToken}`,
+          'X-Idempotency-Key': `${orderId}-${Date.now()}`,
         },
         body: JSON.stringify(cardPaymentData),
       });

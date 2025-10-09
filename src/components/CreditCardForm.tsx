@@ -29,8 +29,8 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
-    // Usar public_key fixa da plataforma
-    const platformPublicKey = 'APP_USR-3ae9076d-38dd-49c6-93db-4e578b332243';
+    // Usar public_key de teste da plataforma
+    const platformPublicKey = 'TEST-3ae9076d-38dd-49c6-93db-4e578b332243';
     setPublicKey(platformPublicKey);
     
     // Inicializar MercadoPago SDK
