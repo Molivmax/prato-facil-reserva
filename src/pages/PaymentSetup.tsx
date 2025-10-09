@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 const PaymentSetup = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const PaymentSetup = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<any>(null);
+  const [mpConfig, setMpConfig] = useState<any>(null);
 
   useEffect(() => {
     const success = searchParams.get('success');
@@ -59,6 +61,12 @@ const PaymentSetup = () => {
         setIsConnected(true);
         setCredentials(creds);
       }
+
+      // Buscar configurações atuais do MP
+      const { data: config } = await supabase.functions.invoke('get-mp-config');
+      if (config) {
+        setMpConfig(config);
+      }
     } catch (error) {
       console.error('Error checking connection:', error);
       toast.error('Erro ao verificar conexão');
@@ -98,21 +106,7 @@ const PaymentSetup = () => {
       const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${establishmentId}&redirect_uri=${encodedRedirectUri}`;
       
       console.log('Redirecionando para:', authUrl);
-      console.log('Client ID usado:', clientId);
-      console.log('Redirect URI usado:', redirectUri);
-      
-      // Mostrar confirmação antes de redirecionar
-      const confirmar = window.confirm(
-        `Verificar configurações antes de continuar:\n\n` +
-        `Client ID: ${clientId}\n` +
-        `Redirect URI: ${redirectUri}\n\n` +
-        `Confirme se o Client ID está correto no painel do Mercado Pago.\n\n` +
-        `Clique OK para continuar ou Cancelar para verificar.`
-      );
-      
-      if (confirmar) {
-        window.location.href = authUrl;
-      }
+      window.location.href = authUrl;
     } catch (error: any) {
       console.error('Erro ao conectar com Mercado Pago:', error);
       toast.error(error.message || 'Erro ao conectar com Mercado Pago. Verifique as configurações.');
@@ -151,6 +145,31 @@ const PaymentSetup = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Configuração de Pagamentos</h1>
+
+        {mpConfig && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Configurações Atuais do Mercado Pago</AlertTitle>
+            <AlertDescription className="space-y-2 mt-2">
+              <div className="font-mono text-xs">
+                <p><strong>Client ID:</strong> {mpConfig.clientId}</p>
+                <p><strong>Redirect URI:</strong> {mpConfig.redirectUri}</p>
+              </div>
+              <p className="text-sm">
+                ⚠️ Se os valores acima estiverem incorretos, clique no botão abaixo para atualizá-los.
+              </p>
+              <div className="flex gap-2 mt-3">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => window.open('https://supabase.com/dashboard/project/lstbjfcupoowfeunlcly/settings/functions', '_blank')}
+                >
+                  Atualizar Secrets no Supabase
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         
         <Card>
           <CardHeader>
