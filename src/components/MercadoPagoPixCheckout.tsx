@@ -107,9 +107,9 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
       if (data?.pixData) {
         console.log('PIX data recebido:', data.pixData);
         setPixData({
-          qrCode: data.pixData.qrCode,
-          qrCodeText: data.pixData.qrCodeText,
-          paymentId: data.pixData.paymentId,
+          qrCode: data.pixData.qr_code_base64,
+          qrCodeText: data.pixData.qr_code,
+          paymentId: data.pixData.payment_id,
         });
       } else {
         console.error('Dados do PIX não encontrados na resposta:', data);
