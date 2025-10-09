@@ -271,7 +271,7 @@ const MenuSelection = () => {
   return (
     <>
       <Navbar />
-      <div className="container max-w-4xl mx-auto px-4 py-6 pb-48">
+      <div className="container max-w-4xl mx-auto px-4 py-6 pb-24">
         <Button 
           variant="ghost" 
           className="mb-4"
@@ -366,25 +366,20 @@ const MenuSelection = () => {
       
       {/* Cart summary - fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md">
-        <div className="container max-w-4xl mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="flex items-center">
-                <ShoppingCart className="h-5 w-5 text-restaurant-primary mr-2" />
-                <span className="font-medium">{cart.length} {cart.length === 1 ? 'item' : 'itens'}</span>
-              </div>
-              <div className="text-lg font-bold">
-                Total: R$ {totalAmount.toFixed(2)}
-              </div>
+        <div className="container max-w-4xl mx-auto px-4 py-2">
+          <div className="flex justify-between items-center gap-3">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">{cart.length} {cart.length === 1 ? 'item' : 'itens'}</span>
+              <span className="text-base font-bold">R$ {totalAmount.toFixed(2)}</span>
             </div>
             <Button 
-              size="lg" 
+              size="default" 
               className="bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold"
               onClick={handleReserve}
               disabled={cart.length === 0 || isCreatingOrder}
             >
-              {isCreatingOrder ? "Processando..." : "Adicionar à Mesa"}
-              <ArrowRight className="ml-2 h-5 w-5" />
+              {isCreatingOrder ? "Processando..." : "Finalizar Pedido"}
             </Button>
           </div>
         </div>
