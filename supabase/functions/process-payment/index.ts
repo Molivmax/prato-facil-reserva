@@ -227,7 +227,16 @@ serve(async (req) => {
 
       if (!mpResponse.ok) {
         console.error('Mercado Pago error:', mpData);
-        throw new Error(mpData.message || 'Erro ao processar pagamento');
+        const errorMessage = mpData.message || mpData.cause?.[0]?.description || 'Erro ao processar pagamento';
+        
+        return new Response(
+          JSON.stringify({ 
+            error: true, 
+            message: errorMessage,
+            details: mpData 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
       }
 
       console.log('Card payment created:', { 

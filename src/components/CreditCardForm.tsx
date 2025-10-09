@@ -156,14 +156,41 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
         },
       });
 
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Erro ao processar pagamento');
+      if (error) {
+        console.error('Erro na chamada da função:', error);
+        throw new Error('Erro ao conectar com o servidor de pagamento');
+      }
+
+      if (data?.error) {
+        console.error('Erro no processamento:', data);
+        // Traduzir mensagens comuns do Mercado Pago
+        let errorMessage = data.message || 'Erro ao processar pagamento';
+        
+        if (errorMessage.includes('API') || errorMessage.includes('recursos')) {
+          errorMessage = 'Erro ao processar pagamento. Verifique os dados do cartão.';
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error('Pagamento não foi aprovado');
       }
 
       onSuccess();
     } catch (error: any) {
       console.error('Erro no pagamento:', error);
-      setErrors({ general: error.message || 'Erro ao processar pagamento. Tente novamente.' });
+      
+      let userMessage = error.message || 'Erro ao processar pagamento. Tente novamente.';
+      
+      // Mensagens mais amigáveis para erros comuns
+      if (userMessage.includes('Token') || userMessage.includes('token')) {
+        userMessage = 'Dados do cartão inválidos. Verifique e tente novamente.';
+      } else if (userMessage.includes('API') || userMessage.includes('recursos')) {
+        userMessage = 'Erro ao processar pagamento. Tente novamente em alguns instantes.';
+      }
+      
+      setErrors({ general: userMessage });
     } finally {
       setIsProcessing(false);
     }
