@@ -63,11 +63,12 @@ const Register = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/search`,
+          emailRedirectTo: `${window.location.origin}/login`,
           data: {
             name,
             phone,
-            cpf
+            cpf,
+            email
           },
         },
       });

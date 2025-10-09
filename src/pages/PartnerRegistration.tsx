@@ -124,12 +124,13 @@ const PartnerRegistration: React.FC = () => {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/establishment-dashboard`,
+          emailRedirectTo: `${window.location.origin}/establishment-login`,
           data: {
             name: data.name,
             phone: data.phone,
             documentType: data.documentType,
-            documentNumber: data.documentNumber
+            documentNumber: data.documentNumber,
+            email: data.email
           }
         }
       });
