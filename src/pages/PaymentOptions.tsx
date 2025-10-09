@@ -329,8 +329,8 @@ const PaymentOptions = () => {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-white">Resumo do Pedido</h2>
               <div className="space-y-2">
-                {orderDetails.items.map((item: any) => (
-                  <div key={item.id} className="flex justify-between text-gray-300">
+                {orderDetails.items.map((item: any, index: number) => (
+                  <div key={`${item.menuItemId}-${index}`} className="flex justify-between text-gray-300">
                     <span>{item.quantity}x {item.name}</span>
                     <span>R$ {(item.price * item.quantity).toFixed(2)}</span>
                   </div>
