@@ -7,14 +7,6 @@ import { Search, MapPin, History } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import RestaurantCard from '@/components/RestaurantCard';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useNavigate } from 'react-router-dom';
 
 const SearchRestaurants = () => {
@@ -22,28 +14,11 @@ const SearchRestaurants = () => {
   const [establishments, setEstablishments] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchEstablishments();
-    checkNewUser();
   }, []);
-
-  const checkNewUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      
-      if (profile) {
-        setShowPaymentDialog(true);
-      }
-    }
-  };
 
   const fetchEstablishments = async () => {
     setIsLoading(true);
@@ -74,11 +49,6 @@ const SearchRestaurants = () => {
     }
     
     return filtered;
-  };
-
-  const handleSetupPayment = () => {
-    navigate('/payment-setup');
-    setShowPaymentDialog(false);
   };
 
   return (
@@ -157,31 +127,6 @@ const SearchRestaurants = () => {
           )}
         </div>
       </div>
-
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configurar Forma de Pagamento</DialogTitle>
-            <DialogDescription>
-              Para uma melhor experiência, recomendamos configurar sua forma de pagamento agora.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-start">
-            <Button
-              variant="default"
-              onClick={handleSetupPayment}
-            >
-              Configurar Agora
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowPaymentDialog(false)}
-            >
-              Deixar para depois
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
