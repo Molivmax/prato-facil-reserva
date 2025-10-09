@@ -55,10 +55,15 @@ serve(async (req) => {
       throw new Error("Formato de dados inválido");
     });
     
-    const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId } = requestData;
+    const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId, payer } = requestData;
 
     if (!amount || !orderDetails || !restaurantId || tableId === undefined || tableId === null || !paymentMethod || !orderId) {
       throw new Error("Dados incompletos para o pagamento");
+    }
+
+    // Validar dados do pagador para PIX
+    if (paymentMethod === "pix" && (!payer || !payer.identification || !payer.identification.number)) {
+      throw new Error("CPF do pagador é obrigatório para pagamento PIX");
     }
 
     // Handle payment based on the method
@@ -132,14 +137,22 @@ serve(async (req) => {
       try {
         console.log('Iniciando pagamento PIX para pedido:', orderId);
         console.log('Valor:', amount);
+        console.log('Dados do pagador:', payer);
         
         // Create PIX payment with Mercado Pago
+        // Documentação: https://www.mercadopago.com.br/developers/pt/docs/checkout-api/integration-configuration/pix
         const pixPaymentData = {
           transaction_amount: Number(amount),
           description: `Pedido #${orderId.substring(0, 8)}`,
           payment_method_id: "pix",
           payer: {
-            email: userData.user.email || 'customer@email.com',
+            email: payer.email,
+            first_name: payer.first_name,
+            last_name: payer.last_name,
+            identification: {
+              type: payer.identification.type,
+              number: payer.identification.number
+            }
           },
         };
 

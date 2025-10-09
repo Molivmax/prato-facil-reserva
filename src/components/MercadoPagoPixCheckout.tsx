@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,14 +15,27 @@ interface MercadoPagoPixCheckoutProps {
 }
 
 const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: MercadoPagoPixCheckoutProps) => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [cpf, setCpf] = useState('');
+  const [name, setName] = useState('');
+  const [showForm, setShowForm] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    initMercadoPago();
-  }, []);
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1');
+  };
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCPF(e.target.value);
+    setCpf(formatted);
+  };
 
   const initMercadoPago = async () => {
     try {
@@ -35,15 +50,27 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
 
       console.log('Iniciando pagamento PIX para pedido:', orderId);
 
+      // Remove formatação do CPF (apenas números)
+      const cpfNumbers = cpf.replace(/\D/g, '');
+
       // Call edge function to create PIX payment
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
           amount,
           orderId,
           paymentMethod: 'pix',
-          orderDetails: [], // Adicionar detalhes vazios por enquanto
-          restaurantId: 'temp', // Será preenchido pela edge function
-          tableId: 0 // Será preenchido pela edge function
+          orderDetails: [],
+          restaurantId: 'temp',
+          tableId: 0,
+          payer: {
+            email: session.user.email || 'customer@email.com',
+            first_name: name.split(' ')[0] || 'Cliente',
+            last_name: name.split(' ').slice(1).join(' ') || 'App',
+            identification: {
+              type: 'CPF',
+              number: cpfNumbers
+            }
+          }
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`
@@ -106,6 +133,90 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
       }
     }
   };
+
+  const handleGeneratePix = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Por favor, informe seu nome completo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const cpfNumbers = cpf.replace(/\D/g, '');
+    if (cpfNumbers.length !== 11) {
+      toast({
+        title: "CPF inválido",
+        description: "Por favor, informe um CPF válido com 11 dígitos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowForm(false);
+    await initMercadoPago();
+  };
+
+  if (showForm) {
+    return (
+      <Card className="bg-black/50 backdrop-blur-md border border-white/10">
+        <CardContent className="p-6 space-y-4">
+          <h3 className="text-xl font-bold text-white text-center mb-4">
+            Dados para pagamento PIX
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name" className="text-white">Nome completo</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Seu nome completo"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="cpf" className="text-white">CPF</Label>
+              <Input
+                id="cpf"
+                type="text"
+                value={cpf}
+                onChange={handleCPFChange}
+                placeholder="000.000.000-00"
+                maxLength={14}
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+              />
+            </div>
+
+            <div className="text-center pt-2">
+              <p className="text-sm text-gray-400 mb-1">
+                Total a pagar: R$ {amount.toFixed(2)}
+              </p>
+            </div>
+
+            <Button
+              onClick={handleGeneratePix}
+              className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold"
+            >
+              Gerar código PIX
+            </Button>
+
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
