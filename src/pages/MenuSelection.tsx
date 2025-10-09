@@ -376,25 +376,42 @@ const MenuSelection = () => {
       </div>
       
       {/* Cart summary - fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md">
-        <div className="container max-w-4xl mx-auto px-4 py-2">
-          <div className="flex justify-between items-center gap-3">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">{cart.length} {cart.length === 1 ? 'item' : 'itens'}</span>
-              <span className="text-base font-bold">R$ {totalAmount.toFixed(2)}</span>
+      {cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-primary shadow-lg z-50">
+          <div className="container max-w-4xl mx-auto px-4 py-4">
+            <div className="flex flex-col gap-3">
+              {/* Cart items list */}
+              <div className="max-h-40 overflow-y-auto space-y-2">
+                {cart.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center text-sm border-b pb-2">
+                    <div className="flex-1">
+                      <span className="font-medium">{item.quantity}x {item.name}</span>
+                    </div>
+                    <span className="font-semibold">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Total and action button */}
+              <div className="flex justify-between items-center gap-3 pt-2 border-t">
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-600">Total do pedido</span>
+                  <span className="text-xl font-bold text-primary">R$ {totalAmount.toFixed(2)}</span>
+                </div>
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-white font-semibold"
+                  onClick={handleReserve}
+                  disabled={isCreatingOrder}
+                >
+                  {isCreatingOrder ? "Processando..." : "Finalizar Pedido"}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
             </div>
-            <Button 
-              size="default" 
-              className="bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold"
-              onClick={handleReserve}
-              disabled={cart.length === 0 || isCreatingOrder}
-            >
-              {isCreatingOrder ? "Processando..." : "Finalizar Pedido"}
-            </Button>
           </div>
         </div>
-      </div>
+      )}
 
     </>
   );
