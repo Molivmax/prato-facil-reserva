@@ -54,6 +54,23 @@ serve(async (req) => {
 
     console.log('Processing payment:', { amount, restaurantId, paymentMethod, orderId });
 
+    // Buscar dados completos do pedido para obter table_number e items
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('table_number, items, establishment_id')
+      .eq('id', orderId)
+      .single();
+
+    if (orderError || !order) {
+      console.error('Error fetching order:', orderError);
+      return new Response(
+        JSON.stringify({ error: true, message: 'Pedido não encontrado' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+
+    console.log('Order data fetched:', { table_number: order.table_number, establishment_id: order.establishment_id });
+
     // Para Pindura e Local, apenas atualizar o pedido
     if (paymentMethod === 'pindura' || paymentMethod === 'local') {
       const { error: updateError } = await supabase
@@ -78,12 +95,12 @@ serve(async (req) => {
       const { error: transactionError } = await supabase
         .from('daily_transactions')
         .insert({
-          establishment_id: restaurantId,
-          table_number: tableId,
+          establishment_id: order.establishment_id,
+          table_number: order.table_number,
           total_amount: amount,
           payment_method: paymentMethod,
           status: 'confirmed',
-          order_items: orderDetails,
+          order_items: order.items,
           customer_name: user.user_metadata?.name || 'Cliente',
           customer_phone: user.phone || '',
         });
@@ -335,12 +352,12 @@ serve(async (req) => {
         const { error: transactionError } = await supabase
           .from('daily_transactions')
           .insert({
-            establishment_id: restaurantId,
-            table_number: tableId,
+            establishment_id: order.establishment_id,
+            table_number: order.table_number,
             total_amount: amount,
             payment_method: 'credit',
             status: 'completed',
-            order_items: orderDetails,
+            order_items: order.items,
             customer_name: user.user_metadata?.name || 'Cliente',
             customer_phone: user.phone || '',
           });
