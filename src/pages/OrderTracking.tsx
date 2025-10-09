@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus, Clock, CheckCircle } from 'lucide-react';
+import { MapPin, Plus, Clock, CheckCircle, QrCode } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -223,19 +223,17 @@ const OrderTracking = () => {
             )}
 
             <div className="space-y-2">
+              <h3 className="font-semibold text-white mb-2">Itens do Pedido:</h3>
               {orderDetails?.items?.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between text-gray-300">
                   <span>{item.quantity}x {item.name}</span>
                   <span>R$ {(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
-              <div className="border-t border-gray-600 pt-2 flex justify-between font-semibold text-white">
-                <span>Total Acumulado</span>
+              <div className="border-t border-gray-600 pt-2 mt-3 flex justify-between font-semibold text-white">
+                <span>Total</span>
                 <span>R$ {(orderDetails?.total_amount || orderDetails?.total)?.toFixed(2)}</span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Inclui todos os pedidos realizados nesta mesa
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -270,18 +268,36 @@ const OrderTracking = () => {
                   Ative sua localização para que o restaurante saiba quando você está chegando e prepare seu pedido.
                 </p>
                 <Button 
-                  className="w-full btn-sophisticated"
+                  className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold mb-3"
                   onClick={handleEnableLocation}
                 >
                   <MapPin className="mr-2 h-4 w-4" />
                   Ir Agora - Ativar Localização
                 </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full border-white/20 text-white hover:bg-white/10"
+                  onClick={() => navigate(`/check-in/${orderId}`)}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Fazer Check-in
+                </Button>
               </div>
             ) : (
-              <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
-                <p className="text-green-300 text-sm">
-                  ✓ O restaurante será notificado quando você estiver próximo!
-                </p>
+              <div className="space-y-3">
+                <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
+                  <p className="text-green-300 text-sm">
+                    ✓ O restaurante será notificado quando você estiver próximo!
+                  </p>
+                </div>
+                <Button 
+                  variant="outline"
+                  className="w-full border-white/20 text-white hover:bg-white/10"
+                  onClick={() => navigate(`/check-in/${orderId}`)}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Fazer Check-in
+                </Button>
               </div>
             )}
           </CardContent>

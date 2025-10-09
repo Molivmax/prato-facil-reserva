@@ -106,16 +106,18 @@ const CheckIn = () => {
                 <MapPin className="h-5 w-5 text-blink-primary mr-3 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="font-medium text-white">
-                    {orderDetails?.establishments?.name || 'Carregando...'}
+                    {loading ? 'Carregando...' : (orderDetails?.establishments?.name || 'Restaurante')}
                   </p>
                   <p className="text-sm text-gray-400">
-                    {orderDetails?.establishments ? 
-                      [
-                        orderDetails.establishments.address,
-                        orderDetails.establishments.city,
-                        orderDetails.establishments.state
-                      ].filter(Boolean).join(', ') || 'Endereço não disponível'
-                      : 'Carregando endereço...'}
+                    {loading ? 'Carregando endereço...' : 
+                      (orderDetails?.establishments ? 
+                        [
+                          orderDetails.establishments.address,
+                          orderDetails.establishments.city,
+                          orderDetails.establishments.state
+                        ].filter(Boolean).join(', ') || 'Endereço não disponível'
+                        : 'Endereço não disponível')
+                    }
                   </p>
                 </div>
               </div>

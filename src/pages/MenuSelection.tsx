@@ -383,7 +383,7 @@ const MenuSelection = () => {
               onClick={handleReserve}
               disabled={cart.length === 0 || isCreatingOrder}
             >
-              {isCreatingOrder ? "Processando..." : "Adicionar"}
+              {isCreatingOrder ? "Processando..." : "Adicionar à Mesa"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
