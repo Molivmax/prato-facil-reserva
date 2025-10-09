@@ -14,28 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Mercado Pago with access token
-    const mercadoPagoToken = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
-    console.log('Mercado Pago token configurado:', !!mercadoPagoToken);
-    
-    if (!mercadoPagoToken) {
-      console.error("MERCADO_PAGO_ACCESS_TOKEN não configurado");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Configuração de pagamento incompleta. Entre em contato com o estabelecimento." 
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500 
-        }
-      );
-    }
-
     // Get user authentication from request
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     
     const authHeader = req.headers.get("Authorization");
@@ -65,6 +47,32 @@ serve(async (req) => {
     if (paymentMethod === "pix" && (!payer || !payer.identification || !payer.identification.number)) {
       throw new Error("CPF do pagador é obrigatório para pagamento PIX");
     }
+
+    // Get establishment credentials from database
+    console.log('Buscando credenciais do estabelecimento:', restaurantId);
+    
+    const { data: credentials, error: credError } = await supabaseClient
+      .from('establishment_mp_credentials')
+      .select('access_token, public_key, seller_id')
+      .eq('establishment_id', restaurantId)
+      .maybeSingle();
+
+    if (credError || !credentials) {
+      console.error('Erro ao buscar credenciais:', credError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Este estabelecimento ainda não configurou o Mercado Pago. Entre em contato com eles." 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400 
+        }
+      );
+    }
+
+    const mercadoPagoToken = credentials.access_token;
+    console.log('Credenciais encontradas - Seller ID:', credentials.seller_id);
 
     // Handle payment based on the method
     if (paymentMethod === "credit") {
