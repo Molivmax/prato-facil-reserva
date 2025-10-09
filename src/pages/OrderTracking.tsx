@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus, Clock, CheckCircle, QrCode } from 'lucide-react';
+import { MapPin, Plus, Clock, CheckCircle, QrCode, CreditCard } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -219,6 +219,26 @@ const OrderTracking = () => {
                 <p className="text-blue-300 text-sm">
                   💳 Pagamento: Pindura (você pagará no restaurante)
                 </p>
+              </div>
+            )}
+
+            {orderDetails?.payment_status === 'pending' && (
+              <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-yellow-300 font-semibold mb-1">⚠️ Pagamento Pendente</p>
+                    <p className="text-yellow-200/70 text-sm">
+                      Você ainda não completou o pagamento deste pedido
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full bg-yellow-500 text-black hover:bg-yellow-600 font-semibold"
+                  onClick={() => navigate(`/payment-options/${orderDetails.id}`)}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Efetuar Pagamento Agora
+                </Button>
               </div>
             )}
 
