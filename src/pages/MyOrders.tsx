@@ -52,20 +52,17 @@ const MyOrders = () => {
       return;
     }
 
+    setDeletingOrderId(orderId);
+    
     try {
-      setDeletingOrderId(orderId);
-      
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         toast.error('Você precisa estar logado');
+        setDeletingOrderId(null);
         return;
       }
 
-      // Primeiro remove da UI para feedback imediato
-      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-      
-      // Depois faz a exclusão no banco
       const { error } = await supabase
         .from('orders')
         .delete()
@@ -75,17 +72,16 @@ const MyOrders = () => {
       if (error) {
         console.error('Delete error:', error);
         toast.error('Erro ao excluir pedido: ' + error.message);
-        // Se houver erro, recarrega a lista
-        await loadOrders();
+        setDeletingOrderId(null);
         return;
       }
 
+      // Remove da UI apenas após confirmação de sucesso
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
       toast.success('Pedido excluído com sucesso!');
     } catch (error: any) {
       console.error('Error deleting order:', error);
       toast.error('Erro ao excluir pedido: ' + (error.message || 'Erro desconhecido'));
-      // Se houver erro, recarrega a lista
-      await loadOrders();
     } finally {
       setDeletingOrderId(null);
     }

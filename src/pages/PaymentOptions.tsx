@@ -171,10 +171,7 @@ const PaymentOptions = () => {
       }
 
       const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: requestBody,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
+        body: requestBody
       });
       
       if (error) {
