@@ -37,9 +37,9 @@ serve(async (req) => {
       throw new Error("Formato de dados inválido");
     });
     
-    const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId, payer } = requestData;
+    const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId, payer, cardToken } = requestData;
 
-    if (!amount || !orderDetails || !restaurantId || tableId === undefined || tableId === null || !paymentMethod || !orderId) {
+    if (!amount || !restaurantId || !paymentMethod || !orderId) {
       throw new Error("Dados incompletos para o pagamento");
     }
 
@@ -77,21 +77,35 @@ serve(async (req) => {
     // Handle payment based on the method
     if (paymentMethod === "credit") {
       try {
+        console.log('Processando pagamento com cartão para pedido:', orderId);
+        
+        if (!cardToken) {
+          throw new Error("Token do cartão não fornecido");
+        }
+
+        if (!payer || !payer.email) {
+          throw new Error("Dados do pagador incompletos");
+        }
+
         // Create a payment with Mercado Pago
         const paymentData = {
-          transaction_amount: amount,
-          description: `Pedido #${orderId}`,
-          payment_method_id: "credit_card",
+          transaction_amount: Number(amount),
+          token: cardToken,
+          description: `Pedido #${orderId.substring(0, 8)}`,
+          installments: 1,
+          payment_method_id: 'visa', // Será detectado automaticamente pelo token
           payer: {
-            email: userData.user.email,
-          },
-          metadata: {
-            user_id: userData.user.id,
-            restaurant_id: restaurantId,
-            table_id: tableId,
-            order_id: orderId,
-          },
+            email: payer.email,
+            first_name: payer.first_name,
+            last_name: payer.last_name,
+            identification: {
+              type: payer.identification.type,
+              number: payer.identification.number
+            }
+          }
         };
+
+        console.log('Enviando pagamento para Mercado Pago...');
 
         const mercadoPagoResponse = await fetch("https://api.mercadopago.com/v1/payments", {
           method: "POST",
@@ -102,21 +116,22 @@ serve(async (req) => {
           body: JSON.stringify(paymentData),
         });
 
-        if (!mercadoPagoResponse.ok) {
-          const errorData = await mercadoPagoResponse.json();
-          console.error("Erro Mercado Pago:", errorData);
-          throw new Error("Erro ao processar pagamento no Mercado Pago");
-        }
-
         const paymentResult = await mercadoPagoResponse.json();
+        console.log('Resposta Mercado Pago - Status:', mercadoPagoResponse.status);
+        console.log('Resposta Mercado Pago:', JSON.stringify(paymentResult));
+
+        if (!mercadoPagoResponse.ok) {
+          console.error("Erro Mercado Pago:", paymentResult);
+          throw new Error(paymentResult.message || "Erro ao processar pagamento no Mercado Pago");
+        }
 
         // Update order in database
         const { error: updateError } = await supabaseClient
           .from('orders')
           .update({
             payment_method: paymentMethod,
-            payment_status: 'paid',
-            order_status: 'confirmed'
+            payment_status: paymentResult.status === 'approved' ? 'paid' : 'pending',
+            order_status: paymentResult.status === 'approved' ? 'confirmed' : 'pending'
           })
           .eq('id', orderId)
           .eq('user_id', userData.user.id);
@@ -127,10 +142,10 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify({
+            success: true,
             paymentId: paymentResult.id,
             status: paymentResult.status,
             orderId: orderId,
-            success: true
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

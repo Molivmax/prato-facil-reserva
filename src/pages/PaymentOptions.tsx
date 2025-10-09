@@ -10,6 +10,7 @@ import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import MercadoPagoPixCheckout from '@/components/MercadoPagoPixCheckout';
+import CreditCardForm from '@/components/CreditCardForm';
 
 const PaymentOptions = () => {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -17,6 +18,7 @@ const PaymentOptions = () => {
   const [error, setError] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [showPixCheckout, setShowPixCheckout] = useState(false);
+  const [showCreditCardForm, setShowCreditCardForm] = useState(false);
   const [showPixForm, setShowPixForm] = useState(false);
   const [cpf, setCpf] = useState('');
   const [name, setName] = useState('');
@@ -104,6 +106,12 @@ const PaymentOptions = () => {
         description: "Não foi possível carregar os detalhes do pedido",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Se for cartão de crédito, mostrar formulário
+    if (paymentMethod === 'credit') {
+      setShowCreditCardForm(true);
       return;
     }
 
@@ -239,6 +247,37 @@ const PaymentOptions = () => {
         <div className="container max-w-md mx-auto px-4 py-6 flex justify-center items-center">
           <Loader2 className="h-8 w-8 animate-spin text-blink-primary" />
           <p className="ml-2 text-white">Carregando detalhes do pedido...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showCreditCardForm) {
+    return (
+      <div className="bg-background min-h-screen">
+        <Navbar />
+        <div className="container max-w-md mx-auto px-4 py-6">
+          <Button 
+            variant="ghost" 
+            className="mb-4 text-white hover:bg-white/10"
+            onClick={() => setShowCreditCardForm(false)}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+          <CreditCardForm
+            amount={orderDetails.total}
+            orderId={orderId!}
+            restaurantId={orderDetails.restaurantId}
+            onSuccess={() => {
+              toast({
+                title: "Pagamento confirmado!",
+                description: "Seu pedido foi recebido pelo restaurante.",
+              });
+              navigate(`/order-tracking/${orderId}`);
+            }}
+            onCancel={() => setShowCreditCardForm(false)}
+          />
         </div>
       </div>
     );
