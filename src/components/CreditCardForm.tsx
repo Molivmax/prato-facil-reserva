@@ -29,48 +29,41 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
-    const loadPublicKey = async () => {
-      try {
-        // Buscar a public key correta do estabelecimento
-        const { data: mpConfig } = await supabase.functions.invoke('get-mp-config');
-        
-        let publicKeyToUse = 'TEST-0a8ffb85-04e2-4b5e-9f9f-d0eb1e064e5c'; // Fallback para a chave da plataforma
-        
-        if (mpConfig?.publicKey) {
-          publicKeyToUse = mpConfig.publicKey;
-        }
-        
-        console.log('Using public key:', publicKeyToUse);
-        setPublicKey(publicKeyToUse);
-        
-        // Inicializar MercadoPago SDK
-        const script = document.createElement('script');
-        script.src = 'https://sdk.mercadopago.com/js/v2';
-        script.async = true;
-        script.onload = () => {
-          console.log('MercadoPago SDK loaded');
-          const mpInstance = new (window as any).MercadoPago(publicKeyToUse);
-          setMp(mpInstance);
-        };
-        document.body.appendChild(script);
-      } catch (error) {
-        console.error('Error loading MP config:', error);
-        // Usar chave padrão em caso de erro
-        const defaultKey = 'TEST-0a8ffb85-04e2-4b5e-9f9f-d0eb1e064e5c';
-        setPublicKey(defaultKey);
-        
-        const script = document.createElement('script');
-        script.src = 'https://sdk.mercadopago.com/js/v2';
-        script.async = true;
-        script.onload = () => {
-          const mpInstance = new (window as any).MercadoPago(defaultKey);
-          setMp(mpInstance);
-        };
-        document.body.appendChild(script);
+    const loadMercadoPago = async () => {
+      // Usar a mesma public key que está configurada no backend
+      const publicKeyToUse = 'TEST-0a8ffb85-04e2-4b5e-9f9f-d0eb1e064e5c';
+      
+      console.log('Loading MercadoPago SDK with key:', publicKeyToUse);
+      setPublicKey(publicKeyToUse);
+      
+      // Carregar o SDK do MercadoPago
+      const existingScript = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
+      if (existingScript) {
+        existingScript.remove();
       }
+
+      const script = document.createElement('script');
+      script.src = 'https://sdk.mercadopago.com/js/v2';
+      script.async = true;
+      script.onload = () => {
+        console.log('MercadoPago SDK loaded successfully');
+        try {
+          const mpInstance = new (window as any).MercadoPago(publicKeyToUse, {
+            locale: 'pt-BR'
+          });
+          console.log('MercadoPago instance created');
+          setMp(mpInstance);
+        } catch (error) {
+          console.error('Error creating MercadoPago instance:', error);
+        }
+      };
+      script.onerror = () => {
+        console.error('Failed to load MercadoPago SDK');
+      };
+      document.body.appendChild(script);
     };
     
-    loadPublicKey();
+    loadMercadoPago();
   }, []);
 
   const formatCardNumber = (value: string) => {
@@ -146,18 +139,24 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
     setIsProcessing(true);
 
     try {
+      console.log('Starting card token creation...');
+      console.log('MP instance:', mp);
+      
       // Criar token do cartão
       const cardData = {
         cardNumber: formData.cardNumber.replace(/\D/g, ''),
         cardholderName: formData.cardholderName,
         cardExpirationMonth: formData.expirationMonth,
-        cardExpirationYear: formData.expirationYear,
+        cardExpirationYear: '20' + formData.expirationYear, // Adicionar século
         securityCode: formData.securityCode,
         identificationType: 'CPF',
         identificationNumber: formData.cpf.replace(/\D/g, ''),
       };
 
+      console.log('Card data prepared:', { ...cardData, securityCode: '***', cardNumber: cardData.cardNumber.slice(0, 6) + '...' });
+
       const token = await mp.createCardToken(cardData);
+      console.log('Token created:', token);
 
       if (!token || !token.id) {
         throw new Error('Erro ao processar dados do cartão');
