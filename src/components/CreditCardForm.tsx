@@ -29,19 +29,48 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
-    // Usar public_key de teste da plataforma
-    const platformPublicKey = 'TEST-3ae9076d-38dd-49c6-93db-4e578b332243';
-    setPublicKey(platformPublicKey);
-    
-    // Inicializar MercadoPago SDK
-    const script = document.createElement('script');
-    script.src = 'https://sdk.mercadopago.com/js/v2';
-    script.async = true;
-    script.onload = () => {
-      const mpInstance = new (window as any).MercadoPago(platformPublicKey);
-      setMp(mpInstance);
+    const loadPublicKey = async () => {
+      try {
+        // Buscar a public key correta do estabelecimento
+        const { data: mpConfig } = await supabase.functions.invoke('get-mp-config');
+        
+        let publicKeyToUse = 'TEST-0a8ffb85-04e2-4b5e-9f9f-d0eb1e064e5c'; // Fallback para a chave da plataforma
+        
+        if (mpConfig?.publicKey) {
+          publicKeyToUse = mpConfig.publicKey;
+        }
+        
+        console.log('Using public key:', publicKeyToUse);
+        setPublicKey(publicKeyToUse);
+        
+        // Inicializar MercadoPago SDK
+        const script = document.createElement('script');
+        script.src = 'https://sdk.mercadopago.com/js/v2';
+        script.async = true;
+        script.onload = () => {
+          console.log('MercadoPago SDK loaded');
+          const mpInstance = new (window as any).MercadoPago(publicKeyToUse);
+          setMp(mpInstance);
+        };
+        document.body.appendChild(script);
+      } catch (error) {
+        console.error('Error loading MP config:', error);
+        // Usar chave padrão em caso de erro
+        const defaultKey = 'TEST-0a8ffb85-04e2-4b5e-9f9f-d0eb1e064e5c';
+        setPublicKey(defaultKey);
+        
+        const script = document.createElement('script');
+        script.src = 'https://sdk.mercadopago.com/js/v2';
+        script.async = true;
+        script.onload = () => {
+          const mpInstance = new (window as any).MercadoPago(defaultKey);
+          setMp(mpInstance);
+        };
+        document.body.appendChild(script);
+      }
     };
-    document.body.appendChild(script);
+    
+    loadPublicKey();
   }, []);
 
   const formatCardNumber = (value: string) => {
