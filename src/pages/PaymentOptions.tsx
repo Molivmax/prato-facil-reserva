@@ -17,6 +17,9 @@ const PaymentOptions = () => {
   const [error, setError] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [showPixCheckout, setShowPixCheckout] = useState(false);
+  const [showPixForm, setShowPixForm] = useState(false);
+  const [cpf, setCpf] = useState('');
+  const [name, setName] = useState('');
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -71,6 +74,20 @@ const PaymentOptions = () => {
     getOrderDetails();
   }, [orderId, toast]);
 
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1');
+  };
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCPF(e.target.value);
+    setCpf(formatted);
+  };
+
   const handleContinue = async () => {
     if (!paymentMethod) {
       toast({
@@ -89,6 +106,34 @@ const PaymentOptions = () => {
       });
       return;
     }
+
+    // Se for PIX, mostrar formulário de CPF primeiro
+    if (paymentMethod === 'pix') {
+      if (!showPixForm) {
+        setShowPixForm(true);
+        return;
+      }
+
+      // Validar CPF e nome
+      if (!name.trim()) {
+        toast({
+          title: "Nome obrigatório",
+          description: "Por favor, informe seu nome completo",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const cpfNumbers = cpf.replace(/\D/g, '');
+      if (cpfNumbers.length !== 11) {
+        toast({
+          title: "CPF inválido",
+          description: "Por favor, informe um CPF válido com 11 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
     setIsProcessing(true);
     setError(null);
@@ -102,15 +147,31 @@ const PaymentOptions = () => {
       }
       
       // Chamar a função edge do Supabase para processar o pagamento
+      const requestBody: any = {
+        amount: orderDetails.total,
+        orderDetails: orderDetails.items,
+        restaurantId: orderDetails.restaurantId,
+        tableId: orderDetails.tableId,
+        paymentMethod: paymentMethod,
+        orderId: orderId
+      };
+
+      // Adicionar dados do pagador para PIX
+      if (paymentMethod === 'pix') {
+        const cpfNumbers = cpf.replace(/\D/g, '');
+        requestBody.payer = {
+          email: session.user.email || 'customer@email.com',
+          first_name: name.split(' ')[0] || 'Cliente',
+          last_name: name.split(' ').slice(1).join(' ') || 'App',
+          identification: {
+            type: 'CPF',
+            number: cpfNumbers
+          }
+        };
+      }
+
       const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: {
-          amount: orderDetails.total,
-          orderDetails: orderDetails.items,
-          restaurantId: orderDetails.restaurantId,
-          tableId: orderDetails.tableId,
-          paymentMethod: paymentMethod,
-          orderId: orderId
-        },
+        body: requestBody,
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
@@ -245,63 +306,105 @@ const PaymentOptions = () => {
         
         <Card className="mb-8 bg-black/50 backdrop-blur-md border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
           <CardContent className="p-6">
-            <RadioGroup
-              value={paymentMethod || ""}
-              onValueChange={setPaymentMethod}
-              className="space-y-4"
-            >
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                <RadioGroupItem value="credit" id="payment-credit" />
-                <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
-                  <div className="flex items-center">
-                    <CreditCard className="h-5 w-5 text-blink-primary mr-3" />
-                    <div>
-                      <p className="font-medium text-white">Cartão de Crédito</p>
-                      <p className="text-sm text-gray-400">Pague agora e tenha seu pedido aprovado imediatamente</p>
-                    </div>
-                  </div>
-                </Label>
+            {showPixForm ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Dados para pagamento PIX</h3>
+                
+                <div>
+                  <Label htmlFor="name" className="text-white">Nome completo</Label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="w-full mt-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blink-primary"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="cpf" className="text-white">CPF</Label>
+                  <input
+                    id="cpf"
+                    type="text"
+                    value={cpf}
+                    onChange={handleCPFChange}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    className="w-full mt-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blink-primary"
+                  />
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+                  onClick={() => {
+                    setShowPixForm(false);
+                    setPaymentMethod(null);
+                  }}
+                >
+                  Voltar
+                </Button>
               </div>
-              
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                <RadioGroupItem value="pix" id="payment-pix" />
-                <Label htmlFor="payment-pix" className="flex-1 cursor-pointer">
-                  <div className="flex items-center">
-                    <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
-                    <div>
-                      <p className="font-medium text-white">PIX</p>
-                      <p className="text-sm text-gray-400">Pagamento instantâneo via PIX</p>
+            ) : (
+              <RadioGroup
+                value={paymentMethod || ""}
+                onValueChange={setPaymentMethod}
+                className="space-y-4"
+              >
+                <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
+                  <RadioGroupItem value="credit" id="payment-credit" />
+                  <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
+                    <div className="flex items-center">
+                      <CreditCard className="h-5 w-5 text-blink-primary mr-3" />
+                      <div>
+                        <p className="font-medium text-white">Cartão de Crédito</p>
+                        <p className="text-sm text-gray-400">Pague agora e tenha seu pedido aprovado imediatamente</p>
+                      </div>
                     </div>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                <RadioGroupItem value="pindura" id="payment-pindura" />
-                <Label htmlFor="payment-pindura" className="flex-1 cursor-pointer">
-                  <div className="flex items-center">
-                    <Banknote className="h-5 w-5 text-blink-primary mr-3" />
-                    <div>
-                      <p className="font-medium text-white">Pindura</p>
-                      <p className="text-sm text-gray-400">Mini crédito do app - pague depois</p>
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
+                  <RadioGroupItem value="pix" id="payment-pix" />
+                  <Label htmlFor="payment-pix" className="flex-1 cursor-pointer">
+                    <div className="flex items-center">
+                      <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
+                      <div>
+                        <p className="font-medium text-white">PIX</p>
+                        <p className="text-sm text-gray-400">Pagamento instantâneo via PIX</p>
+                      </div>
                     </div>
-                  </div>
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                <RadioGroupItem value="local" id="payment-local" />
-                <Label htmlFor="payment-local" className="flex-1 cursor-pointer">
-                  <div className="flex items-center">
-                    <Banknote className="h-5 w-5 text-blink-primary mr-3" />
-                    <div>
-                      <p className="font-medium text-white">Pagar no Local</p>
-                      <p className="text-sm text-gray-400">Pague com dinheiro, cartão ou Pix no restaurante</p>
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
+                  <RadioGroupItem value="pindura" id="payment-pindura" />
+                  <Label htmlFor="payment-pindura" className="flex-1 cursor-pointer">
+                    <div className="flex items-center">
+                      <Banknote className="h-5 w-5 text-blink-primary mr-3" />
+                      <div>
+                        <p className="font-medium text-white">Pindura</p>
+                        <p className="text-sm text-gray-400">Mini crédito do app - pague depois</p>
+                      </div>
                     </div>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
+                  <RadioGroupItem value="local" id="payment-local" />
+                  <Label htmlFor="payment-local" className="flex-1 cursor-pointer">
+                    <div className="flex items-center">
+                      <Banknote className="h-5 w-5 text-blink-primary mr-3" />
+                      <div>
+                        <p className="font-medium text-white">Pagar no Local</p>
+                        <p className="text-sm text-gray-400">Pague com dinheiro, cartão ou Pix no restaurante</p>
+                      </div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            )}
           </CardContent>
         </Card>
         
@@ -315,13 +418,15 @@ const PaymentOptions = () => {
           <Button 
             className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 py-6 font-semibold"
             onClick={handleContinue}
-            disabled={!paymentMethod || isProcessing}
+            disabled={(!paymentMethod && !showPixForm) || isProcessing}
           >
             {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processando...
               </>
+            ) : showPixForm ? (
+              "Gerar código PIX"
             ) : (
               "Confirmar Pagamento"
             )}
