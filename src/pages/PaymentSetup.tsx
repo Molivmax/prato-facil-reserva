@@ -1,104 +1,180 @@
-
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { CreditCard, Wallet, ArrowLeft } from 'lucide-react';
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, LinkIcon } from "lucide-react";
+
+const MP_CLIENT_ID = 'TEST-fd2a4268-c4f7-4902-b349-c3f80ad8659c';
 
 const PaymentSetup = () => {
-  const [selectedMethod, setSelectedMethod] = useState<string>('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const [isConnected, setIsConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [establishmentId, setEstablishmentId] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<any>(null);
 
-  const handleSubmit = () => {
-    if (!selectedMethod) {
+  useEffect(() => {
+    checkConnection();
+    
+    const success = searchParams.get('success');
+    if (success === 'true') {
+      toast({
+        title: "Conexão realizada!",
+        description: "Sua conta do Mercado Pago foi conectada com sucesso.",
+      });
+    }
+  }, [searchParams]);
+
+  const checkConnection = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/establishment-login');
+        return;
+      }
+
+      const { data: establishments } = await supabase
+        .from('establishments')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (establishments) {
+        setEstablishmentId(establishments.id);
+
+        const { data: creds } = await supabase
+          .from('establishment_mp_credentials')
+          .select('*')
+          .eq('establishment_id', establishments.id)
+          .single();
+
+        if (creds) {
+          setIsConnected(true);
+          setCredentials(creds);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking connection:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnectMP = () => {
+    if (!establishmentId) {
       toast({
         title: "Erro",
-        description: "Por favor, selecione uma forma de pagamento",
+        description: "Estabelecimento não encontrado",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Forma de pagamento salva",
-      description: "Sua forma de pagamento foi configurada com sucesso!",
-    });
+    const redirectUri = `${window.location.origin}/mp-oauth-callback`;
+    const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${MP_CLIENT_ID}&response_type=code&platform_id=mp&state=${establishmentId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
-    navigate('/search');
+    window.location.href = authUrl;
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-black/70 p-4">
-      <div className="container max-w-md mx-auto">
-        <Button 
-          variant="ghost" 
-          className="mb-6 text-white"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
+  const handleDisconnect = async () => {
+    if (!establishmentId) return;
 
-        <Card className="bg-black/50 backdrop-blur-md border border-white/10">
+    try {
+      const { error } = await supabase
+        .from('establishment_mp_credentials')
+        .delete()
+        .eq('establishment_id', establishmentId);
+
+      if (error) throw error;
+
+      setIsConnected(false);
+      setCredentials(null);
+      toast({
+        title: "Desconectado",
+        description: "Sua conta do Mercado Pago foi desconectada.",
+      });
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível desconectar a conta.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p>Carregando...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background py-12">
+      <div className="container max-w-2xl mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-8">Configuração de Pagamento</h1>
+        
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-white">Configurar Pagamento</CardTitle>
-            <CardDescription className="text-gray-400">
-              Escolha sua forma de pagamento preferida
+            <CardTitle className="flex items-center gap-2">
+              {isConnected ? (
+                <><CheckCircle2 className="h-5 w-5 text-green-600" /> Conta Conectada</>
+              ) : (
+                <><LinkIcon className="h-5 w-5" /> Conectar Mercado Pago</>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {isConnected 
+                ? "Sua conta do Mercado Pago está conectada e pronta para receber pagamentos."
+                : "Conecte sua conta do Mercado Pago para receber pagamentos dos clientes."}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={selectedMethod}
-              onValueChange={setSelectedMethod}
-              className="space-y-4"
-            >
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5">
-                <RadioGroupItem value="credit" id="payment-credit" />
-                <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
-                  <div className="flex items-center text-white">
-                    <CreditCard className="h-5 w-5 mr-3 text-restaurant-primary" />
-                    <div>
-                      <p className="font-medium">Cartão de Crédito</p>
-                      <p className="text-sm text-gray-400">Adicione um cartão de crédito</p>
-                    </div>
-                  </div>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5">
-                <RadioGroupItem value="wallet" id="payment-wallet" />
-                <Label htmlFor="payment-wallet" className="flex-1 cursor-pointer">
-                  <div className="flex items-center text-white">
-                    <Wallet className="h-5 w-5 mr-3 text-restaurant-primary" />
-                    <div>
-                      <p className="font-medium">Carteira Digital</p>
-                      <p className="text-sm text-gray-400">Configure sua carteira digital</p>
-                    </div>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-
-            <div className="flex flex-col gap-3 mt-6">
-              <Button
-                className="w-full bg-blink-primary hover:bg-blink-primary/90 text-black font-semibold transition-colors"
-                onClick={handleSubmit}
-              >
-                Configurar Agora
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full border-2 border-blink-primary bg-transparent text-blink-primary hover:bg-blink-primary hover:text-black font-semibold transition-colors"
-                onClick={() => navigate('/search')}
-              >
-                Deixar para depois
-              </Button>
-            </div>
+          <CardContent className="space-y-4">
+            {isConnected ? (
+              <>
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm"><strong>Seller ID:</strong> {credentials?.seller_id}</p>
+                  <p className="text-sm"><strong>Status:</strong> <span className="text-green-600">Ativa</span></p>
+                  {credentials?.public_key && (
+                    <p className="text-sm"><strong>Public Key:</strong> {credentials.public_key.substring(0, 20)}...</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleDisconnect} variant="destructive">
+                    Desconectar Conta
+                  </Button>
+                  <Button onClick={() => navigate('/establishment-dashboard')} variant="outline">
+                    Voltar ao Dashboard
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-2">Como funciona:</h3>
+                  <ol className="list-decimal list-inside space-y-1 text-sm">
+                    <li>Clique em "Conectar Mercado Pago"</li>
+                    <li>Faça login na sua conta do Mercado Pago</li>
+                    <li>Autorize o aplicativo a processar pagamentos</li>
+                    <li>Pronto! Você receberá 97% de cada venda (3% de comissão do app)</li>
+                  </ol>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleConnectMP} className="w-full">
+                    Conectar Mercado Pago
+                  </Button>
+                  <Button onClick={() => navigate('/establishment-dashboard')} variant="outline">
+                    Voltar
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

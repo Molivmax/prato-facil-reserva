@@ -67,6 +67,53 @@ export type Database = {
           },
         ]
       }
+      establishment_mp_credentials: {
+        Row: {
+          access_token: string
+          created_at: string
+          establishment_id: string
+          expires_at: string | null
+          id: string
+          public_key: string | null
+          refresh_token: string | null
+          seller_id: string
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          establishment_id: string
+          expires_at?: string | null
+          id?: string
+          public_key?: string | null
+          refresh_token?: string | null
+          seller_id: string
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          establishment_id?: string
+          expires_at?: string | null
+          id?: string
+          public_key?: string | null
+          refresh_token?: string | null
+          seller_id?: string
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_mp_credentials_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: true
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishments: {
         Row: {
           address: string | null
