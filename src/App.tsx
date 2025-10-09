@@ -55,6 +55,7 @@ const App = () => (
           <Route path="/table-selection/:restaurantId" element={<TableSelection />} />
           <Route path="/menu-selection/:restaurantId/:tableId" element={<MenuSelection />} />
           <Route path="/payment/:orderId" element={<PaymentOptions />} />
+          <Route path="/payment-options/:orderId" element={<PaymentOptions />} />
           <Route path="/check-in/:orderId" element={<CheckIn />} />
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
           <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
