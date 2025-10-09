@@ -29,30 +29,20 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
-    // Buscar a public_key do estabelecimento
-    const fetchPublicKey = async () => {
-      const { data, error } = await supabase
-        .from('establishment_mp_credentials')
-        .select('public_key')
-        .eq('establishment_id', restaurantId)
-        .maybeSingle();
-
-      if (data?.public_key) {
-        setPublicKey(data.public_key);
-        // Inicializar MercadoPago SDK
-        const script = document.createElement('script');
-        script.src = 'https://sdk.mercadopago.com/js/v2';
-        script.async = true;
-        script.onload = () => {
-          const mpInstance = new (window as any).MercadoPago(data.public_key);
-          setMp(mpInstance);
-        };
-        document.body.appendChild(script);
-      }
+    // Usar public_key fixa da plataforma
+    const platformPublicKey = 'APP_USR-3ae9076d-38dd-49c6-93db-4e578b332243';
+    setPublicKey(platformPublicKey);
+    
+    // Inicializar MercadoPago SDK
+    const script = document.createElement('script');
+    script.src = 'https://sdk.mercadopago.com/js/v2';
+    script.async = true;
+    script.onload = () => {
+      const mpInstance = new (window as any).MercadoPago(platformPublicKey);
+      setMp(mpInstance);
     };
-
-    fetchPublicKey();
-  }, [restaurantId]);
+    document.body.appendChild(script);
+  }, []);
 
   const formatCardNumber = (value: string) => {
     const numbers = value.replace(/\D/g, '');

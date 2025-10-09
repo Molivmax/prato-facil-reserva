@@ -90,36 +90,22 @@ serve(async (req) => {
     }
 
     // Para PIX e Cartão, processar via Mercado Pago
-    // Buscar credenciais do estabelecimento
-    const { data: credentials, error: credError } = await supabase
-      .from('establishment_mp_credentials')
-      .select('access_token, public_key, seller_id')
-      .eq('establishment_id', restaurantId)
-      .single();
+    // Usar credenciais fixas da plataforma
+    const platformAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
+    const platformPublicKey = Deno.env.get('MERCADO_PAGO_PUBLIC_KEY');
 
-    if (credError || !credentials) {
-      console.error('Credentials error:', credError);
+    if (!platformAccessToken || !platformPublicKey) {
+      console.error('Platform MP credentials not configured');
       return new Response(
         JSON.stringify({ 
           error: true,
-          needsConfiguration: true,
-          message: 'Estabelecimento não configurou pagamentos online' 
+          message: 'Credenciais do Mercado Pago não configuradas' 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
-    console.log('Found credentials for seller:', credentials.seller_id);
-
-    // Calcular taxa do app (3%)
-    const applicationFee = Number((amount * 0.03).toFixed(2));
-    const netAmount = Number((amount - applicationFee).toFixed(2));
-
-    console.log('Payment breakdown:', { 
-      total: amount, 
-      applicationFee, 
-      netAmount 
-    });
+    console.log('Using platform credentials for payment');
 
     // Processar PIX
     if (paymentMethod === 'pix') {
@@ -142,8 +128,6 @@ serve(async (req) => {
         description: `Pedido Mesa ${tableId}`,
         external_reference: orderId,
         notification_url: `${supabaseUrl}/functions/v1/mp-webhook`,
-        // Taxa da aplicação (3%)
-        application_fee: applicationFee,
       };
 
       console.log('Creating PIX payment...');
@@ -152,7 +136,7 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${credentials.access_token}`,
+          'Authorization': `Bearer ${platformAccessToken}`,
         },
         body: JSON.stringify(pixPaymentData),
       });
@@ -224,8 +208,6 @@ serve(async (req) => {
         description: `Pedido Mesa ${tableId}`,
         external_reference: orderId,
         notification_url: `${supabaseUrl}/functions/v1/mp-webhook`,
-        // Taxa da aplicação (3%)
-        application_fee: applicationFee,
       };
 
       console.log('Creating card payment...');
@@ -234,7 +216,7 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${credentials.access_token}`,
+          'Authorization': `Bearer ${platformAccessToken}`,
         },
         body: JSON.stringify(cardPaymentData),
       });
