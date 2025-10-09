@@ -98,7 +98,21 @@ const PaymentSetup = () => {
       const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${establishmentId}&redirect_uri=${encodedRedirectUri}`;
       
       console.log('Redirecionando para:', authUrl);
-      window.location.href = authUrl;
+      console.log('Client ID usado:', clientId);
+      console.log('Redirect URI usado:', redirectUri);
+      
+      // Mostrar confirmação antes de redirecionar
+      const confirmar = window.confirm(
+        `Verificar configurações antes de continuar:\n\n` +
+        `Client ID: ${clientId}\n` +
+        `Redirect URI: ${redirectUri}\n\n` +
+        `Confirme se o Client ID está correto no painel do Mercado Pago.\n\n` +
+        `Clique OK para continuar ou Cancelar para verificar.`
+      );
+      
+      if (confirmar) {
+        window.location.href = authUrl;
+      }
     } catch (error: any) {
       console.error('Erro ao conectar com Mercado Pago:', error);
       toast.error(error.message || 'Erro ao conectar com Mercado Pago. Verifique as configurações.');
