@@ -12,6 +12,7 @@ interface MenuItemProps {
   image: string;
   category: string;
   onAddToOrder: (id: string, quantity: number) => void;
+  currentQuantity?: number;
 }
 
 const MenuItem = ({
@@ -21,7 +22,8 @@ const MenuItem = ({
   price,
   image,
   category,
-  onAddToOrder
+  onAddToOrder,
+  currentQuantity = 0
 }: MenuItemProps) => {
   const [quantity, setQuantity] = useState(0);
   const [showQuantitySelector, setShowQuantitySelector] = useState(false);
@@ -76,7 +78,12 @@ const MenuItem = ({
   const totalPrice = price * quantity;
 
   return (
-    <div className="border rounded-lg overflow-hidden shadow-sm bg-white" ref={itemRef}>
+    <div className="border rounded-lg overflow-hidden shadow-sm bg-white relative" ref={itemRef}>
+      {currentQuantity > 0 && (
+        <div className="absolute top-2 left-2 bg-blink-primary text-black rounded-full h-8 w-8 flex items-center justify-center font-bold z-10 shadow-lg">
+          {currentQuantity}
+        </div>
+      )}
       <div className="relative">
         <img 
           src={image} 

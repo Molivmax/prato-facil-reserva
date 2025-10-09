@@ -139,12 +139,14 @@ const MenuSelection = () => {
       
       if (existingItemIndex >= 0) {
         const updatedCart = [...prevCart];
-        if (quantity === 0) {
+        const newQuantity = updatedCart[existingItemIndex].quantity + quantity;
+        
+        if (newQuantity <= 0) {
           // Remove item from cart
           updatedCart.splice(existingItemIndex, 1);
         } else {
           // Update quantity
-          updatedCart[existingItemIndex].quantity = quantity;
+          updatedCart[existingItemIndex].quantity = newQuantity;
         }
         return updatedCart;
       } else if (quantity > 0) {
@@ -159,6 +161,11 @@ const MenuSelection = () => {
       
       return prevCart;
     });
+  };
+
+  const getItemQuantityInCart = (menuItemId: string): number => {
+    const item = cart.find(item => item.menuItemId === menuItemId);
+    return item ? item.quantity : 0;
   };
 
   const handleReserve = async () => {
@@ -306,6 +313,7 @@ const MenuSelection = () => {
                   image={item.image}
                   category={item.category}
                   onAddToOrder={handleAddToCart}
+                  currentQuantity={getItemQuantityInCart(item.id)}
                 />
               ))}
             </div>
@@ -323,6 +331,7 @@ const MenuSelection = () => {
                   image={item.image}
                   category={item.category}
                   onAddToOrder={handleAddToCart}
+                  currentQuantity={getItemQuantityInCart(item.id)}
                 />
               ))}
             </div>
@@ -340,6 +349,7 @@ const MenuSelection = () => {
                   image={item.image}
                   category={item.category}
                   onAddToOrder={handleAddToCart}
+                  currentQuantity={getItemQuantityInCart(item.id)}
                 />
               ))}
             </div>
@@ -357,6 +367,7 @@ const MenuSelection = () => {
                   image={item.image}
                   category={item.category}
                   onAddToOrder={handleAddToCart}
+                  currentQuantity={getItemQuantityInCart(item.id)}
                 />
               ))}
             </div>
