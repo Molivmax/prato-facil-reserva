@@ -67,18 +67,30 @@ const PaymentSetup = () => {
     }
   };
 
-  const handleConnectMP = () => {
+  const handleConnectMP = async () => {
     if (!establishmentId) {
       toast.error('ID do estabelecimento não encontrado');
       return;
     }
 
-    const clientId = 'SEU_CLIENT_ID_AQUI'; // Será substituído pela variável de ambiente
-    const redirectUri = encodeURIComponent('https://lstbjfcupoowfeunlcly.supabase.co/functions/v1/mp-oauth-callback');
-    
-    const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${establishmentId}&redirect_uri=${redirectUri}`;
-    
-    window.location.href = authUrl;
+    try {
+      // Buscar configurações do Mercado Pago
+      const { data: config, error } = await supabase.functions.invoke('get-mp-config');
+
+      if (error || !config) {
+        throw new Error('Erro ao buscar configurações do Mercado Pago');
+      }
+
+      const { clientId, redirectUri } = config;
+      const encodedRedirectUri = encodeURIComponent(redirectUri);
+      
+      const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${establishmentId}&redirect_uri=${encodedRedirectUri}`;
+      
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error connecting to Mercado Pago:', error);
+      toast.error('Erro ao conectar com Mercado Pago. Verifique as configurações.');
+    }
   };
 
   const handleDisconnect = async () => {
