@@ -90,6 +90,17 @@ const OrderTracking = () => {
             return;
           }
 
+          // Atualizar status do pedido para confirmado e pago
+          if (order.payment_status === 'pending' && order.order_status === 'pending') {
+            await supabase
+              .from('orders')
+              .update({
+                payment_status: 'paid',
+                order_status: 'confirmed'
+              })
+              .eq('id', orderId);
+          }
+
           // Buscar dados do estabelecimento
           const { data: establishment } = await supabase
             .from('establishments')
@@ -97,8 +108,15 @@ const OrderTracking = () => {
             .eq('id', order.establishment_id)
             .maybeSingle();
 
+          // Buscar novamente o pedido atualizado
+          const { data: updatedOrder } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', orderId)
+            .maybeSingle();
+
           setOrderDetails({
-            ...order,
+            ...(updatedOrder || order),
             establishments: establishment ? { name: establishment.name } : null
           });
         }
