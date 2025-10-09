@@ -111,6 +111,12 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           qrCodeText: data.pixData.qr_code,
           paymentId: data.pixData.payment_id,
         });
+        
+        // Mostrar mensagem de sucesso
+        toast({
+          title: "Código PIX gerado!",
+          description: "Escaneie o QR Code ou copie o código para pagar",
+        });
       } else {
         console.error('Dados do PIX não encontrados na resposta:', data);
         throw new Error('Dados do PIX não recebidos. Verifique a configuração do Mercado Pago.');
@@ -310,6 +316,19 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
               Após o pagamento, seu pedido será confirmado automaticamente
             </p>
           </div>
+
+          <Button
+            onClick={() => {
+              toast({
+                title: "Pagamento em processamento",
+                description: "Acompanhe o status do seu pedido",
+              });
+              onSuccess();
+            }}
+            className="w-full bg-green-600 text-white hover:bg-green-700 font-semibold"
+          >
+            Já paguei
+          </Button>
 
           <Button
             onClick={onCancel}
