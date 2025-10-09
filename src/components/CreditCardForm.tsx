@@ -179,6 +179,15 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
 
       if (error) {
         console.error('Error calling function:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        
+        // Tentar pegar a resposta de erro
+        const errorData = (error as any).context?.body;
+        if (errorData) {
+          console.error('Error data from server:', errorData);
+          throw new Error(errorData.message || 'Erro ao processar pagamento');
+        }
+        
         throw new Error('Erro ao conectar com o servidor de pagamento');
       }
 
