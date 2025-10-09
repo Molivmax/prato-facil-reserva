@@ -1,317 +1,310 @@
-
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get user authentication from request
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-    
-    const authHeader = req.headers.get("Authorization");
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verificar autenticação
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error("Autenticação necessária");
-    }
-    
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error } = await supabaseClient.auth.getUser(token);
-    
-    if (error || !userData.user) {
-      throw new Error("Usuário não autenticado");
+      throw new Error('Não autorizado');
     }
 
-    // Get payment data from request
-    const requestData = await req.json().catch(() => {
-      throw new Error("Formato de dados inválido");
-    });
-    
-    const { amount, orderDetails, restaurantId, tableId, paymentMethod, orderId, payer, cardToken } = requestData;
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!amount || !restaurantId || !paymentMethod || !orderId) {
-      throw new Error("Dados incompletos para o pagamento");
+    if (authError || !user) {
+      throw new Error('Não autorizado');
     }
 
-    // Validar dados do pagador para PIX
-    if (paymentMethod === "pix" && (!payer || !payer.identification || !payer.identification.number)) {
-      throw new Error("CPF do pagador é obrigatório para pagamento PIX");
+    const { 
+      amount, 
+      orderDetails, 
+      restaurantId, 
+      tableId, 
+      paymentMethod, 
+      orderId,
+      payer,
+      cardToken 
+    } = await req.json();
+
+    console.log('Processing payment:', { amount, restaurantId, paymentMethod, orderId });
+
+    // Para Pindura e Local, apenas atualizar o pedido
+    if (paymentMethod === 'pindura' || paymentMethod === 'local') {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          payment_method: paymentMethod,
+          payment_status: 'pending',
+          order_status: 'confirmed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (updateError) {
+        console.error('Error updating order:', updateError);
+        throw new Error('Erro ao atualizar pedido');
+      }
+
+      // Criar registro na tabela de transações
+      const { error: transactionError } = await supabase
+        .from('daily_transactions')
+        .insert({
+          establishment_id: restaurantId,
+          table_number: tableId,
+          total_amount: amount,
+          payment_method: paymentMethod,
+          status: 'confirmed',
+          order_items: orderDetails,
+          customer_name: user.user_metadata?.name || 'Cliente',
+          customer_phone: user.phone || '',
+        });
+
+      if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          orderId,
+          message: paymentMethod === 'pindura' 
+            ? 'Pindura confirmada' 
+            : 'Pedido confirmado para pagamento no local'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Get establishment credentials from database
-    console.log('Buscando credenciais do estabelecimento:', restaurantId);
-    
-    const { data: credentials, error: credError } = await supabaseClient
+    // Para PIX e Cartão, processar via Mercado Pago
+    // Buscar credenciais do estabelecimento
+    const { data: credentials, error: credError } = await supabase
       .from('establishment_mp_credentials')
       .select('access_token, public_key, seller_id')
       .eq('establishment_id', restaurantId)
-      .maybeSingle();
+      .single();
 
     if (credError || !credentials) {
-      console.error('Erro ao buscar credenciais:', credError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Este estabelecimento ainda não configurou o Mercado Pago. Entre em contato com eles." 
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400 
-        }
-      );
+      console.error('Credentials error:', credError);
+      throw new Error('Estabelecimento não configurou pagamentos online. Use outro método.');
     }
 
-    const mercadoPagoToken = credentials.access_token;
-    console.log('Credenciais encontradas - Seller ID:', credentials.seller_id);
+    console.log('Found credentials for seller:', credentials.seller_id);
 
-    // Handle payment based on the method
-    if (paymentMethod === "credit") {
-      try {
-        console.log('Processando pagamento com cartão para pedido:', orderId);
-        
-        if (!cardToken) {
-          throw new Error("Token do cartão não fornecido");
-        }
+    // Calcular taxa do app (3%)
+    const applicationFee = Number((amount * 0.03).toFixed(2));
+    const netAmount = Number((amount - applicationFee).toFixed(2));
 
-        if (!payer || !payer.email) {
-          throw new Error("Dados do pagador incompletos");
-        }
+    console.log('Payment breakdown:', { 
+      total: amount, 
+      applicationFee, 
+      netAmount 
+    });
 
-        // Create a payment with Mercado Pago
-        const paymentData = {
-          transaction_amount: Number(amount),
-          token: cardToken,
-          description: `Pedido #${orderId.substring(0, 8)}`,
-          installments: 1,
-          payment_method_id: 'visa', // Será detectado automaticamente pelo token
-          payer: {
-            email: payer.email,
-            first_name: payer.first_name,
-            last_name: payer.last_name,
-            identification: {
-              type: payer.identification.type,
-              number: payer.identification.number
-            }
-          }
-        };
-
-        console.log('Enviando pagamento para Mercado Pago...');
-
-        const mercadoPagoResponse = await fetch("https://api.mercadopago.com/v1/payments", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${mercadoPagoToken}`,
-          },
-          body: JSON.stringify(paymentData),
-        });
-
-        const paymentResult = await mercadoPagoResponse.json();
-        console.log('Resposta Mercado Pago - Status:', mercadoPagoResponse.status);
-        console.log('Resposta Mercado Pago:', JSON.stringify(paymentResult));
-
-        if (!mercadoPagoResponse.ok) {
-          console.error("Erro Mercado Pago:", paymentResult);
-          throw new Error(paymentResult.message || "Erro ao processar pagamento no Mercado Pago");
-        }
-
-        // Update order in database
-        const { error: updateError } = await supabaseClient
-          .from('orders')
-          .update({
-            payment_method: paymentMethod,
-            payment_status: paymentResult.status === 'approved' ? 'paid' : 'pending',
-            order_status: paymentResult.status === 'approved' ? 'confirmed' : 'pending'
-          })
-          .eq('id', orderId)
-          .eq('user_id', userData.user.id);
-
-        if (updateError) {
-          console.error('Erro ao atualizar pedido:', updateError);
-        }
-
-        return new Response(
-          JSON.stringify({
-            success: true,
-            paymentId: paymentResult.id,
-            status: paymentResult.status,
-            orderId: orderId,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
-        );
-      } catch (mpError: any) {
-        console.error("Erro Mercado Pago:", mpError);
-        throw new Error(`Erro no processamento do pagamento: ${mpError.message}`);
+    // Processar PIX
+    if (paymentMethod === 'pix') {
+      if (!payer) {
+        throw new Error('Dados do pagador obrigatórios para PIX');
       }
-    } else if (paymentMethod === "pix") {
-      try {
-        console.log('Iniciando pagamento PIX para pedido:', orderId);
-        console.log('Valor:', amount);
-        console.log('Dados do pagador:', payer);
-        
-        // Create PIX payment with Mercado Pago
-        // Documentação: https://www.mercadopago.com.br/developers/pt/docs/checkout-api/integration-configuration/pix
-        const pixPaymentData = {
-          transaction_amount: Number(amount),
-          description: `Pedido #${orderId.substring(0, 8)}`,
-          payment_method_id: "pix",
-          payer: {
-            email: payer.email,
-            first_name: payer.first_name,
-            last_name: payer.last_name,
-            identification: {
-              type: payer.identification.type,
-              number: payer.identification.number
-            }
-          },
-        };
 
-        console.log('Dados do pagamento PIX:', JSON.stringify(pixPaymentData));
-
-        const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${mercadoPagoToken}`,
-          },
-          body: JSON.stringify(pixPaymentData),
-        });
-
-        const pixResult = await mpResponse.json();
-        console.log('Resposta Mercado Pago - Status:', mpResponse.status);
-        console.log('Resposta Mercado Pago - Body:', JSON.stringify(pixResult));
-
-        if (!mpResponse.ok) {
-          console.error("Erro Mercado Pago PIX:", pixResult);
-          throw new Error(`Erro PIX: ${pixResult.message || JSON.stringify(pixResult.cause || pixResult)}`);
-        }
-
-        // Update order status
-        const { error: updateError } = await supabaseClient
-          .from('orders')
-          .update({
-            payment_method: 'pix',
-            payment_status: 'pending',
-            order_status: 'pending'
-          })
-          .eq('id', orderId)
-          .eq('user_id', userData.user.id);
-
-        if (updateError) {
-          console.error('Erro ao atualizar pedido:', updateError);
-        }
-
-        const qrCodeBase64 = pixResult.point_of_interaction?.transaction_data?.qr_code_base64;
-        const qrCodeText = pixResult.point_of_interaction?.transaction_data?.qr_code;
-
-        console.log('QR Code Base64 presente:', !!qrCodeBase64);
-        console.log('QR Code Text presente:', !!qrCodeText);
-
-        return new Response(
-          JSON.stringify({
-            success: true,
-            paymentMethod: "pix",
-            orderId: orderId,
-            pixData: {
-              qrCode: qrCodeBase64,
-              qrCodeText: qrCodeText,
-              paymentId: pixResult.id,
-            }
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
+      const pixPaymentData = {
+        transaction_amount: amount,
+        payment_method_id: 'pix',
+        payer: {
+          email: payer.email,
+          first_name: payer.first_name,
+          last_name: payer.last_name,
+          identification: {
+            type: payer.identification.type,
+            number: payer.identification.number
           }
-        );
-      } catch (mpError: any) {
-        console.error("Erro PIX Mercado Pago:", mpError);
-        throw new Error(`Erro no processamento do PIX: ${mpError.message}`);
+        },
+        description: `Pedido Mesa ${tableId}`,
+        external_reference: orderId,
+        notification_url: `${supabaseUrl}/functions/v1/mp-webhook`,
+        // Taxa da aplicação (3%)
+        application_fee: applicationFee,
+      };
+
+      console.log('Creating PIX payment...');
+
+      const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${credentials.access_token}`,
+        },
+        body: JSON.stringify(pixPaymentData),
+      });
+
+      const mpData = await mpResponse.json();
+
+      if (!mpResponse.ok) {
+        console.error('Mercado Pago error:', mpData);
+        throw new Error(mpData.message || 'Erro ao gerar PIX');
       }
-    } else if (paymentMethod === "pindura") {
-      // For Pindura payment, update order status
-      const { error: updateError } = await supabaseClient
+
+      console.log('PIX generated:', { 
+        id: mpData.id, 
+        status: mpData.status 
+      });
+
+      // Atualizar pedido
+      const { error: updateError } = await supabase
         .from('orders')
         .update({
-          payment_method: 'pindura',
-          payment_status: 'pindura',
-          order_status: 'confirmed'
+          payment_method: 'pix',
+          payment_status: 'pending',
+          order_status: 'pending',
+          updated_at: new Date().toISOString()
         })
-        .eq('id', orderId)
-        .eq('user_id', userData.user.id);
+        .eq('id', orderId);
 
       if (updateError) {
-        console.error('Erro ao atualizar pedido:', updateError);
-        throw new Error('Erro ao confirmar Pindura');
+        console.error('Error updating order:', updateError);
       }
 
       return new Response(
         JSON.stringify({
           success: true,
-          paymentMethod: "pindura",
-          orderId: orderId,
+          pixData: {
+            qr_code: mpData.point_of_interaction?.transaction_data?.qr_code,
+            qr_code_base64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
+            ticket_url: mpData.point_of_interaction?.transaction_data?.ticket_url,
+            payment_id: mpData.id,
+          },
+          orderId,
         }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } else if (paymentMethod === "local") {
-      // For local payment, just confirm the order without payment processing
-      const { error: updateError } = await supabaseClient
+    }
+
+    // Processar Cartão de Crédito
+    if (paymentMethod === 'credit') {
+      if (!cardToken) {
+        throw new Error('Token do cartão obrigatório');
+      }
+
+      if (!payer) {
+        throw new Error('Dados do pagador obrigatórios');
+      }
+
+      const cardPaymentData = {
+        transaction_amount: amount,
+        token: cardToken,
+        installments: 1,
+        payment_method_id: 'visa', // Será determinado pelo token
+        payer: {
+          email: payer.email,
+          identification: {
+            type: payer.identification.type,
+            number: payer.identification.number
+          }
+        },
+        description: `Pedido Mesa ${tableId}`,
+        external_reference: orderId,
+        notification_url: `${supabaseUrl}/functions/v1/mp-webhook`,
+        // Taxa da aplicação (3%)
+        application_fee: applicationFee,
+      };
+
+      console.log('Creating card payment...');
+
+      const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${credentials.access_token}`,
+        },
+        body: JSON.stringify(cardPaymentData),
+      });
+
+      const mpData = await mpResponse.json();
+
+      if (!mpResponse.ok) {
+        console.error('Mercado Pago error:', mpData);
+        throw new Error(mpData.message || 'Erro ao processar pagamento');
+      }
+
+      console.log('Card payment created:', { 
+        id: mpData.id, 
+        status: mpData.status 
+      });
+
+      // Atualizar pedido baseado no status
+      const paymentStatus = mpData.status === 'approved' ? 'paid' : 'pending';
+      const orderStatus = mpData.status === 'approved' ? 'confirmed' : 'pending';
+
+      const { error: updateError } = await supabase
         .from('orders')
         .update({
-          payment_method: 'local',
-          payment_status: 'pay_later',
-          order_status: 'confirmed'
+          payment_method: 'credit',
+          payment_status: paymentStatus,
+          order_status: orderStatus,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', orderId)
-        .eq('user_id', userData.user.id);
+        .eq('id', orderId);
 
       if (updateError) {
-        console.error('Erro ao atualizar pedido:', updateError);
-        throw new Error('Erro ao confirmar pedido');
+        console.error('Error updating order:', updateError);
+      }
+
+      // Se aprovado, criar transação
+      if (mpData.status === 'approved') {
+        const { error: transactionError } = await supabase
+          .from('daily_transactions')
+          .insert({
+            establishment_id: restaurantId,
+            table_number: tableId,
+            total_amount: amount,
+            payment_method: 'credit',
+            status: 'completed',
+            order_items: orderDetails,
+            customer_name: user.user_metadata?.name || 'Cliente',
+            customer_phone: user.phone || '',
+          });
+
+        if (transactionError) {
+          console.error('Error creating transaction:', transactionError);
+        }
       }
 
       return new Response(
         JSON.stringify({
           success: true,
-          paymentMethod: "local",
-          orderId: orderId,
+          payment: {
+            id: mpData.id,
+            status: mpData.status,
+            status_detail: mpData.status_detail,
+          },
+          orderId,
         }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } else {
-      throw new Error("Método de pagamento não suportado");
     }
+
+    throw new Error('Método de pagamento inválido');
+
   } catch (error) {
-    console.error("Erro no processamento do pagamento:", error);
-    const errorMessage = (error as Error).message || "Erro desconhecido no processamento do pagamento";
-    console.error("Mensagem de erro:", errorMessage);
-    
+    console.error('Error in process-payment:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: errorMessage 
-      }),
+      JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Mudando para 200 para que o frontend possa processar o erro
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
