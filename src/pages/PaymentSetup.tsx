@@ -74,22 +74,34 @@ const PaymentSetup = () => {
     }
 
     try {
+      console.log('Buscando configurações do Mercado Pago...');
+      
       // Buscar configurações do Mercado Pago
       const { data: config, error } = await supabase.functions.invoke('get-mp-config');
 
-      if (error || !config) {
-        throw new Error('Erro ao buscar configurações do Mercado Pago');
+      console.log('Resposta da função:', { config, error });
+
+      if (error) {
+        console.error('Erro ao buscar configurações:', error);
+        throw error;
+      }
+
+      if (!config || !config.clientId) {
+        throw new Error('Configurações do Mercado Pago não encontradas');
       }
 
       const { clientId, redirectUri } = config;
+      console.log('Client ID obtido:', clientId);
+      
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       
       const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${clientId}&response_type=code&platform_id=mp&state=${establishmentId}&redirect_uri=${encodedRedirectUri}`;
       
+      console.log('Redirecionando para:', authUrl);
       window.location.href = authUrl;
-    } catch (error) {
-      console.error('Error connecting to Mercado Pago:', error);
-      toast.error('Erro ao conectar com Mercado Pago. Verifique as configurações.');
+    } catch (error: any) {
+      console.error('Erro ao conectar com Mercado Pago:', error);
+      toast.error(error.message || 'Erro ao conectar com Mercado Pago. Verifique as configurações.');
     }
   };
 
