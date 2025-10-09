@@ -99,7 +99,14 @@ serve(async (req) => {
 
     if (credError || !credentials) {
       console.error('Credentials error:', credError);
-      throw new Error('Estabelecimento não configurou pagamentos online. Use outro método.');
+      return new Response(
+        JSON.stringify({ 
+          error: true,
+          needsConfiguration: true,
+          message: 'Estabelecimento não configurou pagamentos online' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     console.log('Found credentials for seller:', credentials.seller_id);

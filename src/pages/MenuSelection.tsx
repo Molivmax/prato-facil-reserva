@@ -144,19 +144,28 @@ const MenuSelection = () => {
         if (newQuantity <= 0) {
           // Remove item from cart
           updatedCart.splice(existingItemIndex, 1);
+          console.log(`[MenuSelection] Item removido: ${menuItem.name}`);
         } else {
           // Update quantity
           updatedCart[existingItemIndex].quantity = newQuantity;
+          console.log(`[MenuSelection] Item atualizado: ${menuItem.name}, Nova quantidade: ${newQuantity}`);
         }
+        
+        const total = updatedCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        console.log(`[MenuSelection] Total do carrinho: R$ ${total.toFixed(2)}`);
         return updatedCart;
       } else if (quantity > 0) {
         // Add new item to cart
-        return [...prevCart, {
+        const newCart = [...prevCart, {
           menuItemId,
           name: menuItem.name,
           price: menuItem.price,
           quantity
         }];
+        console.log(`[MenuSelection] Novo item adicionado: ${menuItem.name}, Quantidade: ${quantity}`);
+        const total = newCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        console.log(`[MenuSelection] Total do carrinho: R$ ${total.toFixed(2)}`);
+        return newCart;
       }
       
       return prevCart;

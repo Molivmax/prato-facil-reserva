@@ -22,6 +22,7 @@ const PaymentOptions = () => {
   const [showPixForm, setShowPixForm] = useState(false);
   const [cpf, setCpf] = useState('');
   const [name, setName] = useState('');
+  const [hasOnlinePayment, setHasOnlinePayment] = useState(false);
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -62,6 +63,15 @@ const PaymentOptions = () => {
             tableId: order.table_number,
             total: order.total_amount
           });
+          
+          // Check if establishment has MP credentials configured
+          const { data: credentials } = await supabase
+            .from('establishment_mp_credentials')
+            .select('id')
+            .eq('establishment_id', order.establishment_id)
+            .maybeSingle();
+          
+          setHasOnlinePayment(!!credentials);
         }
       } catch (err) {
         console.error("Erro ao buscar detalhes do pedido:", err);
@@ -383,36 +393,46 @@ const PaymentOptions = () => {
                 </Button>
               </div>
             ) : (
-              <RadioGroup
-                value={paymentMethod || ""}
-                onValueChange={setPaymentMethod}
-                className="space-y-4"
-              >
-                <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                  <RadioGroupItem value="credit" id="payment-credit" />
-                  <Label htmlFor="payment-credit" className="flex-1 cursor-pointer">
-                    <div className="flex items-center">
-                      <CreditCard className="h-5 w-5 text-blink-primary mr-3" />
-                      <div>
-                        <p className="font-medium text-white">Cartão de Crédito</p>
-                        <p className="text-sm text-gray-400">Pague agora e tenha seu pedido aprovado imediatamente</p>
-                      </div>
-                    </div>
-                  </Label>
-                </div>
+              <>
+                {!hasOnlinePayment && (
+                  <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ Este estabelecimento ainda não aceita pagamentos online (PIX/Cartão). 
+                      Por favor, escolha "Pagar no Local" ou "Pindura".
+                    </p>
+                  </div>
+                )}
                 
-                <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
-                  <RadioGroupItem value="pix" id="payment-pix" />
-                  <Label htmlFor="payment-pix" className="flex-1 cursor-pointer">
-                    <div className="flex items-center">
-                      <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
-                      <div>
-                        <p className="font-medium text-white">PIX</p>
-                        <p className="text-sm text-gray-400">Pagamento instantâneo via PIX</p>
+                <RadioGroup
+                  value={paymentMethod || ""}
+                  onValueChange={setPaymentMethod}
+                  className="space-y-4"
+                >
+                  <div className={`flex items-center space-x-2 rounded-lg border border-white/10 p-4 ${hasOnlinePayment ? 'cursor-pointer hover:bg-white/5' : 'opacity-50 cursor-not-allowed bg-gray-800/50'} transition-colors`}>
+                    <RadioGroupItem value="credit" id="payment-credit" disabled={!hasOnlinePayment} />
+                    <Label htmlFor="payment-credit" className={`flex-1 ${hasOnlinePayment ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                      <div className="flex items-center">
+                        <CreditCard className="h-5 w-5 text-blink-primary mr-3" />
+                        <div>
+                          <p className="font-medium text-white">Cartão de Crédito {!hasOnlinePayment && '(Indisponível)'}</p>
+                          <p className="text-sm text-gray-400">Pague agora e tenha seu pedido aprovado imediatamente</p>
+                        </div>
                       </div>
-                    </div>
-                  </Label>
-                </div>
+                    </Label>
+                  </div>
+                  
+                  <div className={`flex items-center space-x-2 rounded-lg border border-white/10 p-4 ${hasOnlinePayment ? 'cursor-pointer hover:bg-white/5' : 'opacity-50 cursor-not-allowed bg-gray-800/50'} transition-colors`}>
+                    <RadioGroupItem value="pix" id="payment-pix" disabled={!hasOnlinePayment} />
+                    <Label htmlFor="payment-pix" className={`flex-1 ${hasOnlinePayment ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                      <div className="flex items-center">
+                        <WalletCards className="h-5 w-5 text-blink-primary mr-3" />
+                        <div>
+                          <p className="font-medium text-white">PIX {!hasOnlinePayment && '(Indisponível)'}</p>
+                          <p className="text-sm text-gray-400">Pagamento instantâneo via PIX</p>
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
                 
                 <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">
                   <RadioGroupItem value="pindura" id="payment-pindura" />
@@ -439,7 +459,8 @@ const PaymentOptions = () => {
                     </div>
                   </Label>
                 </div>
-              </RadioGroup>
+                </RadioGroup>
+              </>
             )}
           </CardContent>
         </Card>

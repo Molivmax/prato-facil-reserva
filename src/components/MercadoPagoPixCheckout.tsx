@@ -86,7 +86,21 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
       }
 
       if (data?.success === false || data?.error) {
-        console.error('Erro retornado pela função:', data.error);
+        console.error('Erro retornado pela função:', data);
+        
+        // Check if establishment needs configuration
+        if (data?.needsConfiguration || data?.error?.includes('não configurou')) {
+          toast({
+            title: "Pagamento não configurado",
+            description: "Este estabelecimento ainda não aceita pagamentos online. Por favor, escolha 'Pagar no Local' ou 'Pindura'.",
+            variant: "destructive",
+            duration: 6000,
+          });
+          setLoading(false);
+          onCancel();
+          return;
+        }
+        
         throw new Error(data.error || 'Erro ao processar pagamento');
       }
       

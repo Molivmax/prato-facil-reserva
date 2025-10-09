@@ -45,12 +45,13 @@ const MenuItem = ({
     // If quantity selector is not shown, show it first
     if (!showQuantitySelector) {
       setShowQuantitySelector(true);
-      setQuantity(1); // Start with quantity 1
+      setQuantity(currentQuantity > 0 ? currentQuantity : 1); // Start with current quantity or 1
       return;
     }
 
     // Otherwise add the item
     if (quantity > 0) {
+      console.log(`[MenuItem] Adicionando: ${name}, Quantidade: ${quantity}, Preço: ${price}`);
       onAddToOrder(id, quantity);
       
       // Calculate position for the message
