@@ -139,59 +139,51 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
     setIsProcessing(true);
 
     try {
-      console.log('Starting card token creation...');
-      console.log('MP instance:', mp);
+      console.log('Starting payment process...');
       
-      // Criar token do cartão
-      const cardData = {
-        cardNumber: formData.cardNumber.replace(/\D/g, ''),
-        cardholderName: formData.cardholderName,
-        cardExpirationMonth: formData.expirationMonth,
-        cardExpirationYear: '20' + formData.expirationYear, // Adicionar século
-        securityCode: formData.securityCode,
-        identificationType: 'CPF',
-        identificationNumber: formData.cpf.replace(/\D/g, ''),
-      };
-
-      console.log('Card data prepared:', { ...cardData, securityCode: '***', cardNumber: cardData.cardNumber.slice(0, 6) + '...' });
-
-      const token = await mp.createCardToken(cardData);
-      console.log('Token created:', token);
-
-      if (!token || !token.id) {
-        throw new Error('Erro ao processar dados do cartão');
-      }
-
-      // Enviar token para processar pagamento
+      // Em vez de criar token no frontend, vamos enviar os dados do cartão diretamente
+      // para o backend processar (apenas em ambiente de teste)
       const { data: session } = await supabase.auth.getSession();
 
-      const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: {
-          amount,
-          orderId,
-          restaurantId,
-          paymentMethod: 'credit',
-          cardToken: token.id,
-          payer: {
-            email: session.session?.user.email || 'customer@email.com',
-            first_name: formData.cardholderName.split(' ')[0],
-            last_name: formData.cardholderName.split(' ').slice(1).join(' ') || 'Card',
-            identification: {
-              type: 'CPF',
-              number: formData.cpf.replace(/\D/g, ''),
-            },
+      const paymentData = {
+        amount,
+        orderId,
+        restaurantId,
+        paymentMethod: 'credit',
+        cardData: {
+          cardNumber: formData.cardNumber.replace(/\D/g, ''),
+          cardholderName: formData.cardholderName,
+          cardExpirationMonth: formData.expirationMonth,
+          cardExpirationYear: formData.expirationYear,
+          securityCode: formData.securityCode,
+          cpf: formData.cpf.replace(/\D/g, ''),
+        },
+        payer: {
+          email: session.session?.user.email || 'customer@email.com',
+          first_name: formData.cardholderName.split(' ')[0],
+          last_name: formData.cardholderName.split(' ').slice(1).join(' ') || 'Card',
+          identification: {
+            type: 'CPF',
+            number: formData.cpf.replace(/\D/g, ''),
           },
         },
+      };
+
+      console.log('Calling process-payment function...');
+
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: paymentData,
       });
 
+      console.log('Payment response:', data);
+
       if (error) {
-        console.error('Erro na chamada da função:', error);
+        console.error('Error calling function:', error);
         throw new Error('Erro ao conectar com o servidor de pagamento');
       }
 
       if (data?.error) {
-        console.error('Erro no processamento:', data);
-        // Traduzir mensagens comuns do Mercado Pago
+        console.error('Payment error:', data);
         let errorMessage = data.message || 'Erro ao processar pagamento';
         
         if (errorMessage.includes('API') || errorMessage.includes('recursos')) {

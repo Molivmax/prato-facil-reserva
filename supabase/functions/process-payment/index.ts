@@ -48,7 +48,8 @@ serve(async (req) => {
       paymentMethod, 
       orderId,
       payer,
-      cardToken 
+      cardToken,
+      cardData
     } = requestBody;
 
     console.log('Processing payment:', { amount, restaurantId, paymentMethod, orderId });
@@ -67,7 +68,10 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating order:', updateError);
-        throw new Error('Erro ao atualizar pedido');
+        return new Response(
+          JSON.stringify({ error: true, message: 'Erro ao atualizar pedido' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
       }
 
       // Criar registro na tabela de transações
@@ -197,17 +201,70 @@ serve(async (req) => {
 
     // Processar Cartão de Crédito
     if (paymentMethod === 'credit') {
-      if (!cardToken) {
-        throw new Error('Token do cartão obrigatório');
+      let tokenToUse = cardToken;
+
+      // Se não tiver token mas tiver cardData, criar o token no backend
+      if (!tokenToUse && cardData) {
+        console.log('Creating card token in backend...');
+        
+        const tokenPayload = {
+          card_number: cardData.cardNumber,
+          cardholder: {
+            name: cardData.cardholderName,
+            identification: {
+              type: 'CPF',
+              number: cardData.cpf,
+            }
+          },
+          expiration_month: parseInt(cardData.cardExpirationMonth),
+          expiration_year: parseInt('20' + cardData.cardExpirationYear),
+          security_code: cardData.securityCode,
+        };
+
+        const tokenResponse = await fetch('https://api.mercadopago.com/v1/card_tokens', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${platformAccessToken}`,
+          },
+          body: JSON.stringify(tokenPayload),
+        });
+
+        const tokenData = await tokenResponse.json();
+        
+        if (!tokenResponse.ok) {
+          console.error('Error creating token:', tokenData);
+          return new Response(
+            JSON.stringify({ 
+              error: true, 
+              message: tokenData.message || 'Erro ao processar dados do cartão',
+              details: tokenData 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        tokenToUse = tokenData.id;
+        console.log('Token created successfully:', tokenToUse);
+      }
+
+      if (!tokenToUse) {
+        return new Response(
+          JSON.stringify({ error: true, message: 'Token do cartão obrigatório' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
       }
 
       if (!payer) {
-        throw new Error('Dados do pagador obrigatórios');
+        return new Response(
+          JSON.stringify({ error: true, message: 'Dados do pagador obrigatórios' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
       }
 
       const cardPaymentData = {
         transaction_amount: amount,
-        token: cardToken,
+        token: tokenToUse,
         installments: 1,
         payment_method_id: 'visa', // Será determinado pelo token
         payer: {
