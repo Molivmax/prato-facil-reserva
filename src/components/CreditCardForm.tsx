@@ -31,7 +31,7 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   useEffect(() => {
     const loadMercadoPago = async () => {
       // Usar a mesma public key que está configurada no backend
-      const publicKeyToUse = 'TEST-0a8ffb85-04e2-4b5e-9f9f-d0eb1e064e5c';
+      const publicKeyToUse = 'APP_USR-3ae9076d-38dd-49c6-93db-4e578b332243';
       
       console.log('Loading MercadoPago SDK with key:', publicKeyToUse);
       setPublicKey(publicKeyToUse);
