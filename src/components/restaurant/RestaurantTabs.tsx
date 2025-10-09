@@ -22,7 +22,7 @@ const RestaurantTabs = ({ showProducts, setShowProducts }: RestaurantTabsProps) 
       
       <Button
         variant={!showProducts ? "default" : "outline"}
-        className={!showProducts ? "bg-blink-primary text-black hover:bg-blink-secondary font-medium" : "text-black font-medium"}
+        className={!showProducts ? "bg-blink-primary text-blink-text hover:bg-blink-secondary font-medium" : "border-foreground text-foreground hover:bg-accent font-medium"}
         onClick={() => setShowProducts(false)}
       >
         <Star className="mr-2 h-5 w-5" />
