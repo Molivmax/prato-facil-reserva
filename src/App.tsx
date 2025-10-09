@@ -19,7 +19,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import PartnerRegistration from "./pages/PartnerRegistration";
-import PaymentSetup from "./pages/PaymentSetup";
 import EstablishmentLogin from "./pages/EstablishmentLogin";
 import EstablishmentDashboard from "./pages/EstablishmentDashboard";
 import ProductRegistration from "./pages/ProductRegistration";
@@ -48,7 +47,6 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/search" element={<SearchRestaurants />} />
-          <Route path="/payment-setup" element={<PaymentSetup />} />
           <Route path="/restaurant/:id" element={<RestaurantDetails />} />
           <Route path="/table-selection/:restaurantId" element={<TableSelection />} />
           <Route path="/menu-selection/:restaurantId/:tableId" element={<MenuSelection />} />
