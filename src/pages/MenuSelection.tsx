@@ -271,7 +271,7 @@ const MenuSelection = () => {
   return (
     <>
       <Navbar />
-      <div className="container max-w-4xl mx-auto px-4 py-6 pb-20">
+      <div className="container max-w-4xl mx-auto px-4 py-6 pb-48">
         <Button 
           variant="ghost" 
           className="mb-4"
