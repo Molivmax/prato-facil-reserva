@@ -18,6 +18,7 @@ import CompletedOrder from "./pages/CompletedOrder";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import PartnerRegistration from "./pages/PartnerRegistration";
 import PaymentSetup from "./pages/PaymentSetup";
 import MPOAuthSuccess from "./pages/MPOAuthSuccess";
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/search" element={<SearchRestaurants />} />
           <Route path="/payment-setup" element={<PaymentSetup />} />
           <Route path="/mp-oauth-success" element={<MPOAuthSuccess />} />
