@@ -35,12 +35,15 @@ type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
 
 // Define order interface
 interface Order {
-  id: number;
+  id: string | number;
   tableNumber: number;
   itemCount: number;
   total: number;
   status: OrderStatus;
   canAddMore: boolean;
+  paymentStatus?: string;
+  orderStatus?: string;
+  items?: any;
 }
 
 const EstablishmentDashboard = () => {
@@ -80,18 +83,89 @@ const EstablishmentDashboard = () => {
     };
 
     checkAuth();
-
-    // Generate mock orders
-    generateMockData();
   }, [navigate, location]);
 
-  const generateMockData = () => {
-    // Clear all mock data for testing real flow
-    setPendingOrders([]);
-    setArrivingCustomers(0);
-    setAttendingCustomers([]);
-    setFinalizedCustomers(0);
+  const fetchEstablishmentOrders = async (establishmentId: string) => {
+    try {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('establishment_id', establishmentId)
+        .in('payment_status', ['pending', 'paid'])
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching orders:', error);
+        return;
+      }
+      
+      if (orders && orders.length > 0) {
+        const formattedOrders = orders.map(order => ({
+          id: order.id,
+          tableNumber: order.table_number,
+          itemCount: Array.isArray(order.items) ? order.items.length : 0,
+          total: Number(order.total_amount),
+          status: (order.order_status === 'pending' ? 'pending' : 'accepted') as OrderStatus,
+          canAddMore: order.order_status === 'confirmed',
+          paymentStatus: order.payment_status,
+          orderStatus: order.order_status,
+          items: order.items,
+        }));
+        
+        const pending = formattedOrders.filter(o => o.status === 'pending');
+        const accepted = formattedOrders.filter(o => o.status === 'accepted');
+        
+        setPendingOrders(pending);
+        setArrivingCustomers(pending.length);
+        setAttendingCustomers(accepted);
+        
+        console.log('Orders loaded:', { pending: pending.length, accepted: accepted.length });
+      } else {
+        setPendingOrders([]);
+        setArrivingCustomers(0);
+        setAttendingCustomers([]);
+      }
+    } catch (error) {
+      console.error('Error in fetchEstablishmentOrders:', error);
+      toast.error('Não foi possível buscar os pedidos do estabelecimento');
+    }
   };
+
+  useEffect(() => {
+    if (!establishment?.id) return;
+    
+    console.log('Setting up real-time for establishment:', establishment.id);
+    
+    fetchEstablishmentOrders(establishment.id);
+    
+    const channel = supabase
+      .channel('orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `establishment_id=eq.${establishment.id}`
+        },
+        (payload) => {
+          console.log('Order changed via real-time:', payload);
+          fetchEstablishmentOrders(establishment.id);
+          
+          if (payload.eventType === 'INSERT') {
+            toast.success(`🔔 Novo Pedido! Mesa ${payload.new.table_number} - R$ ${Number(payload.new.total_amount).toFixed(2)}`);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
+      
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [establishment?.id]);
 
   const fetchEstablishmentData = async (userId: string) => {
     try {
@@ -188,41 +262,41 @@ const EstablishmentDashboard = () => {
   };
 
   // Function to handle accepting an order
-  const handleAcceptOrder = (orderId: number) => {
+  const handleAcceptOrder = (orderId: string | number) => {
     setPendingOrders(prevOrders =>
       prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'accepted', canAddMore: true } : order
+        order.id === orderId ? { ...order, status: 'accepted' as OrderStatus, canAddMore: true } : order
       )
     );
-    toast.success(`Pedido #${orderId} aceito com sucesso!`);
+    toast.success(`Pedido aceito com sucesso!`);
   };
 
   // Function to handle rejecting an order
-  const handleRejectOrder = (orderId: number) => {
+  const handleRejectOrder = (orderId: string | number) => {
     setPendingOrders(prevOrders =>
       prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'rejected', canAddMore: false } : order
+        order.id === orderId ? { ...order, status: 'rejected' as OrderStatus, canAddMore: false } : order
       )
     );
-    toast.error(`Pedido #${orderId} rejeitado.`);
+    toast.error(`Pedido rejeitado.`);
   };
 
   // Function to handle completing an order
-  const handleCompleteOrder = (orderId: number) => {
+  const handleCompleteOrder = (orderId: string | number) => {
     setPendingOrders(prevOrders =>
       prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'completed', canAddMore: false } : order
+        order.id === orderId ? { ...order, status: 'completed' as OrderStatus, canAddMore: false } : order
       )
     );
-    toast.success(`Pedido #${orderId} finalizado com sucesso!`);
+    toast.success(`Pedido finalizado com sucesso!`);
   };
 
   // Function to handle deleting a rejected order
-  const handleDeleteOrder = (orderId: number) => {
+  const handleDeleteOrder = (orderId: string | number) => {
     setPendingOrders(prevOrders =>
       prevOrders.filter(order => order.id !== orderId)
     );
-    toast.success(`Pedido #${orderId} removido da lista.`);
+    toast.success(`Pedido removido da lista.`);
   };
 
   // Function to handle preparing a table (customer arrives)
@@ -260,7 +334,7 @@ const EstablishmentDashboard = () => {
   };
 
   // Function to allow customer to add more items to an accepted order
-  const handleAllowMoreItems = (orderId: number) => {
+  const handleAllowMoreItems = (orderId: string | number) => {
     // In a real application, this would send a notification to the customer's app
     toast.success(`Cliente da mesa ${pendingOrders.find(o => o.id === orderId)?.tableNumber} notificado para adicionar mais itens!`);
     
@@ -878,7 +952,7 @@ const EstablishmentDashboard = () => {
         <CheckoutDialog
           isOpen={checkoutDialogOpen}
           onClose={handleCloseCheckoutDialog}
-          orderId={selectedOrder.id}
+          orderId={typeof selectedOrder.id === 'string' ? parseInt(selectedOrder.id) : selectedOrder.id}
           tableNumber={selectedOrder.tableNumber}
         />
       )}

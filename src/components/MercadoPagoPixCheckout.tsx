@@ -23,6 +23,53 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   const [showForm, setShowForm] = useState(true);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!pixData?.qr_code) return;
+    
+    console.log('Starting payment polling for order:', orderId);
+    
+    const checkPaymentStatus = async () => {
+      try {
+        const { data: order, error } = await supabase
+          .from('orders')
+          .select('payment_status, order_status')
+          .eq('id', orderId)
+          .single();
+          
+        if (error) {
+          console.error('Error checking payment status:', error);
+          return;
+        }
+        
+        console.log('Payment status check:', order);
+        
+        if (order?.payment_status === 'paid') {
+          console.log('✅ Payment confirmed! Redirecting...');
+          clearInterval(intervalId);
+          
+          toast({
+            title: "✅ Pagamento Confirmado!",
+            description: "Seu pedido foi recebido pelo restaurante",
+          });
+          
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Error in checkPaymentStatus:', error);
+      }
+    };
+    
+    const intervalId = setInterval(checkPaymentStatus, 3000);
+    checkPaymentStatus();
+    
+    return () => {
+      console.log('Cleaning up payment polling');
+      clearInterval(intervalId);
+    };
+  }, [pixData, orderId, onSuccess, toast]);
+
   const formatCPF = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     return numbers

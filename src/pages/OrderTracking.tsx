@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus, Clock, CheckCircle, QrCode, CreditCard } from 'lucide-react';
+import { MapPin, Plus, Clock, CheckCircle, QrCode, CreditCard, Loader2, CheckCircle2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,6 +136,52 @@ const OrderTracking = () => {
     loadOrderDetails();
   }, [orderId, navigate, toast]);
 
+  useEffect(() => {
+    if (!orderId || orderId === 'latest') return;
+    
+    console.log('Setting up real-time for order:', orderId);
+    
+    const channel = supabase
+      .channel(`order-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`
+        },
+        (payload) => {
+          console.log('Order updated via real-time:', payload);
+          const updatedOrder = payload.new;
+          
+          setOrderDetails(updatedOrder);
+          
+          if (updatedOrder.payment_status === 'paid' && orderDetails?.payment_status !== 'paid') {
+            toast({
+              title: "✅ Pagamento Confirmado!",
+              description: "Seu pedido foi recebido pelo restaurante",
+            });
+          }
+          
+          if (updatedOrder.order_status === 'confirmed' && orderDetails?.order_status !== 'confirmed') {
+            toast({
+              title: "🎉 Pedido Confirmado!",
+              description: "O restaurante está preparando seu pedido",
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
+      
+    return () => {
+      console.log('Cleaning up order real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [orderId, orderDetails?.payment_status, orderDetails?.order_status, toast]);
+
   const handleEnableLocation = async () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -241,22 +287,49 @@ const OrderTracking = () => {
             )}
 
             {orderDetails?.payment_status === 'pending' && (
-              <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between mb-3">
+              <>
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin text-yellow-500" />
+                    <div>
+                      <p className="font-semibold text-yellow-500">Aguardando Confirmação do Pagamento</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Verificando seu pagamento automaticamente...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-yellow-300 font-semibold mb-1">⚠️ Pagamento Pendente</p>
+                      <p className="text-yellow-200/70 text-sm">
+                        Você ainda não completou o pagamento deste pedido
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full bg-yellow-500 text-black hover:bg-yellow-600 font-semibold"
+                    onClick={() => navigate(`/payment-options/${orderDetails.id}`)}
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Efetuar Pagamento Agora
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {orderDetails?.payment_status === 'paid' && (
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
                   <div>
-                    <p className="text-yellow-300 font-semibold mb-1">⚠️ Pagamento Pendente</p>
-                    <p className="text-yellow-200/70 text-sm">
-                      Você ainda não completou o pagamento deste pedido
+                    <p className="font-semibold text-green-500">✅ Pagamento Confirmado!</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Seu pedido foi recebido pelo restaurante
                     </p>
                   </div>
                 </div>
-                <Button 
-                  className="w-full bg-yellow-500 text-black hover:bg-yellow-600 font-semibold"
-                  onClick={() => navigate(`/payment-options/${orderDetails.id}`)}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Efetuar Pagamento Agora
-                </Button>
               </div>
             )}
 

@@ -176,13 +176,23 @@ Deno.serve(async (req) => {
     if (paymentStatus === 'paid') {
       console.log('Payment approved, creating daily transaction');
 
+      // Mapear payment_type_id do Mercado Pago para os valores aceitos pela constraint
+      let mappedPaymentMethod = 'credit';
+      if (paymentData.payment_type_id === 'bank_transfer' || 
+          paymentData.payment_method_id === 'pix') {
+        mappedPaymentMethod = 'credit';
+      } else if (paymentData.payment_type_id === 'credit_card' || 
+                 paymentData.payment_type_id === 'debit_card') {
+        mappedPaymentMethod = 'credit';
+      }
+
       const { error: transactionError } = await supabase
         .from('daily_transactions')
         .insert({
           establishment_id: order.establishment_id,
           table_number: order.table_number,
           total_amount: order.total_amount,
-          payment_method: paymentData.payment_type_id || 'credit',
+          payment_method: mappedPaymentMethod,
           status: 'completed',
           order_items: order.items,
           customer_name: paymentData.payer?.first_name || 'Cliente',
