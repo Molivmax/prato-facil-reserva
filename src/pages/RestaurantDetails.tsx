@@ -94,19 +94,40 @@ const RestaurantDetails = () => {
   }, [id, navigate, toast]);
 
   // Calculate total amount
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalAmount = cartItems.reduce((sum, item) => {
+    const itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+    console.log('🧮 Item:', item.name, 'Price:', item.price, 'Qty:', item.quantity, 'Total:', itemTotal);
+    return sum + itemTotal;
+  }, 0);
+  
+  console.log('💰 Total Amount Calculated:', totalAmount, 'CartItems:', cartItems);
+
+  // Debug: Monitor cart changes
+  useEffect(() => {
+    console.log('🛒 Cart Updated:', {
+      itemCount: cartItems.length,
+      items: cartItems,
+      totalAmount: totalAmount
+    });
+  }, [cartItems, totalAmount]);
 
   // Add item to cart
   const addToCart = (item: {id: string, name: string, price: number, quantity: number}) => {
+    console.log('➕ Adding to cart:', item.name, 'Qty:', item.quantity, 'Price:', item.price);
+    
     const updatedCart = [...cartItems];
     const existingItemIndex = updatedCart.findIndex(i => i.id === item.id);
     
     if (existingItemIndex >= 0) {
       updatedCart[existingItemIndex].quantity += item.quantity;
     } else {
-      updatedCart.push(item);
+      updatedCart.push({
+        ...item,
+        price: Number(item.price)
+      });
     }
     
+    console.log('📦 Updated Cart:', updatedCart);
     setCartItems(updatedCart);
     localStorage.setItem('cartItems', JSON.stringify(updatedCart));
   };

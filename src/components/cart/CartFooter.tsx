@@ -23,6 +23,15 @@ const CartFooter = ({
 }: CartFooterProps) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const safeTotal = Number(totalAmount) || 0;
+  
+  console.log('🎯 CartFooter Render:', {
+    itemCount: cartItems.length,
+    totalItems,
+    totalAmount,
+    safeTotal,
+    cartItems
+  });
 
   return (
     <>
@@ -46,7 +55,7 @@ const CartFooter = ({
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-xs text-muted-foreground">Ver carrinho</span>
-                <span className="text-base font-bold">R$ {totalAmount.toFixed(2)}</span>
+                <span className="text-base font-bold">R$ {safeTotal.toFixed(2)}</span>
               </div>
               <ChevronUp className="h-4 w-4 text-muted-foreground ml-1" />
             </button>
@@ -67,7 +76,7 @@ const CartFooter = ({
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         cartItems={cartItems}
-        totalAmount={totalAmount}
+        totalAmount={safeTotal}
         onUpdateQuantity={onUpdateQuantity}
         onRemoveItem={onRemoveItem}
         onReserve={onReserve}
