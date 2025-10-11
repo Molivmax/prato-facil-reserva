@@ -362,7 +362,7 @@ serve(async (req) => {
             establishment_id: order.establishment_id,
             table_number: order.table_number,
             total_amount: amount,
-            payment_method: 'credit',
+            payment_method: paymentMethod,
             status: 'completed',
             order_items: order.items,
             customer_name: user.user_metadata?.name || 'Cliente',

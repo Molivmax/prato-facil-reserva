@@ -138,16 +138,20 @@ const DailyRevenue = ({ establishmentId }: DailyRevenueProps) => {
   };
 
   const getPaymentMethodBadge = (method: string | null) => {
-    const variants: { [key: string]: 'default' | 'secondary' | 'outline' } = {
+    const variants: { [key: string]: 'default' | 'secondary' | 'outline' | 'destructive' } = {
       'credit': 'default',
-      'app': 'secondary',
+      'debit': 'default',
+      'pix': 'secondary',
+      'pindura': 'outline',
       'local': 'outline'
     };
     
     const labels: { [key: string]: string } = {
-      'credit': 'Cartão',
-      'app': 'App',
-      'local': 'Local'
+      'credit': '💳 Crédito',
+      'debit': '💳 Débito',
+      'pix': '📱 PIX',
+      'pindura': '📌 Pindura',
+      'local': '💵 Local'
     };
 
     return (
