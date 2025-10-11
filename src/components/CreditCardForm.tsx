@@ -396,14 +396,17 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-blink-primary text-black hover:bg-blink-primary/90"
+              className="flex-1 bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold"
               disabled={isProcessing}
             >
               {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processando...
-                </>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-semibold">Processando pagamento</span>
+                    <span className="text-[10px] opacity-80">Aguarde...</span>
+                  </div>
+                </div>
               ) : (
                 `Pagar R$ ${amount.toFixed(2)}`
               )}

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import PixPaymentProgress from './PixPaymentProgress';
 
 interface MercadoPagoPixCheckoutProps {
   amount: number;
@@ -21,6 +22,8 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   const [cpf, setCpf] = useState('');
   const [name, setName] = useState('');
   const [showForm, setShowForm] = useState(true);
+  const [paymentProgress, setPaymentProgress] = useState(0);
+  const [progressStatus, setProgressStatus] = useState<'waiting' | 'detected' | 'confirming' | 'confirmed'>('waiting');
   const { toast } = useToast();
 
   // Monitor critical state changes + session status
@@ -51,9 +54,15 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
 
   // Poll for payment status updates + Real-time subscription
   useEffect(() => {
-    if (!pixData?.qr_code) return;
+    if (!pixData?.qr_code) {
+      setPaymentProgress(0);
+      setProgressStatus('waiting');
+      return;
+    }
     
     console.log('🔍 Starting payment monitoring (polling + real-time) for order:', orderId);
+    setPaymentProgress(25);
+    setProgressStatus('waiting');
     
     // Real-time subscription
     const channel = supabase
@@ -75,13 +84,24 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
             order_status: updatedOrder.order_status
           });
           
-          if (updatedOrder.payment_status === 'paid') {
+          if (updatedOrder.payment_status === 'pending') {
+            setPaymentProgress(50);
+            setProgressStatus('detected');
+          } else if (updatedOrder.payment_status === 'paid') {
             console.log('✅ Real-time: PAGAMENTO CONFIRMADO!');
+            setPaymentProgress(100);
+            setProgressStatus('confirmed');
+            
+            // Vibração se suportado
+            if (navigator.vibrate) {
+              navigator.vibrate([200, 100, 200]);
+            }
+            
             toast({
               title: "✅ Pagamento Confirmado!",
               description: "Seu pedido foi recebido pelo restaurante",
             });
-            setTimeout(() => onSuccess(), 1000);
+            setTimeout(() => onSuccess(), 2000);
           }
         }
       )
@@ -140,16 +160,22 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           order_status: order.order_status
         });
         
-        if (order?.payment_status === 'paid') {
+        if (order?.payment_status === 'pending') {
+          setPaymentProgress(50);
+          setProgressStatus('detected');
+        } else if (order?.payment_status === 'paid') {
           console.log('✅ PAGAMENTO CONFIRMADO! Chamando onSuccess...');
           clearInterval(intervalId);
+          
+          setPaymentProgress(100);
+          setProgressStatus('confirmed');
           
           toast({
             title: "✅ Pagamento Confirmado!",
             description: "Seu pedido foi recebido pelo restaurante",
           });
           
-          setTimeout(() => onSuccess(), 1000);
+          setTimeout(() => onSuccess(), 2000);
         }
       } catch (error) {
         console.error('❌ Erro crítico no polling:', error);
@@ -475,6 +501,11 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
             </p>
           </div>
 
+          <PixPaymentProgress 
+            status={progressStatus} 
+            progress={paymentProgress}
+          />
+
           <Button
             type="button"
             onClick={(e) => {
@@ -501,9 +532,6 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           <div className="text-center">
             <p className="text-sm text-gray-400 mb-2">
               Total: R$ {amount.toFixed(2)}
-            </p>
-            <p className="text-xs text-gray-500">
-              Após o pagamento, seu pedido será confirmado automaticamente
             </p>
           </div>
 
