@@ -103,8 +103,8 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blink-primary via-blink-secondary to-blink-tertiary p-4">
-      <Card className="w-full max-w-md bg-white/5 border-white/10 backdrop-blur-lg">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
         <CardHeader className="text-center space-y-4">
           <div className="flex items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-blink-primary/20 flex items-center justify-center">
@@ -115,7 +115,7 @@ const ResetPassword = () => {
             <CardTitle className="text-2xl font-bold text-white">
               Redefinir Senha
             </CardTitle>
-            <CardDescription className="text-gray-300">
+            <CardDescription className="text-gray-400">
               Digite sua nova senha abaixo
             </CardDescription>
           </div>
@@ -123,9 +123,9 @@ const ResetPassword = () => {
         <CardContent>
           {hasError ? (
             <div className="space-y-4">
-              <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
+              <Alert variant="destructive" className="bg-red-950/50 border-red-900">
                 <AlertTriangle className="h-5 w-5 text-red-400" />
-                <AlertDescription className="text-gray-200">
+                <AlertDescription className="text-red-200">
                   <strong className="block mb-2">⚠️ Link de recuperação expirado ou inválido</strong>
                   Este link já foi usado ou expirou. Os links de recuperação são válidos por apenas 1 hora.
                 </AlertDescription>
@@ -139,7 +139,7 @@ const ResetPassword = () => {
               <Button 
                 variant="outline"
                 onClick={() => navigate('/login')}
-                className="w-full border-white/20 text-white hover:bg-white/10"
+                className="w-full border-gray-700 text-white hover:bg-gray-800"
               >
                 Voltar ao Login
               </Button>
@@ -147,7 +147,7 @@ const ResetPassword = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-200">Nova Senha</Label>
+              <Label htmlFor="password" className="text-white">Nova Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -156,11 +156,11 @@ const ResetPassword = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="bg-white/10 border-white/20 placeholder:text-gray-500 text-white"
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-200">
+              <Label htmlFor="confirmPassword" className="text-white">
                 Confirmar Nova Senha
               </Label>
               <Input
@@ -171,7 +171,7 @@ const ResetPassword = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
-                className="bg-white/10 border-white/20 placeholder:text-gray-500 text-white"
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
             <Button 

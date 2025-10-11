@@ -8,7 +8,7 @@ interface AdvancedQuantitySelectorProps {
   quantity: number;
   price: number;
   updateQuantity: (productId: string, increment: boolean) => void;
-  onAddToTable?: (productId: string) => void;
+  onAddToTable?: () => void;
   formatPrice: (price: number) => string;
   showAddButton?: boolean;
 }
@@ -26,7 +26,7 @@ const AdvancedQuantitySelector = ({
 
   const handleAddToTable = () => {
     if (onAddToTable && quantity > 0) {
-      onAddToTable(productId);
+      onAddToTable();
     }
   };
 
