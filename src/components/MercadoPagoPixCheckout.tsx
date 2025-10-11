@@ -67,11 +67,16 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
-          console.log('🔔 Payment status updated via real-time:', payload);
+          console.log('🔔 Real-time: Payment status updated!', payload);
           const updatedOrder = payload.new as any;
           
+          console.log('📊 Novo status:', {
+            payment_status: updatedOrder.payment_status,
+            order_status: updatedOrder.order_status
+          });
+          
           if (updatedOrder.payment_status === 'paid') {
-            console.log('✅ Payment confirmed via real-time!');
+            console.log('✅ Real-time: PAGAMENTO CONFIRMADO!');
             toast({
               title: "✅ Pagamento Confirmado!",
               description: "Seu pedido foi recebido pelo restaurante",
@@ -81,20 +86,30 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
         }
       )
       .subscribe((status) => {
-        console.log('📡 Payment monitoring subscription status:', status);
+        console.log('📡 Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Real-time conectado ao canal:', `payment-${orderId}`);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Erro no canal real-time');
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏱️ Timeout no canal real-time');
+        }
       });
     
     // Polling como backup (caso real-time falhe)
     const checkPaymentStatus = async () => {
       try {
+        console.log('🔍 Polling: Verificando status do pagamento...');
+        
         // ✅ Refresh da sessão antes de fazer query
         const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
         
         if (sessionError || !session) {
-          console.warn('⚠️ Erro ao renovar sessão durante verificação:', sessionError);
-          // Não interromper o polling - tentar novamente no próximo ciclo
+          console.warn('⚠️ Erro ao renovar sessão:', sessionError);
           return;
         }
+        
+        console.log('✅ Sessão renovada, buscando order:', orderId);
         
         const { data: order, error } = await supabase
           .from('orders')
@@ -102,19 +117,31 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           .eq('id', orderId)
           .maybeSingle();
           
+        console.log('📦 Order recebido:', { order, error });
+          
         if (error) {
-          console.error('❌ Error checking payment status:', error);
+          console.error('❌ Erro na query:', error);
           
           // Se for erro de autenticação, tentar refresh
           if (error.message?.includes('JWT') || error.message?.includes('session')) {
-            console.log('🔄 Detectado erro de autenticação, tentando refresh...');
+            console.log('🔄 Tentando refresh da sessão...');
             await supabase.auth.refreshSession();
           }
           return;
         }
         
+        if (!order) {
+          console.warn('⚠️ Order não encontrado:', orderId);
+          return;
+        }
+        
+        console.log('🔍 Status atual:', {
+          payment_status: order.payment_status,
+          order_status: order.order_status
+        });
+        
         if (order?.payment_status === 'paid') {
-          console.log('✅ Payment confirmed via polling!');
+          console.log('✅ PAGAMENTO CONFIRMADO! Chamando onSuccess...');
           clearInterval(intervalId);
           
           toast({
@@ -125,7 +152,7 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           setTimeout(() => onSuccess(), 1000);
         }
       } catch (error) {
-        console.error('❌ Error in checkPaymentStatus:', error);
+        console.error('❌ Erro crítico no polling:', error);
       }
     };
     
@@ -133,7 +160,10 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
     checkPaymentStatus(); // Check imediato
     
     return () => {
-      console.log('🔌 Cleaning up payment monitoring');
+      console.log('🔌 Limpando recursos:', { 
+        orderId, 
+        intervalId 
+      });
       clearInterval(intervalId);
       supabase.removeChannel(channel);
     };
