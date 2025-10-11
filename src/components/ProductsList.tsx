@@ -103,8 +103,8 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
         quantity: quantity
       });
       
-      // Reset quantity
-      setQuantities(prev => ({...prev, [product.id]: 0}));
+      // Reset quantity to 1 for better UX
+      setQuantities(prev => ({...prev, [product.id]: 1}));
       
       toast({
         title: "Adicionado à mesa",
