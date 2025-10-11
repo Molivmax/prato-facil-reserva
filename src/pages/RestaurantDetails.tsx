@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
@@ -93,14 +93,18 @@ const RestaurantDetails = () => {
     }
   }, [id, navigate, toast]);
 
-  // Calculate total amount
-  const totalAmount = cartItems.reduce((sum, item) => {
-    const itemTotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
-    console.log('🧮 Item:', item.name, 'Price:', item.price, 'Qty:', item.quantity, 'Total:', itemTotal);
-    return sum + itemTotal;
-  }, 0);
-  
-  console.log('💰 Total Amount Calculated:', totalAmount, 'CartItems:', cartItems);
+  // Calculate total amount with useMemo
+  const totalAmount = useMemo(() => {
+    const total = cartItems.reduce((sum, item) => {
+      const safePrice = Number(item.price) || 0;
+      const safeQuantity = Number(item.quantity) || 0;
+      const itemTotal = safePrice * safeQuantity;
+      console.log('🧮 Item:', item.name, 'Price:', safePrice, 'Qty:', safeQuantity, 'Total:', itemTotal);
+      return sum + itemTotal;
+    }, 0);
+    console.log('💰 Total Amount Calculated:', total, 'CartItems:', cartItems);
+    return total;
+  }, [cartItems]);
 
   // Debug: Monitor cart changes
   useEffect(() => {

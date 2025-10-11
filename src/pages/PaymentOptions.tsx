@@ -403,15 +403,13 @@ const PaymentOptions = () => {
           <Button 
             className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 py-6 font-semibold"
             onClick={handleContinue}
-            disabled={(!paymentMethod && !showPixForm) || isProcessing}
+            disabled={!paymentMethod || isProcessing}
           >
             {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processando...
               </>
-            ) : showPixForm ? (
-              "Gerar código PIX"
             ) : (
               "Confirmar Pagamento"
             )}
