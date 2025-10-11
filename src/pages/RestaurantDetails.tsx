@@ -122,6 +122,31 @@ const RestaurantDetails = () => {
     });
   };
 
+  // Update cart item quantity
+  const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeCartItem(itemId);
+      return;
+    }
+    
+    setCartItems(prev => {
+      const updated = prev.map(item => 
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      );
+      localStorage.setItem('cartItems', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Remove cart item
+  const removeCartItem = (itemId: string) => {
+    setCartItems(prev => {
+      const updated = prev.filter(item => item.id !== itemId);
+      localStorage.setItem('cartItems', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const handleReserve = async () => {
     if (cartItems.length === 0) {
       toast({
@@ -279,6 +304,8 @@ const RestaurantDetails = () => {
         cartItems={cartItems}
         totalAmount={totalAmount}
         onReserve={handleReserve}
+        onUpdateQuantity={updateCartItemQuantity}
+        onRemoveItem={removeCartItem}
         onClearCart={clearCart}
       />
     </>
