@@ -17,6 +17,7 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   const [isProcessing, setIsProcessing] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [mp, setMp] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [cardToken, setCardToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     cardNumber: '',
@@ -29,12 +30,30 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
   const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
+    // Timeout de segurança de 10 segundos
+    const timeout = setTimeout(() => {
+      if (!publicKey || publicKey === null) {
+        console.error('⏰ Timeout ao carregar SDK do Mercado Pago');
+        setErrors({ general: 'Tempo esgotado ao carregar pagamento. Tente novamente.' });
+        setPublicKey('ERROR');
+        setIsLoading(false);
+      }
+    }, 10000);
+
     const loadMercadoPago = async () => {
       try {
+        // Validar restaurantId antes de continuar
+        if (!restaurantId) {
+          console.error('❌ restaurantId não fornecido ao CreditCardForm');
+          setErrors({ general: 'Erro: ID do restaurante não encontrado' });
+          setPublicKey('ERROR');
+          setIsLoading(false);
+          return;
+        }
+
         console.log('🔐 Buscando credenciais do Mercado Pago...');
         console.log('📍 Restaurant ID:', restaurantId);
         
-        // CORREÇÃO: Usar restaurantId da prop ao invés do user.id
         // Buscar credenciais do MP usando o restaurantId diretamente
         const { data: credentials, error: credentialsError } = await supabase
           .from('establishment_mp_credentials')
@@ -45,12 +64,16 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
         if (credentialsError) {
           console.error('❌ Erro ao buscar credenciais:', credentialsError);
           setErrors({ general: 'Erro ao buscar credenciais de pagamento' });
+          setPublicKey('ERROR');
+          setIsLoading(false);
           return;
         }
 
         if (!credentials?.public_key) {
           console.error('❌ Credenciais do MP não encontradas para este restaurante');
           setErrors({ general: 'Restaurante não configurou pagamentos ainda' });
+          setPublicKey('ERROR');
+          setIsLoading(false);
           return;
         }
 
@@ -75,22 +98,33 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
             });
             console.log('✅ Instância do MercadoPago criada');
             setMp(mpInstance);
+            setIsLoading(false);
           } catch (error) {
             console.error('❌ Erro ao criar instância do MercadoPago:', error);
+            setErrors({ general: 'Erro ao inicializar pagamento' });
+            setPublicKey('ERROR');
+            setIsLoading(false);
           }
         };
         script.onerror = () => {
           console.error('❌ Falha ao carregar SDK do MercadoPago');
+          setErrors({ general: 'Falha ao carregar sistema de pagamento' });
+          setPublicKey('ERROR');
+          setIsLoading(false);
         };
         document.body.appendChild(script);
       } catch (error) {
         console.error('❌ Erro ao carregar credenciais do MP:', error);
         setErrors({ general: 'Erro ao carregar configurações de pagamento' });
+        setPublicKey('ERROR');
+        setIsLoading(false);
       }
     };
     
     loadMercadoPago();
-  }, []);
+    
+    return () => clearTimeout(timeout);
+  }, [restaurantId]);
 
   const formatCardNumber = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -251,12 +285,29 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
     }
   };
 
-  if (!publicKey) {
+  if (isLoading || !publicKey || publicKey === 'ERROR') {
     return (
       <Card className="bg-black/50 backdrop-blur-md border border-white/10">
-        <CardContent className="p-6 flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-blink-primary mr-2" />
-          <p className="text-white">Carregando formulário...</p>
+        <CardContent className="p-6">
+          {errors.general ? (
+            <div className="space-y-4">
+              <div className="p-3 bg-red-900/50 border border-red-500/50 rounded-md">
+                <p className="text-white text-sm">{errors.general}</p>
+              </div>
+              <Button
+                onClick={onCancel}
+                className="w-full bg-white/10 hover:bg-white/20 text-white"
+                variant="outline"
+              >
+                Voltar
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-blink-primary mr-2" />
+              <p className="text-white">Carregando formulário de pagamento...</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
