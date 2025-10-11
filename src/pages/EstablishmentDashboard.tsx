@@ -44,6 +44,10 @@ interface Order {
   paymentStatus?: string;
   orderStatus?: string;
   items?: any;
+  user_id?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
 }
 
 const EstablishmentDashboard = () => {
@@ -53,7 +57,7 @@ const EstablishmentDashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [arrivingCustomers, setArrivingCustomers] = useState(0);
-  const [attendingCustomers, setAttendingCustomers] = useState<any[]>([]);
+  const [attendingCustomers, setAttendingCustomers] = useState<Order[]>([]);
   const [finalizedCustomers, setFinalizedCustomers] = useState(0);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -85,6 +89,26 @@ const EstablishmentDashboard = () => {
     checkAuth();
   }, [navigate, location]);
 
+  const fetchCustomerInfo = async (userId: string) => {
+    try {
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('name, phone, email')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching customer info:', error);
+        return null;
+      }
+      
+      return user;
+    } catch (error) {
+      console.error('Error in fetchCustomerInfo:', error);
+      return null;
+    }
+  };
+
   const fetchEstablishmentOrders = async (establishmentId: string) => {
     try {
       const { data: orders, error } = await supabase
@@ -110,16 +134,46 @@ const EstablishmentDashboard = () => {
           paymentStatus: order.payment_status,
           orderStatus: order.order_status,
           items: order.items,
+          user_id: order.user_id,
         }));
         
-        const pending = formattedOrders.filter(o => o.status === 'pending');
-        const accepted = formattedOrders.filter(o => o.status === 'accepted');
+        // Buscar informações de clientes para pedidos confirmados
+        const ordersWithCustomers = await Promise.all(
+          formattedOrders.map(async (order) => {
+            if (order.user_id && order.paymentStatus === 'paid') {
+              const customerInfo = await fetchCustomerInfo(order.user_id);
+              if (customerInfo) {
+                return {
+                  ...order,
+                  customerName: customerInfo.name,
+                  customerPhone: customerInfo.phone,
+                  customerEmail: customerInfo.email,
+                };
+              }
+            }
+            return order;
+          })
+        );
         
-        setPendingOrders(pending);
-        setArrivingCustomers(pending.length);
-        setAttendingCustomers(accepted);
+        // Separar pedidos pendentes (ainda não pagos)
+        const pending = ordersWithCustomers.filter(o => 
+          o.paymentStatus === 'pending' && o.orderStatus === 'pending'
+        );
         
-        console.log('Orders loaded:', { pending: pending.length, accepted: accepted.length });
+        // Separar pedidos confirmados (pagos)
+        const confirmed = ordersWithCustomers.filter(o => 
+          o.paymentStatus === 'paid' && o.orderStatus === 'confirmed'
+        );
+        
+        setPendingOrders([...pending, ...confirmed]); // Mostrar AMBOS na aba Pedidos
+        setArrivingCustomers(confirmed.length); // Clientes que pagaram
+        setAttendingCustomers(confirmed); // Pedidos confirmados (pagos)
+        
+        console.log('Orders loaded:', { 
+          pending: pending.length, 
+          confirmed: confirmed.length,
+          totalOrders: [...pending, ...confirmed].length 
+        });
       } else {
         setPendingOrders([]);
         setArrivingCustomers(0);
@@ -301,35 +355,24 @@ const EstablishmentDashboard = () => {
 
   // Function to handle preparing a table (customer arrives)
   const handlePrepareTable = (customerIndex: number) => {
-    // Move customer from arriving to attending
-    const newCustomer = {
-      id: Math.floor(Math.random() * 1000) + 3000,
-      tableNumber: Math.floor(Math.random() * 20) + 1,
-      people: Math.floor(Math.random() * 4) + 1,
-      startTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      pendingAmount: 0, // No pending amount initially
-      status: 'attending'
-    };
-    
-    setAttendingCustomers(prev => [...prev, newCustomer]);
+    // This function is kept for backward compatibility but not used anymore
     setArrivingCustomers(prev => Math.max(0, prev - 1));
-    
-    toast.success(`Mesa #${newCustomer.tableNumber} preparada! Cliente está sendo atendido.`);
+    toast.success(`Cliente preparado para atendimento.`);
   };
 
   // Function to handle finalizing a table (send payment reminder)
-  const handleFinalizeTable = (customerId: number) => {
-    const customer = attendingCustomers.find(c => c.id === customerId);
-    if (!customer) return;
+  const handleFinalizeTable = (orderId: string | number) => {
+    const order = attendingCustomers.find(c => c.id === orderId);
+    if (!order) return;
     
-    // Simulate sending payment reminder to customer's app
-    toast.success(`Lembrete de pagamento enviado para o cliente da mesa #${customer.tableNumber}! Valor pendente: R$ ${customer.pendingAmount.toFixed(2)}`);
+    // Simulate finalizing the order
+    toast.success(`Mesa #${order.tableNumber} finalizada! Total: R$ ${order.total.toFixed(2)}`);
     
-    // Remove customer from attending list after a short delay (simulating payment process)
+    // Remove customer from attending list
     setTimeout(() => {
-      setAttendingCustomers(prev => prev.filter(c => c.id !== customerId));
+      setAttendingCustomers(prev => prev.filter(c => c.id !== orderId));
       setFinalizedCustomers(prev => prev + 1);
-      toast.success(`Mesa #${customer.tableNumber} finalizada e liberada!`);
+      toast.success(`Mesa #${order.tableNumber} liberada!`);
     }, 2000);
   };
 
@@ -841,27 +884,33 @@ const EstablishmentDashboard = () => {
                   <CardContent className="pt-6">
                     {attendingCustomers.length > 0 ? (
                       <div className="space-y-4">
-                        {attendingCustomers.map((customer) => (
-                          <Card key={customer.id} className="border border-green-500/50 bg-green-950/20 hover:bg-green-950/30 cursor-pointer transition-all duration-200">
+                        {attendingCustomers.map((order) => (
+                          <Card key={order.id} className="border border-green-500/50 bg-green-950/20 hover:bg-green-950/30 cursor-pointer transition-all duration-200">
                             <CardHeader className="pb-2">
                               <div className="flex justify-between">
-                                <CardTitle className="text-lg text-white">Mesa #{customer.tableNumber}</CardTitle>
+                                <CardTitle className="text-lg text-white">Mesa #{order.tableNumber}</CardTitle>
                                 <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-md font-medium">
-                                  Atendendo
+                                  {order.paymentStatus === 'paid' ? 'Pago' : 'Atendendo'}
                                 </span>
                               </div>
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-2 text-white">
-                                <p className="text-sm text-gray-300">Início do atendimento: {customer.startTime}</p>
-                                <p className="font-medium">Pessoas: {customer.people}</p>
-                                <p className="font-medium">Pendente: R$ {customer.pendingAmount.toFixed(2)}</p>
+                                {order.customerName && (
+                                  <p className="text-sm text-gray-300">Cliente: {order.customerName}</p>
+                                )}
+                                {order.customerPhone && (
+                                  <p className="text-sm text-gray-300">Telefone: {order.customerPhone}</p>
+                                )}
+                                <p className="font-medium">Itens: {order.itemCount}</p>
+                                <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                                <p className="text-sm text-gray-400">Status: {order.orderStatus}</p>
                                 <div className="flex space-x-2 pt-2">
                                   <Button 
                                     size="sm" 
                                     variant="outline"
                                     className="border-blue-500 text-blue-400 hover:bg-blue-900/20"
-                                    onClick={() => handleFinalizeTable(customer.id)}
+                                    onClick={() => handleFinalizeTable(order.id)}
                                   >
                                     <DoorOpen size={16} className="mr-1" />
                                     Finalizar Mesa
@@ -877,7 +926,7 @@ const EstablishmentDashboard = () => {
                         <Info className="h-4 w-4 text-gray-400" />
                         <AlertTitle className="text-gray-200">Nenhum cliente sendo atendido</AlertTitle>
                         <AlertDescription className="text-gray-300">
-                          As mesas ocupadas aparecerão aqui quando você preparar as mesas para os clientes.
+                          Pedidos confirmados e pagos aparecerão aqui.
                         </AlertDescription>
                       </Alert>
                     )}
