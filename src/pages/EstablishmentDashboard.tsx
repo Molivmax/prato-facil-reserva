@@ -715,8 +715,29 @@ const EstablishmentDashboard = () => {
                           <CardContent>
                             <div className="space-y-2 text-white">
                               <p className="text-sm text-gray-300">Mesa: #{order.tableNumber}</p>
-                              <p className="font-medium">Itens: {order.itemCount}</p>
                               <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
+                              
+                              {/* Lista de itens do pedido */}
+                              <div className="mt-3 space-y-2">
+                                <p className="text-sm font-semibold text-gray-300">Itens do Pedido:</p>
+                                {Array.isArray(order.items) && order.items.length > 0 ? (
+                                  <ul className="space-y-1 pl-4">
+                                    {order.items.map((item: any, idx: number) => (
+                                      <li key={idx} className="text-sm text-gray-300">
+                                        {item.quantity}x {item.name} - R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-xs text-gray-400 italic pl-4">Nenhum item cadastrado</p>
+                                )}
+                              </div>
+                              
+                              <div className="pt-2 border-t border-gray-600">
+                                <p className="text-sm text-gray-400">
+                                  Status pagamento: <span className="font-medium">{order.paymentStatus || 'pendente'}</span>
+                                </p>
+                              </div>
                               
                               {order.status === 'pending' && (
                                 <div className="flex space-x-2 pt-2">

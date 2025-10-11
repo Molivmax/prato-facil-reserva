@@ -106,146 +106,75 @@ const PaymentOptions = () => {
   const handleContinue = async () => {
     if (!paymentMethod) {
       toast({
-        title: "Escolha um método de pagamento",
-        description: "Por favor, selecione um método de pagamento para continuar",
+        title: "Selecione um método de pagamento",
         variant: "destructive",
       });
       return;
     }
 
-    if (!orderDetails) {
+    if (!orderDetails.id) {
       toast({
-        title: "Erro no pedido",
-        description: "Não foi possível carregar os detalhes do pedido",
+        title: "Erro ao processar pedido",
+        description: "ID do pedido não encontrado",
         variant: "destructive",
       });
       return;
     }
 
-    // Se for cartão de crédito, mostrar formulário
-    if (paymentMethod === 'credit') {
+    if (paymentMethod === "credit_card") {
       setShowCreditCardForm(true);
       return;
     }
 
-    // Se for PIX, mostrar formulário de CPF primeiro
-    if (paymentMethod === 'pix') {
-      if (!showPixForm) {
-        setShowPixForm(true);
-        return;
-      }
-
-      // Validar CPF e nome
-      if (!name.trim()) {
-        toast({
-          title: "Nome obrigatório",
-          description: "Por favor, informe seu nome completo",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const cpfNumbers = cpf.replace(/\D/g, '');
-      if (cpfNumbers.length !== 11) {
-        toast({
-          title: "CPF inválido",
-          description: "Por favor, informe um CPF válido com 11 dígitos",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (paymentMethod === "pix") {
+      // Ir direto para o checkout PIX (sem formulário duplicado)
+      setShowPixCheckout(true);
+      return;
     }
-    
+
     setIsProcessing(true);
     setError(null);
-    
+
     try {
-      // Obter a sessão do usuário
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error("Você precisa estar logado para continuar");
-      }
-      
-      // Chamar a função edge do Supabase para processar o pagamento
-      const requestBody: any = {
-        amount: orderDetails.total,
-        orderDetails: orderDetails.items,
-        restaurantId: orderDetails.restaurantId,
-        tableId: orderDetails.tableId,
-        paymentMethod: paymentMethod,
-        orderId: orderId
-      };
+      if (paymentMethod === 'pindura') {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ 
+            payment_method: 'pindura',
+            payment_status: 'pending'
+          })
+          .eq('id', orderDetails.id);
 
-      // Adicionar dados do pagador para PIX
-      if (paymentMethod === 'pix') {
-        const cpfNumbers = cpf.replace(/\D/g, '');
-        requestBody.payer = {
-          email: session.user.email || 'customer@email.com',
-          first_name: name.split(' ')[0] || 'Cliente',
-          last_name: name.split(' ').slice(1).join(' ') || 'App',
-          identification: {
-            type: 'CPF',
-            number: cpfNumbers
-          }
-        };
-      }
+        if (updateError) throw updateError;
 
-      const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: requestBody
-      });
-      
-      if (error) {
-        throw new Error(error.message || "Erro ao processar o pagamento");
-      }
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Processar a resposta com base no método de pagamento
-      if (paymentMethod === "pix") {
-        // Para PIX, mostrar o componente de checkout
-        setShowPixCheckout(true);
-        setIsProcessing(false);
-        return;
-      } else if (paymentMethod === "credit") {
-        // Para pagamento com cartão
         toast({
-          title: "Pagamento confirmado!",
-          description: "Seu pedido foi recebido pelo restaurante.",
+          title: "Pedido registrado!",
+          description: "Você poderá pagar depois.",
         });
-        
-        navigate(`/order-tracking/${data.orderId || orderId}`);
-      } else if (paymentMethod === "pindura") {
-        // Para pagamento via "pindura" (mini crédito)
-        toast({
-          title: "Pindura confirmada!",
-          description: "Você pagará quando usar o app novamente.",
-        });
-        
-        navigate(`/order-tracking/${data.orderId || orderId}`);
-      } else if (paymentMethod === "local") {
-        // Para pagamento no local
+        navigate(`/order-tracking/${orderId}`);
+      } else if (paymentMethod === 'pay_at_location') {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ 
+            payment_method: 'pay_at_location',
+            payment_status: 'pending'
+          })
+          .eq('id', orderDetails.id);
+
+        if (updateError) throw updateError;
+
         toast({
           title: "Pedido confirmado!",
-          description: "Você pagará diretamente no estabelecimento.",
+          description: "Pague no estabelecimento.",
         });
-        
-        navigate(`/order-tracking/${data.orderId || orderId}`);
+        navigate(`/order-tracking/${orderId}`);
       }
-      
-      // Simular envio de notificação ao restaurante quando estiver a 5min de distância
-      toast({
-        title: "Localização ativada",
-        description: "O restaurante será notificado quando você estiver a 5 minutos de distância.",
-      });
-    } catch (err: any) {
-      console.error("Erro no pagamento:", err);
-      setError(err.message || "Houve um erro ao processar o pagamento. Tente novamente.");
+    } catch (err) {
+      console.error('Payment error:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao processar pagamento');
       toast({
         title: "Erro no pagamento",
-        description: err.message || "Houve um erro ao processar o pagamento. Tente novamente.",
+        description: err instanceof Error ? err.message : 'Tente novamente',
         variant: "destructive",
       });
     } finally {

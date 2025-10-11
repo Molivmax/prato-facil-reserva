@@ -440,21 +440,23 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
             </p>
           </div>
 
-          <Button
-            onClick={() => {
-              toast({
-                title: "Pagamento em processamento",
-                description: "Acompanhe o status do seu pedido",
-              });
-              onSuccess();
-            }}
-            className="w-full bg-green-600 text-white hover:bg-green-700 font-semibold"
-          >
-            Já paguei
-          </Button>
+          <div className="text-center py-3">
+            <div className="flex items-center justify-center gap-2">
+              <div className="animate-pulse h-2 w-2 bg-green-400 rounded-full"></div>
+              <p className="text-sm text-gray-400">
+                Aguardando confirmação do pagamento...
+              </p>
+            </div>
+          </div>
 
           <Button
-            onClick={onCancel}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              console.log('❌ Cancelar clicado');
+              onCancel();
+            }}
             variant="outline"
             className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
           >

@@ -114,8 +114,12 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
     }
   };
 
-  const updateQuantity = (productId: string, increment: boolean) => {
+  const updateQuantity = (productId: string, increment: boolean | number) => {
     setQuantities(prev => {
+      if (typeof increment === 'number') {
+        // Se receber um número, seta diretamente
+        return {...prev, [productId]: increment};
+      }
       const currentQuantity = prev[productId] || 0;
       const newQuantity = increment ? currentQuantity + 1 : Math.max(0, currentQuantity - 1);
       return {...prev, [productId]: newQuantity};
