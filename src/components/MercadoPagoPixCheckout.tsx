@@ -209,10 +209,17 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
     }
   };
 
-  const copyPixCode = async () => {
+  const copyPixCode = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevenir propagação para elementos pais
+    e.preventDefault();  // Prevenir ação padrão
+    
+    console.log('🔘 Botão copiar clicado');
+    console.log('📋 PixData disponível:', !!pixData?.qrCodeText);
+    
     if (pixData?.qrCodeText) {
       try {
         await navigator.clipboard.writeText(pixData.qrCodeText);
+        console.log('✅ Código copiado com sucesso');
         setCopied(true);
         toast({
           title: "Código copiado!",
@@ -220,12 +227,15 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
         });
         setTimeout(() => setCopied(false), 3000);
       } catch (error) {
+        console.error('❌ Erro ao copiar:', error);
         toast({
           title: "Erro ao copiar",
           description: "Tente novamente",
           variant: "destructive",
         });
       }
+    } else {
+      console.warn('⚠️ Nenhum código PIX disponível para copiar');
     }
   };
 

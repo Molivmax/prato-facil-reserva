@@ -13,7 +13,11 @@ interface CheckoutDialogProps {
 const CheckoutDialog = ({ isOpen, onClose, orderId, tableNumber }: CheckoutDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-transparent border-0 p-0">
+      <DialogContent 
+        className="sm:max-w-md bg-transparent border-0 p-0"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <QrCodeCheckout 
           orderId={orderId} 
           tableNumber={tableNumber} 

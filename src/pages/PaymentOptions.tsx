@@ -27,6 +27,11 @@ const PaymentOptions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Debug: Monitor showPixCheckout changes
+  useEffect(() => {
+    console.log('🔄 showPixCheckout changed:', showPixCheckout);
+  }, [showPixCheckout]);
+
   // Fetch order details from Supabase
   useEffect(() => {
     const getOrderDetails = async () => {
