@@ -65,13 +65,14 @@ const PaymentOptions = () => {
           return;
         }
 
-        if (order) {
-          setOrderDetails({
-            items: order.items,
-            restaurantId: order.establishment_id,
-            tableId: order.table_number,
-            total: order.total_amount
-          });
+      if (order) {
+        setOrderDetails({
+          id: order.id,
+          items: order.items,
+          restaurantId: order.establishment_id,
+          tableId: order.table_number,
+          total: order.total_amount
+        });
           
           // Pagamentos online sempre disponíveis (usando credenciais da plataforma)
           setHasOnlinePayment(true);
