@@ -54,13 +54,21 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
 
   // Poll for payment status updates + Real-time subscription
   useEffect(() => {
-    if (!pixData?.qr_code) {
+    console.log('🔍 useEffect de monitoramento executado:', {
+      hasPixData: !!pixData,
+      hasQrCode: !!pixData?.qrCode,
+      orderId
+    });
+    
+    if (!pixData?.qrCode) {
+      console.log('⚠️ Sem pixData.qrCode, resetando progresso');
       setPaymentProgress(0);
       setProgressStatus('waiting');
       return;
     }
     
-    console.log('🔍 Starting payment monitoring (polling + real-time) for order:', orderId);
+    console.log('✅ Iniciando monitoramento (polling + real-time) para order:', orderId);
+    console.log('📦 PixData completo:', pixData);
     setPaymentProgress(25);
     setProgressStatus('waiting');
     
