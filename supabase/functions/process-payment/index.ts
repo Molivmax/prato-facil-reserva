@@ -122,22 +122,30 @@ serve(async (req) => {
     }
 
     // Para PIX e Cartão, processar via Mercado Pago
-    // Usar credenciais fixas da plataforma
-    const platformAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
-    const platformPublicKey = Deno.env.get('MERCADO_PAGO_PUBLIC_KEY');
+    // Buscar credenciais do estabelecimento
+    console.log('🔐 Buscando credenciais do estabelecimento:', order.establishment_id);
+    
+    const { data: credentials, error: credError } = await supabase
+      .from('establishment_mp_credentials')
+      .select('access_token, public_key')
+      .eq('establishment_id', order.establishment_id)
+      .single();
 
-    if (!platformAccessToken || !platformPublicKey) {
-      console.error('Platform MP credentials not configured');
+    if (credError || !credentials) {
+      console.error('❌ Credenciais do MP não encontradas:', credError);
       return new Response(
         JSON.stringify({ 
           error: true,
-          message: 'Credenciais do Mercado Pago não configuradas' 
+          message: 'Estabelecimento não configurou o Mercado Pago' 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log('Using platform credentials for payment');
+    const platformAccessToken = credentials.access_token;
+    const platformPublicKey = credentials.public_key;
+    
+    console.log('✅ Usando credenciais do estabelecimento');
 
     // Processar PIX
     if (paymentMethod === 'pix') {

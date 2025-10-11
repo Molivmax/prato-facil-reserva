@@ -30,37 +30,76 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
 
   useEffect(() => {
     const loadMercadoPago = async () => {
-      // Usar a mesma public key que está configurada no backend
-      const publicKeyToUse = 'APP_USR-3ae9076d-38dd-49c6-93db-4e578b332243';
-      
-      console.log('Loading MercadoPago SDK with key:', publicKeyToUse);
-      setPublicKey(publicKeyToUse);
-      
-      // Carregar o SDK do MercadoPago
-      const existingScript = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://sdk.mercadopago.com/js/v2';
-      script.async = true;
-      script.onload = () => {
-        console.log('MercadoPago SDK loaded successfully');
-        try {
-          const mpInstance = new (window as any).MercadoPago(publicKeyToUse, {
-            locale: 'pt-BR'
-          });
-          console.log('MercadoPago instance created');
-          setMp(mpInstance);
-        } catch (error) {
-          console.error('Error creating MercadoPago instance:', error);
+      try {
+        console.log('🔐 Buscando credenciais do Mercado Pago...');
+        
+        // Buscar public key do estabelecimento
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('❌ Usuário não autenticado');
+          return;
         }
-      };
-      script.onerror = () => {
-        console.error('Failed to load MercadoPago SDK');
-      };
-      document.body.appendChild(script);
+
+        // Buscar establishment
+        const { data: establishment } = await supabase
+          .from('establishments')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!establishment) {
+          console.error('❌ Estabelecimento não encontrado');
+          return;
+        }
+
+        console.log('✅ Establishment ID:', establishment.id);
+
+        // Buscar credenciais do MP
+        const { data: credentials } = await supabase
+          .from('establishment_mp_credentials')
+          .select('public_key')
+          .eq('establishment_id', establishment.id)
+          .single();
+
+        if (!credentials?.public_key) {
+          console.error('❌ Credenciais do MP não encontradas');
+          setErrors({ general: 'Configure o Mercado Pago primeiro nas configurações' });
+          return;
+        }
+
+        const publicKeyToUse = credentials.public_key;
+        console.log('✅ Public Key obtida:', publicKeyToUse);
+        setPublicKey(publicKeyToUse);
+        
+        // Carregar o SDK do MercadoPago
+        const existingScript = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://sdk.mercadopago.com/js/v2';
+        script.async = true;
+        script.onload = () => {
+          console.log('✅ MercadoPago SDK carregado');
+          try {
+            const mpInstance = new (window as any).MercadoPago(publicKeyToUse, {
+              locale: 'pt-BR'
+            });
+            console.log('✅ Instância do MercadoPago criada');
+            setMp(mpInstance);
+          } catch (error) {
+            console.error('❌ Erro ao criar instância do MercadoPago:', error);
+          }
+        };
+        script.onerror = () => {
+          console.error('❌ Falha ao carregar SDK do MercadoPago');
+        };
+        document.body.appendChild(script);
+      } catch (error) {
+        console.error('❌ Erro ao carregar credenciais do MP:', error);
+        setErrors({ general: 'Erro ao carregar configurações de pagamento' });
+      }
     };
     
     loadMercadoPago();
