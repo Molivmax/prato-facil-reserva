@@ -176,6 +176,14 @@ const OrderTracking = () => {
               });
             }
             
+            // Show toast for table assignment
+            if (updatedOrder.assigned_table && prev?.assigned_table !== updatedOrder.assigned_table) {
+              toast({
+                title: "🪑 Mesa Atribuída!",
+                description: `Sua mesa é a número ${updatedOrder.assigned_table}`,
+              });
+            }
+            
             return updatedOrder;
           });
         }
@@ -281,8 +289,17 @@ const OrderTracking = () => {
               <div>
                 <h2 className="text-lg font-semibold text-white">Pedido Confirmado</h2>
                 <p className="text-gray-400">
-                  {orderDetails?.establishments?.name || orderDetails?.restaurantName} • Mesa {orderDetails?.table_number || orderDetails?.tableNumber}
+                  {orderDetails?.establishments?.name || orderDetails?.restaurantName}
                 </p>
+                {orderDetails?.assigned_table ? (
+                  <p className="text-green-400 font-semibold mt-1">
+                    🪑 Sua mesa: #{orderDetails.assigned_table}
+                  </p>
+                ) : (
+                  <p className="text-gray-400">
+                    Mesa será atribuída em breve
+                  </p>
+                )}
               </div>
             </div>
             

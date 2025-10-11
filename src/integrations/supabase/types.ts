@@ -167,6 +167,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          assigned_table: number | null
           created_at: string
           customer_location: Json | null
           establishment_id: string
@@ -174,6 +175,7 @@ export type Database = {
           id: string
           items: Json
           order_status: string | null
+          party_size: number | null
           payment_method: string | null
           payment_status: string | null
           table_number: number
@@ -182,6 +184,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          assigned_table?: number | null
           created_at?: string
           customer_location?: Json | null
           establishment_id: string
@@ -189,6 +192,7 @@ export type Database = {
           id?: string
           items: Json
           order_status?: string | null
+          party_size?: number | null
           payment_method?: string | null
           payment_status?: string | null
           table_number: number
@@ -197,6 +201,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          assigned_table?: number | null
           created_at?: string
           customer_location?: Json | null
           establishment_id?: string
@@ -204,6 +209,7 @@ export type Database = {
           id?: string
           items?: Json
           order_status?: string | null
+          party_size?: number | null
           payment_method?: string | null
           payment_status?: string | null
           table_number?: number

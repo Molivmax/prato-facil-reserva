@@ -202,6 +202,10 @@ const MenuSelection = () => {
         return;
       }
 
+      // Buscar party_size do localStorage
+      const savedPartySize = localStorage.getItem('partySize');
+      const partySize = savedPartySize ? parseInt(savedPartySize) : 2;
+      
       // Criar pedido no banco de dados
       const { data: order, error } = await supabase
         .from('orders')
@@ -212,7 +216,8 @@ const MenuSelection = () => {
           items: cart as any,
           total_amount: totalAmount,
           payment_status: 'pending',
-          order_status: 'pending'
+          order_status: 'pending',
+          party_size: partySize
         })
         .select()
         .single();

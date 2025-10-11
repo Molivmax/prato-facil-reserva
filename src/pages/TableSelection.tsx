@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import TableSelectionLoader from '@/components/table/TableSelectionLoader';
 import TableSelectionHeader from '@/components/table/TableSelectionHeader';
 import TableGrid from '@/components/table/TableGrid';
+import PartySizeSelector from '@/components/PartySizeSelector';
 
 // Define the extended Table type that includes status
 interface ExtendedTable {
@@ -24,6 +25,7 @@ const TableSelection = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [tables, setTables] = useState<ExtendedTable[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [partySize, setPartySize] = useState<number>(2);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -107,6 +109,8 @@ const TableSelection = () => {
     }
 
     if (restaurantId) {
+      // Salvar party_size no localStorage para usar depois
+      localStorage.setItem('partySize', partySize.toString());
       navigate(`/menu-selection/${restaurantId}/${selectedTable}`);
     }
   };
@@ -150,6 +154,11 @@ const TableSelection = () => {
         </Button>
         
         <TableSelectionHeader restaurantName={restaurant.name} />
+        
+        <PartySizeSelector 
+          partySize={partySize}
+          onPartySizeChange={setPartySize}
+        />
         
         <TableGrid 
           tables={tables}

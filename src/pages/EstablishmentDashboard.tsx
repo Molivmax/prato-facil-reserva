@@ -19,7 +19,8 @@ import {
   X,
   Package,
   DoorOpen,
-  Settings
+  Settings,
+  TableProperties
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import CheckoutDialog from '@/components/CheckoutDialog';
 import EstablishmentSettings from '@/components/EstablishmentSettings';
 import DailyRevenue from '@/components/DailyRevenue';
+import AssignTableDialog from '@/components/AssignTableDialog';
 
 // Define order status type
 type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
@@ -48,6 +50,8 @@ interface Order {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  partySize?: number;
+  assignedTable?: number;
 }
 
 const EstablishmentDashboard = () => {
@@ -63,6 +67,8 @@ const EstablishmentDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [hasMPCredentials, setHasMPCredentials] = useState<boolean>(false);
   const [checkingCredentials, setCheckingCredentials] = useState(true);
+  const [assignTableDialogOpen, setAssignTableDialogOpen] = useState(false);
+  const [selectedOrderForTable, setSelectedOrderForTable] = useState<Order | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -135,6 +141,8 @@ const EstablishmentDashboard = () => {
           orderStatus: order.order_status,
           items: order.items,
           user_id: order.user_id,
+          partySize: order.party_size || 2,
+          assignedTable: order.assigned_table,
         }));
         
         // Buscar informações de clientes para pedidos confirmados
@@ -358,6 +366,12 @@ const EstablishmentDashboard = () => {
     // This function is kept for backward compatibility but not used anymore
     setArrivingCustomers(prev => Math.max(0, prev - 1));
     toast.success(`Cliente preparado para atendimento.`);
+  };
+
+  // Function to handle assigning a table to an order
+  const handleAssignTable = (order: Order) => {
+    setSelectedOrderForTable(order);
+    setAssignTableDialogOpen(true);
   };
 
   // Function to handle finalizing a table (send payment reminder)
@@ -755,9 +769,13 @@ const EstablishmentDashboard = () => {
                               </span>
                             </div>
                           </CardHeader>
-                          <CardContent>
+                           <CardContent>
                             <div className="space-y-2 text-white">
                               <p className="text-sm text-gray-300">Mesa: #{order.tableNumber}</p>
+                              <p className="text-sm text-gray-300">👥 Pessoas: {order.partySize || 2}</p>
+                              {order.assignedTable && (
+                                <p className="text-sm text-green-400">✓ Mesa atribuída: #{order.assignedTable}</p>
+                              )}
                               <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
                               
                               {/* Lista de itens do pedido */}
@@ -800,6 +818,20 @@ const EstablishmentDashboard = () => {
                                   >
                                     <X size={16} />
                                     Rejeitar
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {(order.status === 'pending' || order.status === 'accepted') && order.paymentStatus === 'paid' && !order.assignedTable && (
+                                <div className="flex pt-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="border-blink-primary text-blink-primary hover:bg-blink-primary/10"
+                                    onClick={() => handleAssignTable(order)}
+                                  >
+                                    <TableProperties size={16} className="mr-1" />
+                                    Atribuir Mesa
                                   </Button>
                                 </div>
                               )}
@@ -1024,6 +1056,17 @@ const EstablishmentDashboard = () => {
           onClose={handleCloseCheckoutDialog}
           orderId={typeof selectedOrder.id === 'string' ? parseInt(selectedOrder.id) : selectedOrder.id}
           tableNumber={selectedOrder.tableNumber}
+        />
+      )}
+
+      {/* Assign Table Dialog */}
+      {selectedOrderForTable && (
+        <AssignTableDialog
+          open={assignTableDialogOpen}
+          onOpenChange={setAssignTableDialogOpen}
+          orderId={selectedOrderForTable.id}
+          partySize={selectedOrderForTable.partySize || 2}
+          currentTableNumber={selectedOrderForTable.tableNumber}
         />
       )}
     </div>

@@ -32,38 +32,25 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
     const loadMercadoPago = async () => {
       try {
         console.log('🔐 Buscando credenciais do Mercado Pago...');
+        console.log('📍 Restaurant ID:', restaurantId);
         
-        // Buscar public key do estabelecimento
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error('❌ Usuário não autenticado');
-          return;
-        }
-
-        // Buscar establishment
-        const { data: establishment } = await supabase
-          .from('establishments')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!establishment) {
-          console.error('❌ Estabelecimento não encontrado');
-          return;
-        }
-
-        console.log('✅ Establishment ID:', establishment.id);
-
-        // Buscar credenciais do MP
-        const { data: credentials } = await supabase
+        // CORREÇÃO: Usar restaurantId da prop ao invés do user.id
+        // Buscar credenciais do MP usando o restaurantId diretamente
+        const { data: credentials, error: credentialsError } = await supabase
           .from('establishment_mp_credentials')
           .select('public_key')
-          .eq('establishment_id', establishment.id)
+          .eq('establishment_id', restaurantId)
           .single();
 
+        if (credentialsError) {
+          console.error('❌ Erro ao buscar credenciais:', credentialsError);
+          setErrors({ general: 'Erro ao buscar credenciais de pagamento' });
+          return;
+        }
+
         if (!credentials?.public_key) {
-          console.error('❌ Credenciais do MP não encontradas');
-          setErrors({ general: 'Configure o Mercado Pago primeiro nas configurações' });
+          console.error('❌ Credenciais do MP não encontradas para este restaurante');
+          setErrors({ general: 'Restaurante não configurou pagamentos ainda' });
           return;
         }
 
