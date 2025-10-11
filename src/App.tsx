@@ -27,6 +27,7 @@ import EstablishmentDashboard from "./pages/EstablishmentDashboard";
 import ProductRegistration from "./pages/ProductRegistration";
 import Account from "./pages/Account";
 import MyOrders from "./pages/MyOrders";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 // Configure a queryClient com retry para as chamadas de API, incluindo a função edge
 const queryClient = new QueryClient({
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/payment-setup" element={<PaymentSetup />} />
           <Route path="/mp-oauth-success" element={<MPOAuthSuccess />} />
           <Route path="/restaurant/:id" element={<RestaurantDetails />} />
+          <Route path="/order-confirmation/:restaurantId" element={<OrderConfirmation />} />
           <Route path="/table-selection/:restaurantId" element={<TableSelection />} />
           <Route path="/menu-selection/:restaurantId/:tableId" element={<MenuSelection />} />
           <Route path="/payment/:orderId" element={<PaymentOptions />} />
