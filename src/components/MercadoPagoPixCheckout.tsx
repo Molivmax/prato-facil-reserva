@@ -23,28 +23,57 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   const [showForm, setShowForm] = useState(true);
   const { toast } = useToast();
 
+  // Poll for payment status updates + Real-time subscription
   useEffect(() => {
     if (!pixData?.qr_code) return;
     
-    console.log('Starting payment polling for order:', orderId);
+    console.log('🔍 Starting payment monitoring (polling + real-time) for order:', orderId);
     
+    // Real-time subscription
+    const channel = supabase
+      .channel(`payment-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          console.log('🔔 Payment status updated via real-time:', payload);
+          const updatedOrder = payload.new as any;
+          
+          if (updatedOrder.payment_status === 'paid') {
+            console.log('✅ Payment confirmed via real-time!');
+            toast({
+              title: "✅ Pagamento Confirmado!",
+              description: "Seu pedido foi recebido pelo restaurante",
+            });
+            setTimeout(() => onSuccess(), 1000);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Payment monitoring subscription status:', status);
+      });
+    
+    // Polling como backup (caso real-time falhe)
     const checkPaymentStatus = async () => {
       try {
         const { data: order, error } = await supabase
           .from('orders')
           .select('payment_status, order_status')
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
           
         if (error) {
-          console.error('Error checking payment status:', error);
+          console.error('❌ Error checking payment status:', error);
           return;
         }
         
-        console.log('Payment status check:', order);
-        
         if (order?.payment_status === 'paid') {
-          console.log('✅ Payment confirmed! Redirecting...');
+          console.log('✅ Payment confirmed via polling!');
           clearInterval(intervalId);
           
           toast({
@@ -52,21 +81,20 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
             description: "Seu pedido foi recebido pelo restaurante",
           });
           
-          setTimeout(() => {
-            onSuccess();
-          }, 1000);
+          setTimeout(() => onSuccess(), 1000);
         }
       } catch (error) {
-        console.error('Error in checkPaymentStatus:', error);
+        console.error('❌ Error in checkPaymentStatus:', error);
       }
     };
     
-    const intervalId = setInterval(checkPaymentStatus, 3000);
-    checkPaymentStatus();
+    const intervalId = setInterval(checkPaymentStatus, 5000); // 5 segundos
+    checkPaymentStatus(); // Check imediato
     
     return () => {
-      console.log('Cleaning up payment polling');
+      console.log('🔌 Cleaning up payment monitoring');
       clearInterval(intervalId);
+      supabase.removeChannel(channel);
     };
   }, [pixData, orderId, onSuccess, toast]);
 

@@ -137,47 +137,55 @@ const OrderTracking = () => {
   }, [orderId, navigate, toast]);
 
   useEffect(() => {
-    if (!orderId || orderId === 'latest') return;
+    if (!orderId) return;
     
-    console.log('Setting up real-time for order:', orderId);
+    // Se for 'latest', usar o ID real do pedido quando disponível
+    const actualOrderId = orderId === 'latest' ? orderDetails?.id : orderId;
+    if (!actualOrderId) return;
+    
+    console.log('🔔 Setting up real-time for order:', actualOrderId);
     
     const channel = supabase
-      .channel(`order-${orderId}`)
+      .channel(`order-${actualOrderId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
-          filter: `id=eq.${orderId}`
+          filter: `id=eq.${actualOrderId}`
         },
         (payload) => {
-          console.log('Order updated via real-time:', payload);
+          console.log('🔄 Order updated via real-time:', payload);
           const updatedOrder = payload.new;
           
-          setOrderDetails(updatedOrder);
-          
-          if (updatedOrder.payment_status === 'paid' && orderDetails?.payment_status !== 'paid') {
-            toast({
-              title: "✅ Pagamento Confirmado!",
-              description: "Seu pedido foi recebido pelo restaurante",
-            });
-          }
-          
-          if (updatedOrder.order_status === 'confirmed' && orderDetails?.order_status !== 'confirmed') {
-            toast({
-              title: "🎉 Pedido Confirmado!",
-              description: "O restaurante está preparando seu pedido",
-            });
-          }
+          setOrderDetails((prev: any) => {
+            // Show toast for payment confirmation
+            if (updatedOrder.payment_status === 'paid' && prev?.payment_status !== 'paid') {
+              toast({
+                title: "✅ Pagamento Confirmado!",
+                description: "Seu pedido foi recebido pelo restaurante",
+              });
+            }
+            
+            // Show toast for order confirmation
+            if (updatedOrder.order_status === 'confirmed' && prev?.order_status !== 'confirmed') {
+              toast({
+                title: "🎉 Pedido Confirmado!",
+                description: "O restaurante está preparando seu pedido",
+              });
+            }
+            
+            return updatedOrder;
+          });
         }
       )
       .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
+        console.log('📡 Real-time subscription status:', status);
       });
       
     return () => {
-      console.log('Cleaning up order real-time subscription');
+      console.log('🔌 Cleaning up order real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [orderId, orderDetails?.payment_status, orderDetails?.order_status, toast]);

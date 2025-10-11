@@ -17,12 +17,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const body = await req.json();
-    console.log('Webhook received from Mercado Pago:', JSON.stringify(body));
+    console.log('📥 Webhook received from Mercado Pago:', JSON.stringify(body, null, 2));
 
     // Mercado Pago envia notificações de diferentes tipos
     // Tipo mais comum: { type: "payment", data: { id: "payment_id" } }
+    // Ação: payment.created, payment.updated
     if (body.type !== 'payment') {
-      console.log('Ignoring non-payment notification:', body.type);
+      console.log('⏭️ Ignoring non-payment notification:', body.type);
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -31,14 +32,15 @@ Deno.serve(async (req) => {
 
     const paymentId = body.data?.id;
     if (!paymentId) {
-      console.error('No payment ID in webhook data');
+      console.error('❌ No payment ID in webhook data');
       return new Response(JSON.stringify({ error: 'No payment ID' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
     }
 
-    console.log('Processing payment notification:', paymentId);
+    console.log('💳 Processing payment notification:', paymentId);
+    console.log('🔔 Action:', body.action);
 
     // Buscar detalhes do pagamento no Mercado Pago
     // Primeiro precisamos descobrir qual estabelecimento é dono deste pagamento
@@ -76,8 +78,10 @@ Deno.serve(async (req) => {
         if (mpResponse.ok) {
           paymentData = await mpResponse.json();
           establishmentId = credential.establishment_id;
-          console.log('Payment found for establishment:', establishmentId);
+          console.log('✅ Payment found for establishment:', establishmentId);
           break;
+        } else {
+          console.log('⚠️ Payment not found with credential for establishment:', credential.establishment_id);
         }
       } catch (error) {
         console.log('Failed to fetch with credential:', credential.establishment_id, error);
@@ -93,10 +97,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('Payment data retrieved:', {
+    console.log('📄 Payment data retrieved:', {
       id: paymentData.id,
       status: paymentData.status,
+      status_detail: paymentData.status_detail,
       external_reference: paymentData.external_reference,
+      payment_type_id: paymentData.payment_type_id,
+      payment_method_id: paymentData.payment_method_id,
     });
 
     // Buscar o pedido usando external_reference (orderId)
@@ -147,7 +154,7 @@ Deno.serve(async (req) => {
         break;
     }
 
-    console.log('Updating order:', {
+    console.log('🔄 Updating order:', {
       orderId,
       paymentStatus,
       orderStatus,
@@ -155,26 +162,30 @@ Deno.serve(async (req) => {
     });
 
     // Atualizar o pedido
-    const { error: updateError } = await supabase
+    const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
       .update({
         payment_status: paymentStatus,
         order_status: orderStatus,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .select()
+      .single();
 
     if (updateError) {
-      console.error('Error updating order:', updateError);
+      console.error('❌ Error updating order:', updateError);
       return new Response(JSON.stringify({ error: 'Failed to update order' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
+    console.log('✅ Order updated successfully:', updatedOrder);
+
     // Se o pagamento foi aprovado, criar/atualizar daily_transactions
     if (paymentStatus === 'paid') {
-      console.log('Payment approved, creating daily transaction');
+      console.log('💰 Payment approved, creating daily transaction');
 
       // Mapear payment_type_id do Mercado Pago para os valores aceitos pela constraint
       let mappedPaymentMethod = 'credit';
@@ -200,14 +211,14 @@ Deno.serve(async (req) => {
         });
 
       if (transactionError) {
-        console.error('Error creating daily transaction:', transactionError);
+        console.error('❌ Error creating daily transaction:', transactionError);
         // Não retornamos erro aqui pois o pedido já foi atualizado
       } else {
-        console.log('Daily transaction created successfully');
+        console.log('✅ Daily transaction created successfully');
       }
     }
 
-    console.log('Webhook processed successfully');
+    console.log('🎉 Webhook processed successfully');
     
     return new Response(
       JSON.stringify({ 
