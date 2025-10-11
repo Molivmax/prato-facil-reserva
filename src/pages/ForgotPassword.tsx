@@ -68,8 +68,20 @@ const ForgotPassword = () => {
             </CardTitle>
             <CardDescription className="text-gray-300">
               {isEmailSent 
-                ? "Verifique sua caixa de entrada e siga as instruções para redefinir sua senha."
-                : "Digite seu email para receber um link de redefinição de senha."
+                ? (
+                  <>
+                    Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+                    <br />
+                    <strong className="text-yellow-400">⏱️ O link expira em 1 hora - clique imediatamente!</strong>
+                  </>
+                )
+                : (
+                  <>
+                    Digite seu email para receber um link de redefinição de senha.
+                    <br />
+                    <strong className="text-yellow-400">⏱️ O link é válido por 1 hora</strong>
+                  </>
+                )
               }
             </CardDescription>
           </div>

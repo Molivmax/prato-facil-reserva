@@ -4,12 +4,33 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Zap, Store, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
+    // Detectar erros de recuperação de senha na URL
+    const hash = window.location.hash;
+    if (hash.includes('error=') || hash.includes('error_code=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const errorCode = params.get('error_code');
+      const error = params.get('error');
+      
+      if (errorCode === 'otp_expired' || error === 'access_denied') {
+        toast({
+          title: "⚠️ Link de recuperação expirado ou inválido",
+          description: "Este link já foi usado ou expirou. Por favor, solicite um novo link de recuperação.",
+          variant: "destructive",
+        });
+        
+        // Limpar os parâmetros da URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     // Verificar se o usuário está logado
     const checkUserSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
