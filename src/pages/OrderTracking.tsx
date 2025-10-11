@@ -188,7 +188,7 @@ const OrderTracking = () => {
       console.log('🔌 Cleaning up order real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [orderId, orderDetails?.payment_status, orderDetails?.order_status, toast]);
+  }, [orderId, orderDetails?.id, toast]);
 
   const handleEnableLocation = async () => {
     if (navigator.geolocation) {
