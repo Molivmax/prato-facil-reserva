@@ -122,7 +122,7 @@ const PaymentOptions = () => {
       return;
     }
 
-    if (paymentMethod === "credit_card") {
+    if (paymentMethod === "credit") {
       setShowCreditCardForm(true);
       return;
     }
@@ -153,7 +153,7 @@ const PaymentOptions = () => {
           description: "Você poderá pagar depois.",
         });
         navigate(`/order-tracking/${orderId}`);
-      } else if (paymentMethod === 'pay_at_location') {
+      } else if (paymentMethod === 'local') {
         const { error: updateError } = await supabase
           .from('orders')
           .update({ 

@@ -99,7 +99,7 @@ const ProductsList = ({ establishmentId, onAddToCart }: ProductsListProps) => {
       onAddToCart({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: Number(product.price),
         quantity: quantity
       });
       
