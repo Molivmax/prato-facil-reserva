@@ -321,13 +321,11 @@ const CreditCardForm = ({ amount, orderId, restaurantId, onSuccess, onCancel }: 
           <h3 className="text-lg font-semibold text-white">Dados do Cartão</h3>
         </div>
 
-        <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4 mb-6">
-          <p className="text-blue-300 text-sm font-semibold mb-2">💳 Cartões de teste válidos:</p>
-          <ul className="text-blue-200 text-xs space-y-1">
-            <li><strong>Mastercard:</strong> 5031 4332 1540 6351 (usar nome: APRO)</li>
-            <li><strong>Visa:</strong> 4235 6477 2802 5682 (usar nome: APRO)</li>
-            <li><strong>Qualquer mês/ano futuro e CVV de 3 dígitos</strong></li>
-          </ul>
+        <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4 mb-6">
+          <p className="text-green-300 text-sm font-semibold mb-2">🔒 Pagamento Seguro</p>
+          <p className="text-green-200 text-xs">
+            Seus dados de cartão são processados de forma segura pelo Mercado Pago.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
