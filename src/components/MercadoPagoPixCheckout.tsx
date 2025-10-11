@@ -23,13 +23,29 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   const [showForm, setShowForm] = useState(true);
   const { toast } = useToast();
 
-  // Monitor critical state changes
+  // Monitor critical state changes + session status
   useEffect(() => {
     console.log('📊 Estado MercadoPago:', {
       loading,
       hasPixData: !!pixData,
       showForm,
-      copied
+      copied,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Verificar status da sessão
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const expiresAt = session.expires_at || 0;
+        const timeRemaining = Math.floor((expiresAt * 1000 - Date.now()) / 1000);
+        console.log('🔐 Status da sessão:', {
+          hasSession: !!session,
+          expiresAt: new Date(expiresAt * 1000).toISOString(),
+          timeRemaining: `${timeRemaining}s`
+        });
+      } else {
+        console.warn('⚠️ Nenhuma sessão ativa encontrada');
+      }
     });
   }, [loading, pixData, showForm, copied]);
 
@@ -71,6 +87,15 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
     // Polling como backup (caso real-time falhe)
     const checkPaymentStatus = async () => {
       try {
+        // ✅ Refresh da sessão antes de fazer query
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        
+        if (sessionError || !session) {
+          console.warn('⚠️ Erro ao renovar sessão durante verificação:', sessionError);
+          // Não interromper o polling - tentar novamente no próximo ciclo
+          return;
+        }
+        
         const { data: order, error } = await supabase
           .from('orders')
           .select('payment_status, order_status')
@@ -79,6 +104,12 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           
         if (error) {
           console.error('❌ Error checking payment status:', error);
+          
+          // Se for erro de autenticação, tentar refresh
+          if (error.message?.includes('JWT') || error.message?.includes('session')) {
+            console.log('🔄 Detectado erro de autenticação, tentando refresh...');
+            await supabase.auth.refreshSession();
+          }
           return;
         }
         
@@ -223,6 +254,12 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
     try {
       e.stopPropagation();
       e.preventDefault();
+      
+      // ✅ Proteção contra cliques duplicados
+      if (copied) {
+        console.log('⏸️ Já copiado recentemente, ignorando');
+        return;
+      }
       
       console.log('🔘 Iniciando cópia do código PIX');
       console.log('📋 PixData:', { 
