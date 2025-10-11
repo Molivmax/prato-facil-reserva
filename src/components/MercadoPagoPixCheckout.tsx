@@ -23,6 +23,16 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   const [showForm, setShowForm] = useState(true);
   const { toast } = useToast();
 
+  // Monitor critical state changes
+  useEffect(() => {
+    console.log('📊 Estado MercadoPago:', {
+      loading,
+      hasPixData: !!pixData,
+      showForm,
+      copied
+    });
+  }, [loading, pixData, showForm, copied]);
+
   // Poll for payment status updates + Real-time subscription
   useEffect(() => {
     if (!pixData?.qr_code) return;
@@ -210,32 +220,48 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   };
 
   const copyPixCode = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevenir propagação para elementos pais
-    e.preventDefault();  // Prevenir ação padrão
-    
-    console.log('🔘 Botão copiar clicado');
-    console.log('📋 PixData disponível:', !!pixData?.qrCodeText);
-    
-    if (pixData?.qrCodeText) {
-      try {
-        await navigator.clipboard.writeText(pixData.qrCodeText);
-        console.log('✅ Código copiado com sucesso');
-        setCopied(true);
+    try {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      console.log('🔘 Iniciando cópia do código PIX');
+      console.log('📋 PixData:', { 
+        hasData: !!pixData, 
+        hasQrCode: !!pixData?.qrCodeText,
+        textLength: pixData?.qrCodeText?.length 
+      });
+      
+      if (!pixData?.qrCodeText) {
+        console.warn('⚠️ Nenhum código PIX disponível');
         toast({
-          title: "Código copiado!",
-          description: "Cole no seu app de pagamento para finalizar.",
-        });
-        setTimeout(() => setCopied(false), 3000);
-      } catch (error) {
-        console.error('❌ Erro ao copiar:', error);
-        toast({
-          title: "Erro ao copiar",
-          description: "Tente novamente",
+          title: "Código não disponível",
+          description: "Aguarde a geração do código PIX",
           variant: "destructive",
         });
+        return;
       }
-    } else {
-      console.warn('⚠️ Nenhum código PIX disponível para copiar');
+
+      await navigator.clipboard.writeText(pixData.qrCodeText);
+      console.log('✅ Código copiado com sucesso');
+      
+      setCopied(true);
+      toast({
+        title: "Código copiado!",
+        description: "Cole no seu app de pagamento para finalizar.",
+      });
+      
+      setTimeout(() => {
+        console.log('⏰ Resetando estado copied');
+        setCopied(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('❌ Erro ao copiar:', error);
+      toast({
+        title: "Erro ao copiar",
+        description: "Tente novamente ou use o QR Code",
+        variant: "destructive",
+      });
     }
   };
 
@@ -352,8 +378,14 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
   }
 
   return (
-    <Card className="bg-black/50 backdrop-blur-md border border-white/10">
-      <CardContent className="p-6">
+    <Card 
+      className="bg-black/50 backdrop-blur-md border border-white/10"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <CardContent 
+        className="p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3 className="text-xl font-bold text-white text-center mb-4">
           Pagar com PIX
         </h3>
@@ -377,8 +409,14 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
           </div>
 
           <Button
-            onClick={copyPixCode}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              copyPixCode(e);
+            }}
             className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold"
+            disabled={!pixData?.qrCodeText || copied}
           >
             {copied ? (
               <>

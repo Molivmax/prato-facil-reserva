@@ -29,7 +29,11 @@ const PaymentOptions = () => {
 
   // Debug: Monitor showPixCheckout changes
   useEffect(() => {
-    console.log('🔄 showPixCheckout changed:', showPixCheckout);
+    console.log('🔄 PaymentOptions - showPixCheckout:', showPixCheckout);
+    if (!showPixCheckout) {
+      console.log('⚠️ showPixCheckout foi definido como false');
+      console.trace('Stack trace do fechamento');
+    }
   }, [showPixCheckout]);
 
   // Fetch order details from Supabase
@@ -294,20 +298,25 @@ const PaymentOptions = () => {
 
   if (showPixCheckout) {
     return (
-      <div className="bg-background min-h-screen">
+      <div className="bg-background min-h-screen" onClick={(e) => e.stopPropagation()}>
         <Navbar />
         <div className="container max-w-md mx-auto px-4 py-6">
           <MercadoPagoPixCheckout
             amount={orderDetails.total}
             orderId={orderId!}
             onSuccess={() => {
+              console.log('✅ MercadoPago onSuccess chamado');
               toast({
                 title: "Pagamento confirmado!",
                 description: "Seu pedido foi recebido pelo restaurante.",
               });
               navigate(`/order-tracking/${orderId}`);
             }}
-            onCancel={() => setShowPixCheckout(false)}
+            onCancel={() => {
+              console.log('❌ MercadoPago onCancel chamado');
+              console.trace('Stack trace do cancelamento');
+              setShowPixCheckout(false);
+            }}
           />
         </div>
       </div>
