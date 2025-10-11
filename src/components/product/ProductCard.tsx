@@ -30,6 +30,8 @@ const ProductCard = ({
   const handleAddToTableClick = () => {
     if (handleAddToTable && quantity > 0) {
       handleAddToTable(product);
+      // Resetar quantidade para 0 após adicionar
+      updateQuantity(product.id, 0);
     }
   };
 
