@@ -291,7 +291,6 @@ serve(async (req) => {
         transaction_amount: amount,
         token: tokenToUse,
         installments: 1,
-        payment_method_id: 'visa', // Será determinado pelo token
         payer: {
           email: payer.email,
           identification: {
