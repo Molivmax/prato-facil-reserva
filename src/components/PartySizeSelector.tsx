@@ -11,11 +11,11 @@ const PartySizeSelector = ({ partySize, onPartySizeChange }: PartySizeSelectorPr
 
   return (
     <div className="mb-6">
-      <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+      <h2 className="text-xl font-semibold mb-3 flex items-center gap-2 text-white">
         <Users className="h-5 w-5" />
         Quantas pessoas vão?
       </h2>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-gray-400 mb-4">
         Isso nos ajuda a preparar a mesa ideal para você
       </p>
       <div className="grid grid-cols-4 gap-3">
@@ -25,8 +25,8 @@ const PartySizeSelector = ({ partySize, onPartySizeChange }: PartySizeSelectorPr
             variant={partySize === size ? "default" : "outline"}
             className={`h-16 ${
               partySize === size 
-                ? "bg-restaurant-primary hover:bg-restaurant-dark" 
-                : "hover:border-restaurant-primary"
+                ? "bg-yellow-400 hover:bg-yellow-500 text-black" 
+                : "bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-yellow-400"
             }`}
             onClick={() => onPartySizeChange(size)}
           >
