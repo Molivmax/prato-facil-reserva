@@ -66,17 +66,33 @@ const PaymentOptions = () => {
         }
 
       if (order) {
-        setOrderDetails({
+        console.log('📦 Pedido carregado do banco:', order);
+        
+        // ✅ Validação do order.id
+        if (!order.id) {
+          console.error('❌ Pedido sem ID!', order);
+          toast({
+            title: "Erro",
+            description: "Pedido sem ID válido. Tente novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const details = {
           id: order.id,
           items: order.items,
           restaurantId: order.establishment_id,
           tableId: order.table_number,
           total: order.total_amount
-        });
+        };
+        
+        console.log('✅ orderDetails criado:', details);
+        setOrderDetails(details);
           
-          // Pagamentos online sempre disponíveis (usando credenciais da plataforma)
-          setHasOnlinePayment(true);
-        }
+        // Pagamentos online sempre disponíveis (usando credenciais da plataforma)
+        setHasOnlinePayment(true);
+      }
       } catch (err) {
         console.error("Erro ao buscar detalhes do pedido:", err);
         toast({
@@ -105,7 +121,13 @@ const PaymentOptions = () => {
   };
 
   const handleContinue = async () => {
+    console.log('🔍 handleContinue iniciado');
+    console.log('🔍 paymentMethod:', paymentMethod);
+    console.log('🔍 orderDetails:', orderDetails);
+    console.log('🔍 orderDetails.id:', orderDetails?.id);
+    
     if (!paymentMethod) {
+      console.error('❌ Nenhum método de pagamento selecionado');
       toast({
         title: "Selecione um método de pagamento",
         variant: "destructive",
@@ -113,7 +135,8 @@ const PaymentOptions = () => {
       return;
     }
 
-    if (!orderDetails.id) {
+    if (!orderDetails?.id) {
+      console.error('❌ orderDetails.id não encontrado:', orderDetails);
       toast({
         title: "Erro ao processar pedido",
         description: "ID do pedido não encontrado",
@@ -121,6 +144,8 @@ const PaymentOptions = () => {
       });
       return;
     }
+    
+    console.log('✅ Validações passaram, método:', paymentMethod);
 
     if (paymentMethod === "credit") {
       setShowCreditCardForm(true);
@@ -334,7 +359,12 @@ const PaymentOptions = () => {
               <>
                 <RadioGroup
                   value={paymentMethod || ""}
-                  onValueChange={setPaymentMethod}
+                  onValueChange={(value) => {
+                    console.log('🔘 RadioGroup - Método de pagamento selecionado:', value);
+                    console.log('🔘 Valor anterior:', paymentMethod);
+                    setPaymentMethod(value);
+                    console.log('✅ paymentMethod atualizado para:', value);
+                  }}
                   className="space-y-4"
                 >
                   <div className="flex items-center space-x-2 rounded-lg border border-white/10 p-4 cursor-pointer hover:bg-white/5 transition-colors">

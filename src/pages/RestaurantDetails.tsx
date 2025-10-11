@@ -27,9 +27,28 @@ const RestaurantDetails = () => {
     const savedCart = localStorage.getItem('cartItems');
     if (savedCart) {
       try {
-        setCartItems(JSON.parse(savedCart));
+        const parsed = JSON.parse(savedCart);
+        console.log('📦 Carregando carrinho do localStorage:', parsed);
+        
+        // ✅ Normalizar todos os preços para Number
+        const normalized = parsed.map((item: any) => {
+          const normalizedItem = {
+            ...item,
+            price: Number(item.price),
+            quantity: Number(item.quantity)
+          };
+          console.log('🔄 Item normalizado:', {
+            original: item.price,
+            normalized: normalizedItem.price,
+            type: typeof normalizedItem.price
+          });
+          return normalizedItem;
+        });
+        
+        console.log('✅ Carrinho normalizado:', normalized);
+        setCartItems(normalized);
       } catch (e) {
-        console.error("Error parsing saved cart:", e);
+        console.error("❌ Error parsing saved cart:", e);
       }
     }
 
@@ -95,14 +114,40 @@ const RestaurantDetails = () => {
 
   // Calculate total amount with useMemo
   const totalAmount = useMemo(() => {
+    console.log('🧮 Calculando total do carrinho...');
+    
     const total = cartItems.reduce((sum, item) => {
-      const safePrice = Number(item.price) || 0;
-      const safeQuantity = Number(item.quantity) || 0;
-      const itemTotal = safePrice * safeQuantity;
-      console.log('🧮 Item:', item.name, 'Price:', safePrice, 'Qty:', safeQuantity, 'Total:', itemTotal);
+      const price = Number(item.price);
+      const quantity = Number(item.quantity);
+      
+      // ✅ Validação robusta
+      if (isNaN(price) || isNaN(quantity)) {
+        console.error('❌ Preço ou quantidade inválidos:', {
+          item: item.name,
+          price: item.price,
+          priceConverted: price,
+          priceType: typeof item.price,
+          quantity: item.quantity,
+          quantityConverted: quantity,
+          quantityType: typeof item.quantity
+        });
+        return sum;
+      }
+      
+      const itemTotal = price * quantity;
+      console.log('✅ Item válido:', {
+        name: item.name,
+        price,
+        priceType: typeof price,
+        quantity,
+        quantityType: typeof quantity,
+        subtotal: itemTotal
+      });
+      
       return sum + itemTotal;
     }, 0);
-    console.log('💰 Total Amount Calculated:', total, 'CartItems:', cartItems);
+    
+    console.log('💰 TOTAL CALCULADO:', total, 'CartItems count:', cartItems.length);
     return total;
   }, [cartItems]);
 
