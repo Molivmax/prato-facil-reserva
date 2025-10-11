@@ -256,7 +256,10 @@ const OrderTracking = () => {
   const handleAddMoreItems = () => {
     if (orderDetails?.establishment_id || orderDetails?.restaurantId) {
       const restaurantId = orderDetails.establishment_id || orderDetails.restaurantId;
-      navigate(`/restaurant/${restaurantId}`);
+      const currentOrderId = orderDetails.id;
+      navigate(`/restaurant/${restaurantId}`, { 
+        state: { existingOrderId: currentOrderId } 
+      });
     }
   };
 

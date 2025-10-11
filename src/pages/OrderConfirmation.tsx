@@ -79,6 +79,97 @@ const OrderConfirmation = () => {
     }, 0);
   }, [cartItems]);
 
+  const handleAddToExistingOrder = async (orderId: string, userId: string) => {
+    try {
+      const { data: existingOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !existingOrder) {
+        throw new Error('Pedido não encontrado');
+      }
+
+      const newOrderItems = cartItems.map(item => ({
+        menuItemId: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }));
+
+      const existingItems = Array.isArray(existingOrder.items) ? existingOrder.items : [];
+      const mergedItems = [...existingItems, ...newOrderItems];
+      const newTotal = Number(existingOrder.total_amount) + totalAmount;
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          items: mergedItems,
+          total_amount: newTotal,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      localStorage.removeItem('cartItems');
+      localStorage.removeItem('existingOrderId');
+      setCartItems([]);
+
+      toast({
+        title: "Itens adicionados!",
+        description: `Novos itens adicionados ao seu pedido. Total adicional: R$ ${totalAmount.toFixed(2)}`,
+      });
+
+      navigate(`/payment/${orderId}`);
+      
+    } catch (error) {
+      console.error('Erro ao adicionar itens:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar os itens ao pedido. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateNewOrder = async (userId: string) => {
+    const orderItems = cartItems.map(item => ({
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity
+    }));
+
+    const { data: order, error } = await supabase
+      .from('orders')
+      .insert({
+        user_id: userId,
+        establishment_id: restaurantId!,
+        table_number: 0,
+        items: orderItems as any,
+        total_amount: totalAmount,
+        party_size: partySize,
+        payment_status: 'pending',
+        order_status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    localStorage.setItem('party_size', partySize.toString());
+    localStorage.removeItem('cartItems');
+    setCartItems([]);
+    navigate(`/payment/${order.id}`);
+  };
+
   const handleConfirmOrder = async () => {
     if (cartItems.length === 0) {
       toast({
@@ -89,7 +180,9 @@ const OrderConfirmation = () => {
       return;
     }
 
-    if (!partySize || partySize < 1) {
+    const existingOrderId = localStorage.getItem('existingOrderId');
+    
+    if (!existingOrderId && (!partySize || partySize < 1)) {
       toast({
         title: "Selecione o número de pessoas",
         description: "Por favor, informe quantas pessoas vão",
@@ -111,48 +204,11 @@ const OrderConfirmation = () => {
         return;
       }
 
-      // Criar pedido no banco de dados
-      const orderItems = cartItems.map(item => ({
-        menuItemId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity
-      }));
-
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: session.user.id,
-          establishment_id: restaurantId!,
-          table_number: 0,
-          items: orderItems as any,
-          total_amount: totalAmount,
-          party_size: partySize,
-          payment_status: 'pending',
-          order_status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Erro ao criar pedido:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível criar o pedido. Tente novamente.",
-          variant: "destructive",
-        });
-        return;
+      if (existingOrderId) {
+        await handleAddToExistingOrder(existingOrderId, session.user.id);
+      } else {
+        await handleCreateNewOrder(session.user.id);
       }
-
-      // Salvar party_size no localStorage para uso posterior
-      localStorage.setItem('party_size', partySize.toString());
-      
-      // Limpar carrinho
-      localStorage.removeItem('cartItems');
-      setCartItems([]);
-
-      // Navegar para página de pagamento
-      navigate(`/payment/${order.id}`);
       
     } catch (error) {
       console.error('Erro ao processar pedido:', error);
@@ -226,13 +282,15 @@ const OrderConfirmation = () => {
           </div>
         </div>
 
-        {/* Seletor de Pessoas */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
-          <PartySizeSelector 
-            partySize={partySize} 
-            onPartySizeChange={setPartySize}
-          />
-        </div>
+        {/* Seletor de Pessoas - só aparece se for pedido novo */}
+        {!localStorage.getItem('existingOrderId') && (
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+            <PartySizeSelector 
+              partySize={partySize} 
+              onPartySizeChange={setPartySize}
+            />
+          </div>
+        )}
 
         {/* Botão Confirmar */}
         <Button 

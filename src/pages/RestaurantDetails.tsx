@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -15,11 +15,13 @@ import CartFooter from '@/components/cart/CartFooter';
 
 const RestaurantDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const existingOrderId = location.state?.existingOrderId || null;
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
   const [cartItems, setCartItems] = useState<{id: string, name: string, price: number, quantity: number}[]>([]);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -227,10 +229,12 @@ const RestaurantDetails = () => {
       return;
     }
 
-    // Salvar carrinho no localStorage (garantir que está salvo)
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     
-    // Navegar para página de confirmação
+    if (existingOrderId) {
+      localStorage.setItem('existingOrderId', existingOrderId);
+    }
+    
     navigate(`/order-confirmation/${id}`);
   };
 
