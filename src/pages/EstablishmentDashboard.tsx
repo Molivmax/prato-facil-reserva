@@ -54,6 +54,49 @@ interface Order {
   assignedTable?: number;
 }
 
+// Payment Status Badge Helper
+const getPaymentStatusBadge = (status: string) => {
+  const statusConfig = {
+    paid: {
+      icon: '✅',
+      label: 'Pago',
+      bgColor: 'bg-green-500/20',
+      textColor: 'text-green-400',
+      borderColor: 'border-green-500/50'
+    },
+    pending: {
+      icon: '⏳',
+      label: 'Pendente',
+      bgColor: 'bg-yellow-500/20',
+      textColor: 'text-yellow-400',
+      borderColor: 'border-yellow-500/50'
+    },
+    pindura: {
+      icon: '📋',
+      label: 'Pindura',
+      bgColor: 'bg-purple-500/20',
+      textColor: 'text-purple-400',
+      borderColor: 'border-purple-500/50'
+    },
+    pay_at_location: {
+      icon: '🏪',
+      label: 'Pagar no Local',
+      bgColor: 'bg-blue-500/20',
+      textColor: 'text-blue-400',
+      borderColor: 'border-blue-500/50'
+    }
+  };
+
+  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+
+  return (
+    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${config.bgColor} ${config.borderColor}`}>
+      <span>{config.icon}</span>
+      <span className={`text-xs font-semibold ${config.textColor}`}>{config.label}</span>
+    </div>
+  );
+};
+
 const EstablishmentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [establishment, setEstablishment] = useState<any>(null);
@@ -795,9 +838,10 @@ const EstablishmentDashboard = () => {
                               </div>
                               
                               <div className="pt-2 border-t border-gray-600">
-                                <p className="text-sm text-gray-400">
-                                  Status pagamento: <span className="font-medium">{order.paymentStatus || 'pendente'}</span>
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-gray-400">Pagamento:</p>
+                                  {getPaymentStatusBadge(order.paymentStatus || 'pending')}
+                                </div>
                               </div>
                               
                               {order.status === 'pending' && (

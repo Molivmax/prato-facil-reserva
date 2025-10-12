@@ -205,13 +205,29 @@ const OrderTracking = () => {
           const { latitude, longitude } = position.coords;
           
           try {
+            // Buscar coordenadas do estabelecimento
+            const { data: establishment } = await supabase
+              .from('establishments')
+              .select('latitude, longitude, name, address')
+              .eq('id', orderDetails.establishment_id)
+              .maybeSingle();
+
+            if (!establishment?.latitude || !establishment?.longitude) {
+              toast({
+                title: "Erro",
+                description: "Coordenadas do estabelecimento não encontradas",
+                variant: "destructive",
+              });
+              return;
+            }
+
             // Atualizar localização no pedido
             if (orderId) {
               const { error } = await supabase
                 .from('orders')
                 .update({
                   customer_location: { latitude, longitude },
-                  estimated_arrival_time: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutos
+                  estimated_arrival_time: new Date(Date.now() + 15 * 60 * 1000).toISOString()
                 })
                 .eq('id', orderId);
 
@@ -223,12 +239,16 @@ const OrderTracking = () => {
             setLocationEnabled(true);
             setEstimatedArrival('15 minutos');
             
+            // Abrir Google Maps com rota
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${establishment.latitude},${establishment.longitude}&travelmode=driving`;
+            window.open(googleMapsUrl, '_blank');
+            
             toast({
-              title: "Localização ativada!",
-              description: "O restaurante será notificado quando você estiver próximo.",
+              title: "Navegação iniciada!",
+              description: "Google Maps aberto com a rota para o restaurante.",
             });
           } catch (error) {
-            console.error('Erro ao atualizar localização:', error);
+            console.error('Erro ao ativar localização:', error);
             toast({
               title: "Erro",
               description: "Não foi possível ativar a localização",
