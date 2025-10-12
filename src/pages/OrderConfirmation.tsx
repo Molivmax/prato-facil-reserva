@@ -92,6 +92,16 @@ const OrderConfirmation = () => {
         throw new Error('Pedido não encontrado');
       }
 
+      // Salvar snapshot para possível rollback
+      const orderSnapshot = {
+        orderId: existingOrder.id,
+        items: existingOrder.items,
+        total_amount: existingOrder.total_amount,
+        updated_at: existingOrder.updated_at
+      };
+      localStorage.setItem('orderSnapshot', JSON.stringify(orderSnapshot));
+      console.log('📸 Snapshot do pedido salvo:', orderSnapshot);
+
       const newOrderItems = cartItems.map(item => ({
         menuItemId: item.id,
         name: item.name,
@@ -116,13 +126,21 @@ const OrderConfirmation = () => {
         throw updateError;
       }
 
+      // Salvar contexto do pagamento adicional
+      const additionContext = {
+        amount: totalAmount,
+        itemsAdded: newOrderItems.length,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('additionalPayment', JSON.stringify(additionContext));
+
       localStorage.removeItem('cartItems');
       localStorage.removeItem('existingOrderId');
       setCartItems([]);
 
       toast({
         title: "Itens adicionados!",
-        description: `Novos itens adicionados ao seu pedido. Total adicional: R$ ${totalAmount.toFixed(2)}`,
+        description: `${newOrderItems.length} novos itens adicionados. Valor adicional: R$ ${totalAmount.toFixed(2)}`,
       });
 
       navigate(`/payment/${orderId}`);

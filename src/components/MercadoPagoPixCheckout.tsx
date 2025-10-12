@@ -97,6 +97,12 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
             setProgressStatus('detected');
           } else if (updatedOrder.payment_status === 'paid') {
             console.log('✅ Real-time: PAGAMENTO CONFIRMADO!');
+            
+            // Limpar snapshot já que o pagamento foi confirmado
+            localStorage.removeItem('orderSnapshot');
+            localStorage.removeItem('additionalPayment');
+            console.log('🧹 Dados temporários limpos');
+            
             setPaymentProgress(100);
             setProgressStatus('confirmed');
             
@@ -174,6 +180,10 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
         } else if (order?.payment_status === 'paid') {
           console.log('✅ PAGAMENTO CONFIRMADO! Chamando onSuccess...');
           clearInterval(intervalId);
+          
+          // Limpar snapshot
+          localStorage.removeItem('orderSnapshot');
+          localStorage.removeItem('additionalPayment');
           
           setPaymentProgress(100);
           setProgressStatus('confirmed');
@@ -554,10 +564,48 @@ const MercadoPagoPixCheckout = ({ amount, orderId, onSuccess, onCancel }: Mercad
 
           <Button
             type="button"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
               e.preventDefault();
-              console.log('❌ Cancelar clicado');
+              console.log('❌ Cancelamento do PIX - verificando rollback');
+              
+              // Verificar se existe snapshot para reverter
+              const snapshotStr = localStorage.getItem('orderSnapshot');
+              const additionStr = localStorage.getItem('additionalPayment');
+              
+              if (snapshotStr && additionStr) {
+                try {
+                  const snapshot = JSON.parse(snapshotStr);
+                  console.log('🔄 Revertendo pedido para snapshot:', snapshot);
+                  
+                  // Restaurar estado anterior do pedido
+                  const { error: rollbackError } = await supabase
+                    .from('orders')
+                    .update({
+                      items: snapshot.items,
+                      total_amount: snapshot.total_amount,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', snapshot.orderId);
+                  
+                  if (rollbackError) {
+                    console.error('❌ Erro no rollback:', rollbackError);
+                  } else {
+                    console.log('✅ Pedido revertido com sucesso');
+                    toast({
+                      title: "Itens removidos",
+                      description: "Os itens adicionados foram removidos do pedido",
+                    });
+                  }
+                  
+                  // Limpar dados temporários
+                  localStorage.removeItem('orderSnapshot');
+                  localStorage.removeItem('additionalPayment');
+                } catch (e) {
+                  console.error('Erro ao processar rollback:', e);
+                }
+              }
+              
               onCancel();
             }}
             variant="outline"

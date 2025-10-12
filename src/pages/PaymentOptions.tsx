@@ -23,6 +23,11 @@ const PaymentOptions = () => {
   const [cpf, setCpf] = useState('');
   const [name, setName] = useState('');
   const [hasOnlinePayment, setHasOnlinePayment] = useState(false);
+  const [additionalPayment, setAdditionalPayment] = useState<{
+    amount: number;
+    itemsAdded: number;
+    timestamp: string;
+  } | null>(null);
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -77,6 +82,20 @@ const PaymentOptions = () => {
             variant: "destructive",
           });
           return;
+        }
+
+        // Verificar se existe pagamento adicional
+        const storedAddition = localStorage.getItem('additionalPayment');
+        if (storedAddition) {
+          try {
+            const additionData = JSON.parse(storedAddition);
+            setAdditionalPayment(additionData);
+            console.log('💰 Pagamento adicional detectado:', additionData);
+            // Limpar imediatamente após capturar
+            localStorage.removeItem('additionalPayment');
+          } catch (e) {
+            console.error('Erro ao parsear additionalPayment:', e);
+          }
         }
         
         const details = {
@@ -234,7 +253,7 @@ const PaymentOptions = () => {
             Voltar
           </Button>
           <CreditCardForm
-            amount={orderDetails.total}
+            amount={additionalPayment?.amount || orderDetails.total}
             orderId={orderId!}
             restaurantId={orderDetails.restaurantId}
             onSuccess={() => {
@@ -257,7 +276,7 @@ const PaymentOptions = () => {
         <Navbar />
         <div className="container max-w-md mx-auto px-4 py-6">
           <MercadoPagoPixCheckout
-            amount={orderDetails.total}
+            amount={additionalPayment?.amount || orderDetails.total}
             orderId={orderId!}
             onSuccess={() => {
               console.log('✅ MercadoPago onSuccess chamado');
@@ -296,7 +315,18 @@ const PaymentOptions = () => {
         <Card className="mb-6 bg-black/50 backdrop-blur-md border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
           <CardContent className="p-6">
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-white">Resumo do Pedido</h2>
+              <h2 className="text-lg font-semibold text-white">
+                {additionalPayment ? (
+                  <>
+                    Itens Adicionados
+                    <span className="text-sm font-normal text-gray-400 ml-2">
+                      ({additionalPayment.itemsAdded} {additionalPayment.itemsAdded === 1 ? 'item' : 'itens'})
+                    </span>
+                  </>
+                ) : (
+                  'Resumo do Pedido'
+                )}
+              </h2>
               <div className="space-y-2">
                 {orderDetails.items.map((item: any, index: number) => (
                   <div key={`${item.menuItemId}-${index}`} className="flex justify-between text-gray-300">
@@ -305,9 +335,16 @@ const PaymentOptions = () => {
                   </div>
                 ))}
                 <div className="border-t border-gray-600 pt-2 flex justify-between font-semibold text-white">
-                  <span>Total</span>
-                  <span>R$ {orderDetails.total.toFixed(2)}</span>
+                  <span>{additionalPayment ? 'Valor Adicional' : 'Total'}</span>
+                  <span className="text-blink-primary">
+                    R$ {(additionalPayment?.amount || orderDetails.total).toFixed(2)}
+                  </span>
                 </div>
+                {additionalPayment && (
+                  <p className="text-sm text-gray-400 italic mt-2">
+                    Total do pedido completo: R$ {orderDetails.total.toFixed(2)}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
