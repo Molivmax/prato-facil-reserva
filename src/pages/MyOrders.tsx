@@ -48,40 +48,82 @@ const MyOrders = () => {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este pedido?')) {
-      return;
-    }
-
-    setDeletingOrderId(orderId);
-    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         toast.error('Você precisa estar logado');
-        setDeletingOrderId(null);
         return;
       }
 
-      const { error } = await supabase
+      // Buscar status do pedido
+      const { data: order } = await supabase
         .from('orders')
-        .delete()
+        .select('payment_status, order_status')
         .eq('id', orderId)
-        .eq('user_id', session.user.id);
+        .single();
 
-      if (error) {
-        console.error('Delete error:', error);
-        toast.error('Erro ao excluir pedido: ' + error.message);
-        setDeletingOrderId(null);
+      if (!order) {
+        toast.error('Pedido não encontrado');
         return;
       }
 
-      // Remove da UI apenas após confirmação de sucesso
-      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-      toast.success('Pedido excluído com sucesso!');
+      const isPaid = order.payment_status === 'paid';
+      const isConfirmed = order.order_status === 'confirmed';
+
+      if (isPaid || isConfirmed) {
+        // Pedido pago: apenas marcar como cancelado
+        if (!confirm('Este pedido já foi pago. Deseja marcar como cancelado? O restaurante ainda verá este pedido.')) {
+          return;
+        }
+
+        setDeletingOrderId(orderId);
+
+        const { error } = await supabase
+          .from('orders')
+          .update({ 
+            order_status: 'cancelled_by_customer',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', orderId)
+          .eq('user_id', session.user.id);
+
+        if (error) {
+          console.error('Update error:', error);
+          toast.error('Erro ao cancelar: ' + error.message);
+          setDeletingOrderId(null);
+          return;
+        }
+
+        setOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
+        toast.success('Pedido cancelado');
+      } else {
+        // Pedido não pago: pode deletar
+        if (!confirm('Tem certeza que deseja excluir este pedido?')) {
+          return;
+        }
+
+        setDeletingOrderId(orderId);
+
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .eq('id', orderId)
+          .eq('user_id', session.user.id);
+
+        if (error) {
+          console.error('Delete error:', error);
+          toast.error('Erro ao excluir: ' + error.message);
+          setDeletingOrderId(null);
+          return;
+        }
+
+        setOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
+        toast.success('Pedido excluído!');
+      }
     } catch (error: any) {
-      console.error('Error deleting order:', error);
-      toast.error('Erro ao excluir pedido: ' + (error.message || 'Erro desconhecido'));
+      console.error('Error:', error);
+      toast.error('Erro ao processar: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setDeletingOrderId(null);
     }

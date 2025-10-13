@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   PlusCircle, 
   UtensilsCrossed, 
@@ -52,6 +53,8 @@ interface Order {
   customerEmail?: string;
   partySize?: number;
   assignedTable?: number;
+  customerLocation?: any;
+  estimatedArrival?: string | null;
 }
 
 // Payment Status Badge Helper
@@ -95,6 +98,19 @@ const getPaymentStatusBadge = (status: string) => {
       <span className={`text-xs font-semibold ${config.textColor}`}>{config.label}</span>
     </div>
   );
+};
+
+const formatETA = (estimatedArrival: string | null) => {
+  if (!estimatedArrival) return 'Não informado';
+  
+  const now = new Date();
+  const eta = new Date(estimatedArrival);
+  const diffMs = eta.getTime() - now.getTime();
+  const diffMins = Math.ceil(diffMs / 60000);
+  
+  if (diffMins <= 0) return '⚠️ Deveria ter chegado';
+  if (diffMins <= 7) return `🔥 ${diffMins} min (PREPARAR!)`;
+  return `${diffMins} min`;
 };
 
 const EstablishmentDashboard = () => {
@@ -160,11 +176,15 @@ const EstablishmentDashboard = () => {
 
   const fetchEstablishmentOrders = async (establishmentId: string) => {
     try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
       const { data: orders, error } = await supabase
         .from('orders')
         .select('*')
         .eq('establishment_id', establishmentId)
         .in('payment_status', ['pending', 'paid'])
+        .gte('created_at', today.toISOString())
         .order('created_at', { ascending: false });
         
       if (error) {
@@ -186,6 +206,8 @@ const EstablishmentDashboard = () => {
           user_id: order.user_id,
           partySize: order.party_size || 2,
           assignedTable: order.assigned_table,
+          customerLocation: order.customer_location,
+          estimatedArrival: order.estimated_arrival_time,
         }));
         
         // Buscar informações de clientes para pedidos confirmados
@@ -211,13 +233,22 @@ const EstablishmentDashboard = () => {
           o.paymentStatus === 'pending' && o.orderStatus === 'pending'
         );
         
-        // Separar pedidos confirmados (pagos)
+        // Separar pedidos confirmados (pagos) incluindo cancelados
         const confirmed = ordersWithCustomers.filter(o => 
-          o.paymentStatus === 'paid' && o.orderStatus === 'confirmed'
+          o.paymentStatus === 'paid' && 
+          (o.orderStatus === 'confirmed' || o.orderStatus === 'cancelled_by_customer')
+        );
+        
+        // Clientes REALMENTE a caminho (com localização ativa)
+        const arriving = ordersWithCustomers.filter(o => 
+          o.paymentStatus === 'paid' && 
+          o.orderStatus === 'confirmed' &&
+          o.customerLocation && 
+          o.estimatedArrival
         );
         
         setPendingOrders([...pending, ...confirmed]); // Mostrar AMBOS na aba Pedidos
-        setArrivingCustomers(confirmed.length); // Clientes que pagaram
+        setArrivingCustomers(arriving.length); // Só quem está REALMENTE a caminho
         setAttendingCustomers(confirmed); // Pedidos confirmados (pagos)
         
         console.log('Orders loaded:', { 
@@ -842,6 +873,19 @@ const EstablishmentDashboard = () => {
                                   <p className="text-sm text-gray-400">Pagamento:</p>
                                   {getPaymentStatusBadge(order.paymentStatus || 'pending')}
                                 </div>
+                                
+                                {order.orderStatus === 'cancelled_by_customer' && (
+                                  <Badge variant="destructive" className="mt-2">
+                                    ⚠️ Cancelado pelo Cliente
+                                  </Badge>
+                                )}
+                                
+                                {order.customerLocation && order.estimatedArrival && (
+                                  <div className="mt-2 flex items-center text-sm text-blue-400">
+                                    <span className="mr-1">🚗</span>
+                                    Cliente a caminho - ETA: {formatETA(order.estimatedArrival)}
+                                  </div>
+                                )}
                               </div>
                               
                               {order.status === 'pending' && (

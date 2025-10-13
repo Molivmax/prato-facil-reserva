@@ -279,7 +279,8 @@ const OrderTracking = () => {
               .from('orders')
               .update({
                 customer_location: { latitude, longitude },
-                estimated_arrival_time: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+                estimated_arrival_time: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+                customer_status: 'on_the_way'
               })
               .eq('id', orderId);
 

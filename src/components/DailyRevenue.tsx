@@ -58,6 +58,32 @@ const DailyRevenue = ({ establishmentId }: DailyRevenueProps) => {
     filterTransactions();
   }, [transactions, searchTerm, filterType, selectedTable]);
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!establishmentId) return;
+
+    const channel = supabase
+      .channel('daily-transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_transactions',
+          filter: `establishment_id=eq.${establishmentId}`
+        },
+        (payload) => {
+          console.log('Transação atualizada:', payload);
+          fetchDailyTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [establishmentId, selectedDate]);
+
   const fetchDailyTransactions = async () => {
     try {
       setLoading(true);

@@ -170,6 +170,7 @@ export type Database = {
           assigned_table: number | null
           created_at: string
           customer_location: Json | null
+          customer_status: string | null
           establishment_id: string
           estimated_arrival_time: string | null
           id: string
@@ -187,6 +188,7 @@ export type Database = {
           assigned_table?: number | null
           created_at?: string
           customer_location?: Json | null
+          customer_status?: string | null
           establishment_id: string
           estimated_arrival_time?: string | null
           id?: string
@@ -204,6 +206,7 @@ export type Database = {
           assigned_table?: number | null
           created_at?: string
           customer_location?: Json | null
+          customer_status?: string | null
           establishment_id?: string
           estimated_arrival_time?: string | null
           id?: string
