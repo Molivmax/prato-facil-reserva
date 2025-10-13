@@ -13,6 +13,7 @@ const OrderTracking = () => {
   const [loading, setLoading] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [estimatedArrival, setEstimatedArrival] = useState<string>('');
+  const [isEnablingLocation, setIsEnablingLocation] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -199,78 +200,148 @@ const OrderTracking = () => {
   }, [orderId, orderDetails?.id, toast]);
 
   const handleEnableLocation = async () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          try {
-            // Buscar coordenadas do estabelecimento
-            const { data: establishment } = await supabase
-              .from('establishments')
-              .select('latitude, longitude, name, address')
-              .eq('id', orderDetails.establishment_id)
-              .maybeSingle();
-
-            if (!establishment?.latitude || !establishment?.longitude) {
-              toast({
-                title: "Erro",
-                description: "Coordenadas do estabelecimento não encontradas",
-                variant: "destructive",
-              });
-              return;
-            }
-
-            // Atualizar localização no pedido
-            if (orderId) {
-              const { error } = await supabase
-                .from('orders')
-                .update({
-                  customer_location: { latitude, longitude },
-                  estimated_arrival_time: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-                })
-                .eq('id', orderId);
-
-              if (error) {
-                console.error('Erro ao atualizar localização:', error);
-              }
-            }
-
-            setLocationEnabled(true);
-            setEstimatedArrival('15 minutos');
-            
-            // Abrir Google Maps com rota
-            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${establishment.latitude},${establishment.longitude}&travelmode=driving`;
-            window.open(googleMapsUrl, '_blank');
-            
-            toast({
-              title: "Navegação iniciada!",
-              description: "Google Maps aberto com a rota para o restaurante.",
-            });
-          } catch (error) {
-            console.error('Erro ao ativar localização:', error);
-            toast({
-              title: "Erro",
-              description: "Não foi possível ativar a localização",
-              variant: "destructive",
-            });
-          }
-        },
-        (error) => {
-          toast({
-            title: "Erro de localização",
-            description: "Não foi possível acessar sua localização. Verifique as permissões.",
-            variant: "destructive",
-          });
-        }
-      );
-    } else {
+    console.log('🔘 Botão Ir Agora clicado');
+    console.log('📦 orderDetails:', orderDetails);
+    
+    if (!orderDetails) {
+      console.error('❌ orderDetails não existe');
       toast({
-        title: "Geolocalização não suportada",
-        description: "Seu navegador não suporta geolocalização",
+        title: "Erro",
+        description: "Dados do pedido não carregados",
         variant: "destructive",
       });
+      return;
     }
+
+    if (!navigator.geolocation) {
+      toast({
+        title: "Erro",
+        description: "Geolocalização não é suportada pelo seu navegador",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsEnablingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        if (!orderDetails?.establishment_id) {
+          console.error('❌ establishment_id não encontrado:', orderDetails);
+          toast({
+            title: "Erro",
+            description: "Dados do pedido incompletos",
+            variant: "destructive",
+          });
+          setIsEnablingLocation(false);
+          return;
+        }
+
+        const { latitude, longitude } = position.coords;
+        console.log('📍 Sua localização:', { latitude, longitude });
+        
+        try {
+          // Buscar coordenadas do estabelecimento
+          console.log('🔍 Buscando estabelecimento:', orderDetails.establishment_id);
+          const { data: establishment, error: estError } = await supabase
+            .from('establishments')
+            .select('latitude, longitude, name, address')
+            .eq('id', orderDetails.establishment_id)
+            .maybeSingle();
+
+          console.log('🏪 Dados do estabelecimento:', establishment);
+          if (estError) console.log('⚠️ Erro ao buscar:', estError);
+
+          // Fallback: usar endereço se coordenadas não existirem
+          let googleMapsUrl: string;
+          
+          if (establishment?.latitude && establishment?.longitude) {
+            console.log('✅ Usando coordenadas:', { lat: establishment.latitude, lng: establishment.longitude });
+            googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${establishment.latitude},${establishment.longitude}&travelmode=driving`;
+          } else if (establishment?.address) {
+            console.log('⚠️ Usando endereço:', establishment.address);
+            const encodedAddress = encodeURIComponent(establishment.address);
+            googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+          } else {
+            console.error('❌ Sem coordenadas nem endereço');
+            toast({
+              title: "Erro",
+              description: "Localização do estabelecimento não disponível",
+              variant: "destructive",
+            });
+            setIsEnablingLocation(false);
+            return;
+          }
+
+          // Atualizar localização no pedido
+          if (orderId) {
+            const { error } = await supabase
+              .from('orders')
+              .update({
+                customer_location: { latitude, longitude },
+                estimated_arrival_time: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+              })
+              .eq('id', orderId);
+
+            if (error) {
+              console.error('❌ Erro ao atualizar pedido:', error);
+            } else {
+              console.log('✅ Localização salva no pedido');
+            }
+          }
+          
+          setLocationEnabled(true);
+          setEstimatedArrival('15 minutos');
+          
+          // Abrir Google Maps
+          console.log('🗺️ Abrindo Google Maps:', googleMapsUrl);
+          const mapWindow = window.open(googleMapsUrl, '_blank');
+          
+          // Verificar se popup foi bloqueado
+          if (!mapWindow || mapWindow.closed || typeof mapWindow.closed === 'undefined') {
+            console.warn('⚠️ Popup bloqueado');
+            toast({
+              title: "Atenção",
+              description: "Permita popups para abrir o Google Maps. Clique no link abaixo.",
+              action: (
+                <a 
+                  href={googleMapsUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blink-primary underline text-sm"
+                >
+                  Abrir Maps
+                </a>
+              ),
+            });
+          } else {
+            console.log('✅ Maps aberto');
+            toast({
+              title: "Navegação iniciada!",
+              description: "Google Maps aberto com a rota.",
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro:', error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível ativar a localização",
+            variant: "destructive",
+          });
+        } finally {
+          setIsEnablingLocation(false);
+        }
+      },
+      (error) => {
+        console.error('❌ Erro de geolocalização:', error);
+        toast({
+          title: "Erro de localização",
+          description: "Verifique as permissões de localização.",
+          variant: "destructive",
+        });
+        setIsEnablingLocation(false);
+      }
+    );
   };
 
   const handleAddMoreItems = () => {
@@ -429,9 +500,19 @@ const OrderTracking = () => {
                 <Button 
                   className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold mb-3"
                   onClick={handleEnableLocation}
+                  disabled={loading || !orderDetails || isEnablingLocation}
                 >
-                  <MapPin className="mr-2 h-4 w-4" />
-                  Ir Agora - Ativar Localização
+                  {isEnablingLocation ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      Abrindo...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Ir Agora - Ativar Localização
+                    </>
+                  )}
                 </Button>
                 <Button 
                   variant="outline"
