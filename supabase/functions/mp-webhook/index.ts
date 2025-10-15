@@ -183,42 +183,8 @@ Deno.serve(async (req) => {
 
     console.log('✅ Order updated successfully:', updatedOrder);
 
-    // Se o pagamento foi aprovado, criar/atualizar daily_transactions
-    if (paymentStatus === 'paid') {
-      console.log('💰 Payment approved, creating daily transaction');
-
-      // Mapear payment_type_id do Mercado Pago para os valores corretos
-      let mappedPaymentMethod = 'credit'; // default
-
-      if (paymentData.payment_type_id === 'bank_transfer' || 
-          paymentData.payment_method_id === 'pix') {
-        mappedPaymentMethod = 'pix';
-      } else if (paymentData.payment_type_id === 'credit_card') {
-        mappedPaymentMethod = 'credit';
-      } else if (paymentData.payment_type_id === 'debit_card') {
-        mappedPaymentMethod = 'debit';
-      }
-
-      const { error: transactionError } = await supabase
-        .from('daily_transactions')
-        .insert({
-          establishment_id: order.establishment_id,
-          table_number: order.table_number,
-          total_amount: order.total_amount,
-          payment_method: mappedPaymentMethod,
-          status: 'completed',
-          order_items: order.items,
-          customer_name: paymentData.payer?.first_name || 'Cliente',
-          customer_phone: paymentData.payer?.phone?.number || '',
-        });
-
-      if (transactionError) {
-        console.error('❌ Error creating daily transaction:', transactionError);
-        // Não retornamos erro aqui pois o pedido já foi atualizado
-      } else {
-        console.log('✅ Daily transaction created successfully');
-      }
-    }
+    // A transação será criada automaticamente pelo trigger insert_daily_transaction()
+    // quando o order.payment_status mudar para 'paid'
 
     console.log('🎉 Webhook processed successfully');
     
