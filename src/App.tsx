@@ -11,7 +11,6 @@ import RestaurantDetails from "./pages/RestaurantDetails";
 import TableSelection from "./pages/TableSelection";
 import MenuSelection from "./pages/MenuSelection";
 import PaymentOptions from "./pages/PaymentOptions";
-import CheckIn from "./pages/CheckIn";
 import OrderSummary from "./pages/OrderSummary";
 import OrderTracking from "./pages/OrderTracking";
 import CompletedOrder from "./pages/CompletedOrder";
@@ -62,7 +61,6 @@ const App = () => (
           <Route path="/menu-selection/:restaurantId/:tableId" element={<MenuSelection />} />
           <Route path="/payment/:orderId" element={<PaymentOptions />} />
           <Route path="/payment-options/:orderId" element={<PaymentOptions />} />
-          <Route path="/check-in/:orderId" element={<CheckIn />} />
           <Route path="/customer-service/:orderId" element={<CustomerService />} />
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
           <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
