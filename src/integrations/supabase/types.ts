@@ -21,6 +21,7 @@ export type Database = {
           customer_phone: string | null
           establishment_id: string
           id: string
+          order_id: string | null
           order_items: Json | null
           payment_method: string | null
           status: string | null
@@ -35,6 +36,7 @@ export type Database = {
           customer_phone?: string | null
           establishment_id: string
           id?: string
+          order_id?: string | null
           order_items?: Json | null
           payment_method?: string | null
           status?: string | null
@@ -49,6 +51,7 @@ export type Database = {
           customer_phone?: string | null
           establishment_id?: string
           id?: string
+          order_id?: string | null
           order_items?: Json | null
           payment_method?: string | null
           status?: string | null
@@ -63,6 +66,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
