@@ -39,6 +39,7 @@ type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
 // Define order interface
 interface Order {
   id: string | number;
+  dailyNumber?: number;
   tableNumber: number;
   itemCount: number;
   total: number;
@@ -55,6 +56,7 @@ interface Order {
   assignedTable?: number;
   customerLocation?: any;
   estimatedArrival?: string | null;
+  created_at?: string;
 }
 
 // Payment Status Badge Helper
@@ -111,6 +113,32 @@ const formatETA = (estimatedArrival: string | null) => {
   if (diffMins <= 0) return '⚠️ Deveria ter chegado';
   if (diffMins <= 7) return `🔥 ${diffMins} min (PREPARAR!)`;
   return `${diffMins} min`;
+};
+
+const formatClientDisplay = (
+  customerName: string | undefined, 
+  assignedTable: number | undefined, 
+  dailyNumber: number | undefined
+): string => {
+  const name = customerName || "Cliente";
+  const table = assignedTable ? `Mesa ${assignedTable}` : "";
+  const number = dailyNumber ? `Cliente #${String(dailyNumber).padStart(2, '0')}` : "";
+  
+  return [name, table, number].filter(Boolean).join(' - ');
+};
+
+const getServiceTime = (createdAt: string): string => {
+  const startTime = new Date(createdAt);
+  const now = new Date();
+  const diffMinutes = Math.floor((now.getTime() - startTime.getTime()) / 60000);
+  
+  if (diffMinutes < 60) {
+    return `há ${diffMinutes} min`;
+  } else {
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return `há ${hours}h ${minutes}min`;
+  }
 };
 
 const EstablishmentDashboard = () => {
@@ -185,7 +213,7 @@ const EstablishmentDashboard = () => {
         .eq('establishment_id', establishmentId)
         .in('payment_status', ['pending', 'paid'])
         .gte('created_at', today.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
         
       if (error) {
         console.error('Error fetching orders:', error);
@@ -193,8 +221,9 @@ const EstablishmentDashboard = () => {
       }
       
       if (orders && orders.length > 0) {
-        const formattedOrders = orders.map(order => ({
+        const formattedOrders = orders.map((order, index) => ({
           id: order.id,
+          dailyNumber: index + 1,
           tableNumber: order.table_number,
           itemCount: Array.isArray(order.items) ? order.items.length : 0,
           total: Number(order.total_amount),
@@ -208,6 +237,7 @@ const EstablishmentDashboard = () => {
           assignedTable: order.assigned_table,
           customerLocation: order.customer_location,
           estimatedArrival: order.estimated_arrival_time,
+          created_at: order.created_at,
         }));
         
         // Buscar informações de clientes para pedidos confirmados
@@ -649,29 +679,16 @@ const EstablishmentDashboard = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className={`justify-start rounded-none border-l-4 ${activeTab === 'orders' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
-                    onClick={() => setActiveTab('orders')}
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Pedidos
-                    {getPendingOrdersCount() > 0 && (
-                      <span className="ml-2 bg-blink-primary text-black text-xs py-0.5 px-2 rounded-full">
-                        {getPendingOrdersCount()}
-                      </span>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    className={`justify-start rounded-none border-l-4 ${activeTab === 'customers' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
-                    onClick={() => setActiveTab('customers')}
+                    className={`justify-start rounded-none border-l-4 ${activeTab === 'clients' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
+                    onClick={() => setActiveTab('clients')}
                   >
                     <Users className="h-4 w-4 mr-2" />
-                     Clientes
-                     {(arrivingCustomers + attendingCustomers.length) > 0 && (
-                       <span className="ml-2 bg-blink-primary text-black text-xs py-0.5 px-2 rounded-full">
-                         {arrivingCustomers + attendingCustomers.length}
-                       </span>
-                     )}
+                    Clientes
+                    {pendingOrders.length > 0 && (
+                      <span className="ml-2 bg-blink-primary text-black text-xs py-0.5 px-2 rounded-full">
+                        {pendingOrders.length}
+                      </span>
+                    )}
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -809,233 +826,196 @@ const EstablishmentDashboard = () => {
               </Card>
             )}
 
-            {activeTab === 'orders' && (
-              <Card className="border-0 shadow-md bg-gray-800 text-white">
-                <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
-                  <CardTitle className="text-xl text-white">Gerenciar Pedidos</CardTitle>
-                  <CardDescription className="text-gray-300">
-                    Visualize e gerencie os pedidos do seu estabelecimento
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {pendingOrders.length > 0 ? (
-                    <div className="space-y-4">
-                      {pendingOrders.map((order) => (
-                        <Card key={order.id} className={`border 
-                          ${order.status === 'pending' ? 'border-amber-500/50 bg-amber-950/20' : 
-                            order.status === 'accepted' ? 'border-green-500/50 bg-green-950/20' : 
-                            order.status === 'completed' ? 'border-blue-500/50 bg-blue-950/20' :
-                            'border-red-500/50 bg-red-950/20'} 
-                          transition-all duration-200 hover:border-opacity-75 cursor-pointer`}>
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-center">
-                              <CardTitle className="text-lg text-white">Pedido #{order.id}</CardTitle>
-                              <span className={`text-sm px-2 py-1 rounded-md font-medium ${
-                                order.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
-                                order.status === 'accepted' ? 'bg-green-100 text-green-800' : 
-                                order.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {order.status === 'pending' ? 'Pendente' : 
-                                 order.status === 'accepted' ? 'Aceito' : 
-                                 order.status === 'completed' ? 'Finalizado' :
-                                 'Rejeitado'}
-                              </span>
-                            </div>
-                          </CardHeader>
-                           <CardContent>
-                            <div className="space-y-2 text-white">
-                              <p className="text-sm text-gray-300">Mesa: #{order.tableNumber}</p>
-                              <p className="text-sm text-gray-300">👥 Pessoas: {order.partySize || 2}</p>
-                              {order.assignedTable && (
-                                <p className="text-sm text-green-400">✓ Mesa atribuída: #{order.assignedTable}</p>
-                              )}
-                              <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
-                              
-                              {/* Lista de itens do pedido */}
-                              <div className="mt-3 space-y-2">
-                                <p className="text-sm font-semibold text-gray-300">Itens do Pedido:</p>
-                                {Array.isArray(order.items) && order.items.length > 0 ? (
-                                  <ul className="space-y-1 pl-4">
-                                    {order.items.map((item: any, idx: number) => (
-                                      <li key={idx} className="text-sm text-gray-300">
-                                        {item.quantity}x {item.name} - R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-xs text-gray-400 italic pl-4">Nenhum item cadastrado</p>
-                                )}
-                              </div>
-                              
-                              <div className="pt-2 border-t border-gray-600">
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm text-gray-400">Pagamento:</p>
-                                  {getPaymentStatusBadge(order.paymentStatus || 'pending')}
-                                </div>
-                                
-                                {order.orderStatus === 'cancelled_by_customer' && (
-                                  <Badge variant="destructive" className="mt-2">
-                                    ⚠️ Cancelado pelo Cliente
-                                  </Badge>
-                                )}
-                                
-                                {order.customerLocation && order.estimatedArrival && (
-                                  <div className="mt-2 flex items-center text-sm text-blue-400">
-                                    <span className="mr-1">🚗</span>
-                                    Cliente a caminho - ETA: {formatETA(order.estimatedArrival)}
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {order.status === 'pending' && (
-                                <div className="flex space-x-2 pt-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="order-accept"
-                                    onClick={() => handleAcceptOrder(order.id)}
-                                  >
-                                    <Check size={16} />
-                                    Aceitar
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="border-red-500 text-red-400 hover:bg-red-900/20"
-                                    onClick={() => handleRejectOrder(order.id)}
-                                  >
-                                    <X size={16} />
-                                    Rejeitar
-                                  </Button>
-                                </div>
-                              )}
-                              
-                              {(order.status === 'pending' || order.status === 'accepted') && order.paymentStatus === 'paid' && !order.assignedTable && (
-                                <div className="flex pt-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="border-blink-primary text-blink-primary hover:bg-blink-primary/10"
-                                    onClick={() => handleAssignTable(order)}
-                                  >
-                                    <TableProperties size={16} className="mr-1" />
-                                    Atribuir Mesa
-                                  </Button>
-                                </div>
-                              )}
-                              
-                              {order.status === 'accepted' && (
-                                <div className="flex flex-wrap gap-2 pt-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="order-add"
-                                    onClick={() => handleAllowMoreItems(order.id)}
-                                  >
-                                    <PlusCircle size={16} />
-                                    Permitir Adicionar Itens
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="border-blue-500 text-blue-400 hover:bg-blue-900/20"
-                                    onClick={() => handleCompleteOrder(order.id)}
-                                  >
-                                    <Package size={16} className="mr-1" />
-                                    Finalizar Pedido
-                                  </Button>
-                                </div>
-                              )}
-
-                              {order.status === 'completed' && (
-                                <div className="flex pt-2">
-                                  <Button 
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-blink-primary text-blink-primary hover:bg-blink-primary/10"
-                                    onClick={() => handleCheckout(order)}
-                                  >
-                                    <DoorOpen size={16} className="mr-1" />
-                                    Liberar Cliente
-                                  </Button>
-                                 </div>
-                               )}
-
-                               {order.status === 'rejected' && (
-                                 <div className="flex pt-2">
-                                   <Button 
-                                     size="sm"
-                                     variant="outline"
-                                     className="border-red-500 text-red-400 hover:bg-red-900/20"
-                                     onClick={() => handleDeleteOrder(order.id)}
-                                   >
-                                     <X size={16} className="mr-1" />
-                                     Excluir Pedido
-                                   </Button>
-                                 </div>
-                               )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert className="bg-gray-700 border-gray-600">
-                      <AlertCircle className="h-4 w-4 text-gray-400" />
-                      <AlertTitle className="text-gray-200">Nenhum pedido pendente</AlertTitle>
-                      <AlertDescription className="text-gray-300">
-                        Os novos pedidos aparecerão aqui quando os clientes fizerem seus pedidos.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === 'customers' && (
+            {activeTab === 'clients' && (
               <div className="space-y-6">
-                {/* Clientes Atendendo */}
-                <Card className="border-0 shadow-md bg-gray-800 text-white">
-                  <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
-                    <CardTitle className="text-xl text-white">Clientes Sendo Atendidos</CardTitle>
+                
+                {/* ========== SEÇÃO 1: NOVOS CLIENTES (Pedidos Pendentes) ========== */}
+                <Card className="border-0 shadow-md bg-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-white">
+                      👋 Novos Clientes ({pendingOrders.filter(o => o.status === 'pending').length})
+                    </CardTitle>
                     <CardDescription className="text-gray-300">
-                      Mesas ocupadas e em atendimento
+                      Aguardando sua confirmação
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {pendingOrders.filter(o => o.status === 'pending').length > 0 ? (
+                      <div className="space-y-4">
+                        {pendingOrders
+                          .filter(o => o.status === 'pending')
+                          .map((order) => (
+                            <Card key={order.id} className="border-amber-500/50 bg-amber-950/20">
+                              <CardHeader>
+                                <div className="flex justify-between items-center">
+                                  <CardTitle className="text-lg text-white">
+                                    {order.dailyNumber ? `Cliente #${String(order.dailyNumber).padStart(2, '0')}` : `Pedido #${order.id}`}
+                                    {order.customerName && ` - ${order.customerName}`}
+                                  </CardTitle>
+                                  <Badge className="bg-amber-500 text-white">Novo</Badge>
+                                </div>
+                                <CardDescription className="text-gray-300">
+                                  Mesa {order.tableNumber} • {order.partySize || 2} pessoas
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2 text-white">
+                                  {order.customerPhone && (
+                                    <p className="text-sm text-gray-300">📞 {order.customerPhone}</p>
+                                  )}
+                                  <p className="font-medium">🍽️ {order.itemCount} itens • R$ {order.total.toFixed(2)}</p>
+                                  
+                                  {Array.isArray(order.items) && order.items.length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                      <p className="text-sm font-semibold text-gray-300">Itens do Pedido:</p>
+                                      <ul className="space-y-1 pl-4">
+                                        {order.items.map((item: any, idx: number) => (
+                                          <li key={idx} className="text-sm text-gray-300">
+                                            {item.quantity}x {item.name} - R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="pt-2 border-t border-gray-600">
+                                    {getPaymentStatusBadge(order.paymentStatus || 'pending')}
+                                  </div>
+                                  
+                                  <div className="flex space-x-2 pt-4">
+                                    <Button 
+                                      onClick={() => handleAcceptOrder(order.id)}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      <Check className="mr-2" size={16} />
+                                      Aceitar Cliente
+                                    </Button>
+                                    <Button 
+                                      onClick={() => handleRejectOrder(order.id)}
+                                      variant="outline"
+                                      className="border-red-500 text-red-400"
+                                    >
+                                      <X className="mr-2" size={16} />
+                                      Recusar
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    ) : (
+                      <Alert className="bg-gray-700 border-gray-600">
+                        <AlertCircle className="h-4 w-4 text-gray-400" />
+                        <AlertTitle className="text-gray-200">Nenhum cliente novo</AlertTitle>
+                        <AlertDescription className="text-gray-300">
+                          Novos clientes aparecerão aqui quando fizerem pedidos
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* ========== SEÇÃO 2: CLIENTES CONFIRMADOS (Aguardando Mesa) ========== */}
+                <Card className="border-0 shadow-md bg-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-white">
+                      ✅ Clientes Confirmados ({pendingOrders.filter(o => o.status === 'accepted' && !o.assignedTable).length})
+                    </CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Aguardando atribuição de mesa
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {pendingOrders.filter(o => o.status === 'accepted' && !o.assignedTable).length > 0 ? (
+                      <div className="space-y-4">
+                        {pendingOrders
+                          .filter(o => o.status === 'accepted' && !o.assignedTable)
+                          .map((order) => (
+                            <Card key={order.id} className="border-green-400/50 bg-green-950/20">
+                              <CardHeader>
+                                <div className="flex justify-between items-center">
+                                  <CardTitle className="text-lg text-white">
+                                    {order.dailyNumber ? `Cliente #${String(order.dailyNumber).padStart(2, '0')}` : `Pedido #${order.id}`}
+                                    {order.customerName && ` - ${order.customerName}`}
+                                  </CardTitle>
+                                  <Badge className="bg-green-500 text-white">Confirmado</Badge>
+                                </div>
+                                <CardDescription className="text-gray-300">
+                                  Aguardando mesa
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2 text-white">
+                                  {order.customerPhone && (
+                                    <p className="text-sm text-gray-300">📞 {order.customerPhone}</p>
+                                  )}
+                                  {getPaymentStatusBadge(order.paymentStatus || 'pending')}
+                                  <p className="font-medium mt-2">🍽️ {order.itemCount} itens • R$ {order.total.toFixed(2)}</p>
+                                  
+                                  <Button 
+                                    onClick={() => handleAssignTable(order)}
+                                    className="bg-blue-600 hover:bg-blue-700 mt-4 w-full"
+                                  >
+                                    🪑 Atribuir Mesa
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    ) : (
+                      <Alert className="bg-gray-700 border-gray-600">
+                        <Info className="h-4 w-4 text-gray-400" />
+                        <AlertTitle className="text-gray-200">Nenhum cliente aguardando</AlertTitle>
+                        <AlertDescription className="text-gray-300">
+                          Clientes confirmados sem mesa aparecerão aqui
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* ========== SEÇÃO 3: CLIENTES NO SALÃO (Mesas Ocupadas) ========== */}
+                <Card className="border-0 shadow-md bg-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-white">
+                      🍽️ Clientes no Salão ({attendingCustomers.length})
+                    </CardTitle>
+                    <CardDescription className="text-gray-300">
+                      Sendo atendidos no momento
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-6">
                     {attendingCustomers.length > 0 ? (
                       <div className="space-y-4">
                         {attendingCustomers.map((order) => (
-                          <Card key={order.id} className="border border-green-500/50 bg-green-950/20 hover:bg-green-950/30 cursor-pointer transition-all duration-200">
-                            <CardHeader className="pb-2">
-                              <div className="flex justify-between">
-                                <CardTitle className="text-lg text-white">Mesa #{order.tableNumber}</CardTitle>
-                                <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-md font-medium">
-                                  {order.paymentStatus === 'paid' ? 'Pago' : 'Atendendo'}
-                                </span>
+                          <Card key={order.id} className="border-green-600/50 bg-green-950/30">
+                            <CardHeader>
+                              <div className="flex justify-between items-center">
+                                <CardTitle className="text-lg text-white">
+                                  {formatClientDisplay(order.customerName, order.assignedTable, order.dailyNumber)}
+                                </CardTitle>
+                                <Badge className="bg-green-600 text-white">No Salão</Badge>
                               </div>
+                              <CardDescription className="text-gray-300">
+                                Sendo atendido • {order.created_at ? getServiceTime(order.created_at) : ''}
+                              </CardDescription>
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-2 text-white">
-                                {order.customerName && (
-                                  <p className="text-sm text-gray-300">Cliente: {order.customerName}</p>
-                                )}
                                 {order.customerPhone && (
-                                  <p className="text-sm text-gray-300">Telefone: {order.customerPhone}</p>
+                                  <p className="text-sm text-gray-300">📞 {order.customerPhone}</p>
                                 )}
-                                <p className="font-medium">Itens: {order.itemCount}</p>
-                                <p className="font-medium">Total: R$ {order.total.toFixed(2)}</p>
-                                <p className="text-sm text-gray-400">Status: {order.orderStatus}</p>
-                                <div className="flex space-x-2 pt-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="border-blue-500 text-blue-400 hover:bg-blue-900/20"
-                                    onClick={() => handleFinalizeTable(order.id)}
-                                  >
-                                    <DoorOpen size={16} className="mr-1" />
-                                    Finalizar Mesa
-                                  </Button>
-                                </div>
+                                {getPaymentStatusBadge(order.paymentStatus || 'pending')}
+                                <p className="font-medium mt-2">🍽️ {order.itemCount} itens • R$ {order.total.toFixed(2)}</p>
+                                
+                                <Button 
+                                  onClick={() => handleCompleteOrder(order.id)}
+                                  className="bg-blink-primary hover:bg-blink-primary/90 text-black mt-4 w-full"
+                                >
+                                  🍽️ Finalizar Atendimento
+                                </Button>
                               </div>
                             </CardContent>
                           </Card>
@@ -1044,68 +1024,18 @@ const EstablishmentDashboard = () => {
                     ) : (
                       <Alert className="bg-gray-700 border-gray-600">
                         <Info className="h-4 w-4 text-gray-400" />
-                        <AlertTitle className="text-gray-200">Nenhum cliente sendo atendido</AlertTitle>
+                        <AlertTitle className="text-gray-200">Nenhum cliente no salão</AlertTitle>
                         <AlertDescription className="text-gray-300">
-                          Pedidos confirmados e pagos aparecerão aqui.
+                          Mesas ocupadas aparecerão aqui
                         </AlertDescription>
                       </Alert>
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Clientes Chegando */}
-                <Card className="border-0 shadow-md bg-gray-800 text-white">
-                  <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
-                    <CardTitle className="text-xl text-white">Clientes Chegando</CardTitle>
-                    <CardDescription className="text-gray-300">
-                      Veja quem está a caminho do seu estabelecimento
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    {arrivingCustomers > 0 ? (
-                      <div className="space-y-4">
-                        {Array.from({ length: arrivingCustomers }).map((_, index) => (
-                          <Card key={index} className="border border-gray-700 bg-gray-700/50 hover:bg-gray-700 cursor-pointer transition-all duration-200">
-                            <CardHeader className="pb-2">
-                              <div className="flex justify-between">
-                                <CardTitle className="text-lg text-white">Cliente #{Math.floor(Math.random() * 1000) + 1000}</CardTitle>
-                                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium">
-                                  Chegando
-                                </span>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2 text-white">
-                                <p className="text-sm text-gray-300">Horário estimado: {new Date().getHours()}:{new Date().getMinutes() + Math.floor(Math.random() * 30)}</p>
-                                <p className="font-medium">Pessoas: {Math.floor(Math.random() * 4) + 1}</p>
-                                <p className="font-medium">Mesa: #{Math.floor(Math.random() * 20) + 1}</p>
-                                <div className="flex space-x-2 pt-2">
-                                  <Button 
-                                    size="sm" 
-                                    className="bg-blink-primary hover:bg-blink-primary/90 text-black"
-                                    onClick={() => handlePrepareTable(index)}
-                                  >
-                                    Preparar Mesa
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <Alert className="bg-gray-700 border-gray-600">
-                        <Info className="h-4 w-4 text-gray-400" />
-                        <AlertTitle className="text-gray-200">Nenhum cliente a caminho</AlertTitle>
-                        <AlertDescription className="text-gray-300">
-                          Os clientes que estiverem a caminho aparecerão aqui quando confirmarem sua reserva.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
+                
               </div>
             )}
+
 
             {activeTab === 'notifications' && (
               <Card className="border-0 shadow-md bg-gray-800 text-white">
