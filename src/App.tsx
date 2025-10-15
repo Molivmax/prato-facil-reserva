@@ -28,6 +28,7 @@ import ProductRegistration from "./pages/ProductRegistration";
 import Account from "./pages/Account";
 import MyOrders from "./pages/MyOrders";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import CompleteSelfService from "./pages/CompleteSelfService";
 
 // Configure a queryClient com retry para as chamadas de API, incluindo a função edge
 const queryClient = new QueryClient({
@@ -70,6 +71,7 @@ const App = () => (
           <Route path="/establishment-login" element={<EstablishmentLogin />} />
           <Route path="/establishment-dashboard" element={<EstablishmentDashboard />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/complete-service/:orderId" element={<CompleteSelfService />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

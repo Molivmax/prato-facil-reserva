@@ -19,6 +19,7 @@ const MenuSelection = () => {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [existingOrderId, setExistingOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -43,6 +44,35 @@ const MenuSelection = () => {
       }
     }
   }, []);
+
+  // Verificar se existe pedido ativo na mesa
+  useEffect(() => {
+    const checkExistingOrder = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !tableId) return;
+
+      const tableNumber = parseInt(tableId.replace('table-', '')) || 0;
+
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('establishment_id', restaurantId)
+        .or(`assigned_table.eq.${tableNumber},table_number.eq.${tableNumber}`)
+        .eq('order_status', 'confirmed')
+        .maybeSingle();
+
+      if (data) {
+        setExistingOrderId(data.id);
+        toast({
+          title: 'Você já tem um pedido ativo!',
+          description: 'Novos itens serão adicionados ao pedido atual',
+        });
+      }
+    };
+
+    checkExistingOrder();
+  }, [restaurantId, tableId]);
 
   useEffect(() => {
     if (restaurantId && tableId) {
@@ -202,11 +232,53 @@ const MenuSelection = () => {
         return;
       }
 
-      // Buscar party_size do localStorage
+      // Verificar se é adição a pedido existente
+      if (existingOrderId) {
+        // Buscar pedido existente
+        const { data: existingOrder } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', existingOrderId)
+          .single();
+
+        if (existingOrder) {
+          // Mesclar itens
+          const existingItems = typeof existingOrder.items === 'string' 
+            ? JSON.parse(existingOrder.items) 
+            : existingOrder.items || [];
+          const mergedItems = [...existingItems, ...cart];
+
+          // Atualizar pedido existente
+          const { error } = await supabase
+            .from('orders')
+            .update({
+              items: JSON.stringify(mergedItems),
+              total_amount: Number(existingOrder.total_amount) + totalAmount,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingOrderId);
+
+          if (error) throw error;
+
+          toast({
+            title: "Itens adicionados! 🍽️",
+            description: `Novo total: R$ ${(Number(existingOrder.total_amount) + totalAmount).toFixed(2)}`,
+          });
+          
+          // Limpar carrinho
+          setCart([]);
+          localStorage.removeItem('cartItems');
+          
+          // Navegar para página do pedido
+          navigate(`/complete-service/${existingOrderId}`);
+          return;
+        }
+      }
+
+      // Criar novo pedido (fluxo normal)
       const savedPartySize = localStorage.getItem('partySize');
       const partySize = savedPartySize ? parseInt(savedPartySize) : 2;
       
-      // Criar pedido no banco de dados
       const { data: order, error } = await supabase
         .from('orders')
         .insert({

@@ -309,18 +309,42 @@ const EstablishmentDashboard = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'orders',
           filter: `establishment_id=eq.${establishment.id}`
         },
         (payload) => {
-          console.log('Order changed via real-time:', payload);
+          console.log('New order received via real-time:', payload);
+          toast.success('Novo pedido recebido!', {
+            description: 'Um cliente acabou de fazer um pedido',
+          });
           fetchEstablishmentOrders(establishment.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `establishment_id=eq.${establishment.id}`
+        },
+        (payload) => {
+          console.log('Order updated via real-time:', payload);
           
-          if (payload.eventType === 'INSERT') {
-            toast.success(`🔔 Novo Pedido! Mesa ${payload.new.table_number} - R$ ${Number(payload.new.total_amount).toFixed(2)}`);
+          // Detectar se foi adição de itens
+          const oldItems = JSON.parse((payload.old as any).items || '[]');
+          const newItems = JSON.parse((payload.new as any).items || '[]');
+          
+          if (newItems.length > oldItems.length) {
+            const addedCount = newItems.length - oldItems.length;
+            toast.info(`🔔 Mesa ${(payload.new as any).assigned_table} adicionou ${addedCount} itens!`, {
+              description: `Novo total: R$ ${(payload.new as any).total_amount}`,
+            });
           }
+          
+          fetchEstablishmentOrders(establishment.id);
         }
       )
       .subscribe((status) => {
@@ -428,33 +452,83 @@ const EstablishmentDashboard = () => {
   };
 
   // Function to handle accepting an order
-  const handleAcceptOrder = (orderId: string | number) => {
-    setPendingOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'accepted' as OrderStatus, canAddMore: true } : order
-      )
-    );
-    toast.success(`Pedido aceito com sucesso!`);
+  const handleAcceptOrder = async (orderId: string | number) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          order_status: 'confirmed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId.toString());
+
+      if (error) throw error;
+
+      toast.success('Cliente aceito!', {
+        description: 'Cliente foi notificado e está confirmado',
+      });
+      
+      // O real-time irá atualizar automaticamente
+    } catch (error) {
+      console.error('Erro ao aceitar pedido:', error);
+      toast.error('Não foi possível aceitar o pedido');
+    }
   };
 
   // Function to handle rejecting an order
-  const handleRejectOrder = (orderId: string | number) => {
-    setPendingOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'rejected' as OrderStatus, canAddMore: false } : order
-      )
-    );
-    toast.error(`Pedido rejeitado.`);
+  const handleRejectOrder = async (orderId: string | number) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          order_status: 'cancelled_by_establishment',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId.toString());
+
+      if (error) throw error;
+
+      // Remover do estado local
+      setPendingOrders(prev => prev.filter(o => o.id !== orderId));
+      
+      toast.error('Pedido recusado', {
+        description: 'Cliente foi notificado sobre o cancelamento',
+      });
+    } catch (error) {
+      console.error('Erro ao recusar pedido:', error);
+      toast.error('Não foi possível recusar o pedido');
+    }
   };
 
   // Function to handle completing an order
-  const handleCompleteOrder = (orderId: string | number) => {
-    setPendingOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'completed' as OrderStatus, canAddMore: false } : order
-      )
-    );
-    toast.success(`Pedido finalizado com sucesso!`);
+  const handleCompleteOrder = async (orderId: string | number) => {
+    try {
+      // 1. Atualizar no banco de dados
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          order_status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId.toString());
+
+      if (error) throw error;
+
+      // 2. Remover do estado local
+      setAttendingCustomers(prev => prev.filter(c => c.id !== orderId));
+      setPendingOrders(prev => prev.filter(o => o.id !== orderId));
+      
+      // 3. Incrementar contador
+      setFinalizedCustomers(prev => prev + 1);
+
+      // 4. Notificar sucesso
+      toast.success('Atendimento finalizado!', {
+        description: 'Cliente foi notificado e pode avaliar o atendimento',
+      });
+    } catch (error) {
+      console.error('Erro ao finalizar atendimento:', error);
+      toast.error('Não foi possível finalizar o atendimento');
+    }
   };
 
   // Function to handle deleting a rejected order
