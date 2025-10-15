@@ -156,6 +156,7 @@ const EstablishmentDashboard = () => {
   const [checkingCredentials, setCheckingCredentials] = useState(true);
   const [assignTableDialogOpen, setAssignTableDialogOpen] = useState(false);
   const [selectedOrderForTable, setSelectedOrderForTable] = useState<Order | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -350,12 +351,79 @@ const EstablishmentDashboard = () => {
       .subscribe((status) => {
         console.log('Real-time subscription status:', status);
       });
+
+    // Listener para notificações de clientes
+    const notificationsChannel = supabase
+      .channel('notifications-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'customer_notifications',
+          filter: `establishment_id=eq.${establishment.id}`
+        },
+        (payload) => {
+          console.log('New notification received:', payload);
+          const notification = payload.new as any;
+          
+          toast.info(`🔔 ${notification.message}`, {
+            description: 'Veja na aba Notificações',
+          });
+          
+          fetchNotifications(establishment.id);
+        }
+      )
+      .subscribe();
+      
+    fetchNotifications(establishment.id);
       
     return () => {
       console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
+      supabase.removeChannel(notificationsChannel);
     };
   }, [establishment?.id]);
+
+  const fetchNotifications = async (establishmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_notifications')
+        .select('*')
+        .eq('establishment_id', establishmentId)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('customer_notifications')
+        .update({ 
+          is_read: true,
+          resolved_at: new Date().toISOString()
+        })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      toast.success('Notificação resolvida!');
+      
+      if (establishment?.id) {
+        fetchNotifications(establishment.id);
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast.error('Erro ao resolver notificação');
+    }
+  };
 
   const fetchEstablishmentData = async (userId: string) => {
     try {
@@ -779,6 +847,11 @@ const EstablishmentDashboard = () => {
                   >
                     <Bell className="h-4 w-4 mr-2" />
                     Notificações
+                    {notifications.length > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs py-0.5 px-2 rounded-full">
+                        {notifications.length}
+                      </span>
+                    )}
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -1114,19 +1187,60 @@ const EstablishmentDashboard = () => {
             {activeTab === 'notifications' && (
               <Card className="border-0 shadow-md bg-gray-800 text-white">
                 <CardHeader className="bg-gray-800 rounded-t-lg border-b border-gray-700">
-                  <CardTitle className="text-xl text-white">Notificações</CardTitle>
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Notificações
+                    {notifications.length > 0 && (
+                      <Badge className="bg-red-500">{notifications.length}</Badge>
+                    )}
+                  </CardTitle>
                   <CardDescription className="text-gray-300">
-                    Acompanhe as atualizações do seu estabelecimento
+                    Chamados e solicitações dos clientes
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <Alert className="bg-gray-700 border-gray-600">
-                    <Bell className="h-4 w-4 text-gray-400" />
-                    <AlertTitle className="text-gray-200">Nenhuma notificação no momento</AlertTitle>
-                    <AlertDescription className="text-gray-300">
-                      Fique atento às novidades do seu estabelecimento. As notificações aparecerão aqui.
-                    </AlertDescription>
-                  </Alert>
+                  {notifications.length > 0 ? (
+                    <div className="space-y-4">
+                      {notifications.map((notification) => (
+                        <Card key={notification.id} className="border-yellow-600/50 bg-yellow-950/30">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg text-white">
+                                  {notification.notification_type === 'call_waiter' && '🔔 Garçom Chamado'}
+                                </CardTitle>
+                                <CardDescription className="text-gray-300">
+                                  Mesa {notification.table_number} • {new Date(notification.created_at).toLocaleString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </CardDescription>
+                              </div>
+                              <Badge className="bg-yellow-600">Pendente</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <p className="text-white">{notification.message}</p>
+                            <Button
+                              onClick={() => handleMarkAsRead(notification.id)}
+                              className="w-full bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="mr-2 h-4 w-4" />
+                              Marcar como Resolvido
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Alert className="bg-gray-700 border-gray-600">
+                      <Bell className="h-4 w-4 text-gray-400" />
+                      <AlertTitle className="text-gray-200">Nenhuma notificação pendente</AlertTitle>
+                      <AlertDescription className="text-gray-300">
+                        As solicitações dos clientes aparecerão aqui.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             )}

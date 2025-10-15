@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_notifications: {
+        Row: {
+          created_at: string
+          establishment_id: string
+          id: string
+          is_read: boolean
+          message: string | null
+          notification_type: string
+          order_id: string
+          resolved_at: string | null
+          table_number: number | null
+        }
+        Insert: {
+          created_at?: string
+          establishment_id: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          notification_type: string
+          order_id: string
+          resolved_at?: string | null
+          table_number?: number | null
+        }
+        Update: {
+          created_at?: string
+          establishment_id?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          notification_type?: string
+          order_id?: string
+          resolved_at?: string | null
+          table_number?: number | null
+        }
+        Relationships: []
+      }
       daily_transactions: {
         Row: {
           created_at: string | null

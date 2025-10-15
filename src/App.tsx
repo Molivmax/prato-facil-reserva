@@ -29,6 +29,7 @@ import Account from "./pages/Account";
 import MyOrders from "./pages/MyOrders";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import CompleteSelfService from "./pages/CompleteSelfService";
+import CustomerService from "./pages/CustomerService";
 
 // Configure a queryClient com retry para as chamadas de API, incluindo a função edge
 const queryClient = new QueryClient({
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/payment/:orderId" element={<PaymentOptions />} />
           <Route path="/payment-options/:orderId" element={<PaymentOptions />} />
           <Route path="/check-in/:orderId" element={<CheckIn />} />
+          <Route path="/customer-service/:orderId" element={<CustomerService />} />
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
           <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
           <Route path="/completed-order/:orderId" element={<CompletedOrder />} />
