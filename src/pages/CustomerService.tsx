@@ -23,18 +23,28 @@ const CustomerService = () => {
 
   const fetchOrderData = async () => {
     try {
+      // Buscar o pedido
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, establishments(*)')
+        .select('*')
         .eq('id', orderId)
         .single();
 
       if (orderError) throw orderError;
 
+      // Buscar o estabelecimento separadamente
+      const { data: establishmentData, error: establishmentError } = await supabase
+        .from('establishments')
+        .select('*')
+        .eq('id', orderData.establishment_id)
+        .single();
+
+      if (establishmentError) throw establishmentError;
+
       setOrder(orderData);
-      setEstablishment(orderData.establishments);
+      setEstablishment(establishmentData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro ao carregar pedido:', error);
       toast.error('Pedido não encontrado');
       navigate('/');
     } finally {

@@ -1013,15 +1013,23 @@ const EstablishmentDashboard = () => {
                                   <p className="font-medium">🍽️ {order.itemCount} itens • R$ {order.total.toFixed(2)}</p>
                                   
                                   {Array.isArray(order.items) && order.items.length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                      <p className="text-sm font-semibold text-gray-300">Itens do Pedido:</p>
-                                      <ul className="space-y-1 pl-4">
+                                    <div className="mt-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                      <p className="text-sm font-semibold text-blink-primary mb-2">📋 Itens do Pedido:</p>
+                                      <ul className="space-y-2">
                                         {order.items.map((item: any, idx: number) => (
-                                          <li key={idx} className="text-sm text-gray-300">
-                                            {item.quantity}x {item.name} - R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                                          <li key={idx} className="flex justify-between items-center text-sm border-b border-gray-700/50 pb-2 last:border-0">
+                                            <span className="text-white font-medium">
+                                              <span className="text-blink-primary mr-2">{item.quantity}x</span>
+                                              {item.name || 'Item sem nome'}
+                                            </span>
+                                            <span className="text-gray-300">R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}</span>
                                           </li>
                                         ))}
                                       </ul>
+                                      <div className="mt-3 pt-2 border-t border-gray-700 flex justify-between font-bold">
+                                        <span className="text-white">Total:</span>
+                                        <span className="text-blink-primary">R$ {order.total.toFixed(2)}</span>
+                                      </div>
                                     </div>
                                   )}
                                   
@@ -1155,7 +1163,27 @@ const EstablishmentDashboard = () => {
                                   <p className="text-sm text-gray-300">📞 {order.customerPhone}</p>
                                 )}
                                 {getPaymentStatusBadge(order.paymentStatus || 'pending')}
-                                <p className="font-medium mt-2">🍽️ {order.itemCount} itens • R$ {order.total.toFixed(2)}</p>
+                                
+                                {Array.isArray(order.items) && order.items.length > 0 && (
+                                  <div className="mt-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                    <p className="text-sm font-semibold text-blink-primary mb-2">📋 Itens do Pedido:</p>
+                                    <ul className="space-y-2">
+                                      {order.items.map((item: any, idx: number) => (
+                                        <li key={idx} className="flex justify-between items-center text-sm border-b border-gray-700/50 pb-2 last:border-0">
+                                          <span className="text-white font-medium">
+                                            <span className="text-blink-primary mr-2">{item.quantity}x</span>
+                                            {item.name || 'Item sem nome'}
+                                          </span>
+                                          <span className="text-gray-300">R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                    <div className="mt-3 pt-2 border-t border-gray-700 flex justify-between font-bold">
+                                      <span className="text-white">Total:</span>
+                                      <span className="text-blink-primary">R$ {order.total.toFixed(2)}</span>
+                                    </div>
+                                  </div>
+                                )}
                                 
                                 <Button 
                                   onClick={() => handleCompleteOrder(order.id)}
