@@ -60,10 +60,10 @@ const Navbar = () => {
               Buscar Restaurantes
             </Link>
             <Link 
-              to="/check-in/latest" 
+              to="/my-orders" 
               className="px-3 py-2 rounded-md text-sm font-medium hover:bg-blink-secondary hover:text-white"
             >
-              Check-in
+              Meus Pedidos
             </Link>
             <Link 
               to="/my-orders" 
@@ -117,13 +117,13 @@ const Navbar = () => {
               </div>
             </Link>
             <Link
-              to="/check-in/latest"
+              to="/my-orders"
               className="block px-3 py-2 rounded-md text-base font-medium hover:bg-blink-secondary hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               <div className="flex items-center">
                 <ClipboardList className="mr-2 h-4 w-4" />
-                Check-in
+                Meus Pedidos
               </div>
             </Link>
             <Link

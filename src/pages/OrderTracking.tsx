@@ -518,10 +518,10 @@ const OrderTracking = () => {
                 <Button 
                   variant="outline"
                   className="w-full border-white/20 text-white hover:bg-white/10"
-                  onClick={() => navigate(`/check-in/${orderId}`)}
+                  onClick={() => navigate(`/customer-service/${orderId}`)}
                 >
                   <QrCode className="mr-2 h-4 w-4" />
-                  Fazer Check-in
+                  Ver Pedido
                 </Button>
               </div>
             ) : (
@@ -534,10 +534,10 @@ const OrderTracking = () => {
                 <Button 
                   variant="outline"
                   className="w-full border-white/20 text-white hover:bg-white/10"
-                  onClick={() => navigate(`/check-in/${orderId}`)}
+                  onClick={() => navigate(`/customer-service/${orderId}`)}
                 >
                   <QrCode className="mr-2 h-4 w-4" />
-                  Fazer Check-in
+                  Ver Pedido
                 </Button>
               </div>
             )}
