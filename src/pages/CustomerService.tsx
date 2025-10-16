@@ -114,7 +114,7 @@ const CustomerService = () => {
     );
   }
 
-  const items = JSON.parse(order.items || '[]');
+  const items = order.items || [];
 
   return (
     <div className="min-h-screen bg-background">
