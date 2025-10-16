@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Plus, Clock, CheckCircle, QrCode, CreditCard, Loader2, CheckCircle2 } from 'lucide-react';
+import { MapPin, Plus, Clock, CheckCircle, CreditCard, Loader2, CheckCircle2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,7 @@ const OrderTracking = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [estimatedArrival, setEstimatedArrival] = useState<string>('');
   const [isEnablingLocation, setIsEnablingLocation] = useState(false);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -345,6 +346,34 @@ const OrderTracking = () => {
     );
   };
 
+  const handleCheckIn = async () => {
+    setIsCheckingIn(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ customer_status: 'checked_in' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Check-in realizado!",
+        description: "Bem-vindo! Você já pode chamar o garçom.",
+      });
+      
+      navigate(`/customer-service/${orderId}`);
+    } catch (error) {
+      console.error('Erro no check-in:', error);
+      toast({
+        title: "Erro no check-in",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingIn(false);
+    }
+  };
+
   const handleAddMoreItems = () => {
     if (orderDetails?.establishment_id || orderDetails?.restaurantId) {
       const restaurantId = orderDetails.establishment_id || orderDetails.restaurantId;
@@ -499,7 +528,7 @@ const OrderTracking = () => {
                   Ative sua localização para que o restaurante saiba quando você está chegando e prepare seu pedido.
                 </p>
                 <Button 
-                  className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold mb-3"
+                  className="w-full bg-blink-primary text-black hover:bg-blink-primary/90 font-semibold"
                   onClick={handleEnableLocation}
                   disabled={loading || !orderDetails || isEnablingLocation}
                 >
@@ -515,29 +544,30 @@ const OrderTracking = () => {
                     </>
                   )}
                 </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full border-white/20 text-white hover:bg-white/10"
-                  onClick={() => navigate(`/customer-service/${orderId}`)}
-                >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Ver Pedido
-                </Button>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3">
                   <p className="text-green-300 text-sm">
-                    ✓ O restaurante será notificado quando você estiver próximo!
+                    ✓ Navegação ativada! Ao chegar no restaurante, faça o check-in.
                   </p>
                 </div>
                 <Button 
-                  variant="outline"
-                  className="w-full border-white/20 text-white hover:bg-white/10"
-                  onClick={() => navigate(`/customer-service/${orderId}`)}
+                  className="w-full bg-green-600 text-white hover:bg-green-700 font-semibold"
+                  onClick={handleCheckIn}
+                  disabled={isCheckingIn}
                 >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Ver Pedido
+                  {isCheckingIn ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Fazendo check-in...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Cheguei - Fazer Check-in
+                    </>
+                  )}
                 </Button>
               </div>
             )}

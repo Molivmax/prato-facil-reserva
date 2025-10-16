@@ -196,7 +196,7 @@ const PaymentOptions = () => {
           title: "Pedido registrado!",
           description: "Você poderá pagar depois.",
         });
-        navigate(`/customer-service/${orderId}`);
+        navigate(`/order-tracking/${orderId}`);
       } else if (paymentMethod === 'local') {
         const { error: updateError } = await supabase
           .from('orders')
@@ -212,7 +212,7 @@ const PaymentOptions = () => {
           title: "Pedido confirmado!",
           description: "Pague no estabelecimento.",
         });
-        navigate(`/customer-service/${orderId}`);
+        navigate(`/order-tracking/${orderId}`);
       }
     } catch (err) {
       console.error('Payment error:', err);
@@ -261,7 +261,7 @@ const PaymentOptions = () => {
                 title: "Pagamento confirmado!",
                 description: "Seu pedido foi recebido pelo restaurante.",
               });
-              navigate(`/customer-service/${orderId}`);
+              navigate(`/order-tracking/${orderId}`);
             }}
             onCancel={() => setShowCreditCardForm(false)}
           />
@@ -284,7 +284,7 @@ const PaymentOptions = () => {
                 title: "Pagamento confirmado!",
                 description: "Seu pedido foi recebido pelo restaurante.",
               });
-              navigate(`/customer-service/${orderId}`);
+              navigate(`/order-tracking/${orderId}`);
             }}
             onCancel={() => {
               console.log('❌ MercadoPago onCancel chamado');

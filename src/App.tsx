@@ -29,6 +29,7 @@ import MyOrders from "./pages/MyOrders";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import CompleteSelfService from "./pages/CompleteSelfService";
 import CustomerService from "./pages/CustomerService";
+import { Navigate } from "react-router-dom";
 
 // Configure a queryClient com retry para as chamadas de API, incluindo a função edge
 const queryClient = new QueryClient({
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/menu-selection/:restaurantId/:tableId" element={<MenuSelection />} />
           <Route path="/payment/:orderId" element={<PaymentOptions />} />
           <Route path="/payment-options/:orderId" element={<PaymentOptions />} />
+          <Route path="/check-in/:orderId" element={<Navigate to="/order-tracking/:orderId" replace />} />
           <Route path="/customer-service/:orderId" element={<CustomerService />} />
           <Route path="/order-summary/:orderId" element={<OrderSummary />} />
           <Route path="/order-tracking/:orderId" element={<OrderTracking />} />

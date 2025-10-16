@@ -32,6 +32,13 @@ const CustomerService = () => {
 
       if (orderError) throw orderError;
 
+      // Verificar se o cliente fez check-in
+      if (orderData.customer_status !== 'checked_in') {
+        toast.error('Você precisa fazer check-in no restaurante primeiro');
+        navigate(`/order-tracking/${orderId}`);
+        return;
+      }
+
       // Buscar o estabelecimento separadamente
       const { data: establishmentData, error: establishmentError } = await supabase
         .from('establishments')
@@ -171,8 +178,7 @@ const CustomerService = () => {
           <Button
             onClick={handleCallWaiter}
             disabled={callingWaiter}
-            variant="outline"
-            className="w-full h-14 text-lg"
+            className="w-full h-14 text-lg bg-white text-black hover:bg-gray-100 border border-gray-300"
           >
             <Bell className="mr-2 h-5 w-5" />
             {callingWaiter ? 'Chamando...' : 'Chamar Garçom'}
@@ -180,8 +186,7 @@ const CustomerService = () => {
 
           <Button
             onClick={handleAddItems}
-            variant="outline"
-            className="w-full h-14 text-lg"
+            className="w-full h-14 text-lg bg-white text-black hover:bg-gray-100 border border-gray-300"
           >
             <Plus className="mr-2 h-5 w-5" />
             Adicionar Mais Itens
@@ -189,7 +194,7 @@ const CustomerService = () => {
 
           <Button
             onClick={handleFinalize}
-            className="w-full h-14 text-lg bg-primary hover:bg-primary/90"
+            className="w-full h-14 text-lg bg-red-600 text-white hover:bg-red-700"
           >
             <LogOut className="mr-2 h-5 w-5" />
             Finalizar e Sair
