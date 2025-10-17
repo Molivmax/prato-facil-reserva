@@ -91,7 +91,7 @@ const MenuItem = ({
           alt={name} 
           className="w-full h-40 object-cover"
         />
-        <Badge className="absolute top-2 right-2 bg-restaurant-secondary text-black">
+        <Badge className="absolute top-2 right-2 bg-white/90 text-black font-semibold shadow-md border border-gray-200">
           {category}
         </Badge>
       </div>

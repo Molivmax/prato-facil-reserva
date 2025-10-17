@@ -243,16 +243,16 @@ const MenuSelection = () => {
 
         if (existingOrder) {
           // Mesclar itens
-          const existingItems = typeof existingOrder.items === 'string' 
-            ? JSON.parse(existingOrder.items) 
-            : existingOrder.items || [];
+          const existingItems = Array.isArray(existingOrder.items) 
+            ? existingOrder.items 
+            : [];
           const mergedItems = [...existingItems, ...cart];
 
           // Atualizar pedido existente
           const { error } = await supabase
             .from('orders')
             .update({
-              items: JSON.stringify(mergedItems),
+              items: mergedItems as any,
               total_amount: Number(existingOrder.total_amount) + totalAmount,
               updated_at: new Date().toISOString()
             })
@@ -270,7 +270,7 @@ const MenuSelection = () => {
           localStorage.removeItem('cartItems');
           
           // Navegar para página do pedido
-          navigate(`/complete-service/${existingOrderId}`);
+          navigate(`/customer-service/${existingOrderId}`);
           return;
         }
       }
