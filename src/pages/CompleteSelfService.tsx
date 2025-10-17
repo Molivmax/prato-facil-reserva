@@ -24,16 +24,26 @@ const CompleteSelfService = () => {
 
   const fetchOrder = async (id: string) => {
     try {
-      const { data, error } = await supabase
+      // 1. Buscar pedido
+      const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, establishments(*)')
+        .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (orderError) throw orderError;
 
-      setOrder(data);
-      setEstablishment(data.establishments);
+      // 2. Buscar estabelecimento separadamente
+      const { data: establishmentData, error: establishmentError } = await supabase
+        .from('establishments')
+        .select('*')
+        .eq('id', orderData.establishment_id)
+        .single();
+
+      if (establishmentError) throw establishmentError;
+
+      setOrder(orderData);
+      setEstablishment(establishmentData);
     } catch (error) {
       console.error('Erro ao carregar pedido:', error);
       toast.error('Pedido não encontrado');
@@ -108,7 +118,7 @@ const CompleteSelfService = () => {
     );
   }
 
-  const items = JSON.parse(order.items || '[]');
+  const items = order.items || [];
 
   return (
     <div className="min-h-screen bg-background">

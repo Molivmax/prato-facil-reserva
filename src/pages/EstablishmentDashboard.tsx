@@ -149,6 +149,7 @@ const EstablishmentDashboard = () => {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [arrivingCustomers, setArrivingCustomers] = useState(0);
   const [attendingCustomers, setAttendingCustomers] = useState<Order[]>([]);
+  const [customersInSalon, setCustomersInSalon] = useState<Order[]>([]);
   const [finalizedCustomers, setFinalizedCustomers] = useState(0);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -225,13 +226,14 @@ const EstablishmentDashboard = () => {
         const formattedOrders = orders.map((order, index) => ({
           id: order.id,
           dailyNumber: index + 1,
-          tableNumber: order.table_number,
+          tableNumber: order.assigned_table || order.table_number,
           itemCount: Array.isArray(order.items) ? order.items.length : 0,
           total: Number(order.total_amount),
           status: (order.order_status === 'pending' ? 'pending' : 'accepted') as OrderStatus,
           canAddMore: order.order_status === 'confirmed',
           paymentStatus: order.payment_status,
           orderStatus: order.order_status,
+          customerStatus: order.customer_status,
           items: order.items,
           user_id: order.user_id,
           partySize: order.party_size || 2,
@@ -264,10 +266,17 @@ const EstablishmentDashboard = () => {
           o.paymentStatus === 'pending' && o.orderStatus === 'pending'
         );
         
-        // Separar pedidos confirmados (pagos) incluindo cancelados
+        // Separar pedidos confirmados (pagos mas ainda não fizeram check-in)
         const confirmed = ordersWithCustomers.filter(o => 
           o.paymentStatus === 'paid' && 
-          (o.orderStatus === 'confirmed' || o.orderStatus === 'cancelled_by_customer')
+          o.orderStatus === 'confirmed' &&
+          o.customerStatus !== 'checked_in'
+        );
+        
+        // Clientes NO SALÃO (fizeram check-in)
+        const inSalon = ordersWithCustomers.filter(o =>
+          o.paymentStatus === 'paid' &&
+          o.customerStatus === 'checked_in'
         );
         
         // Clientes REALMENTE a caminho (com localização ativa)
@@ -278,9 +287,10 @@ const EstablishmentDashboard = () => {
           o.estimatedArrival
         );
         
-        setPendingOrders([...pending, ...confirmed]); // Mostrar AMBOS na aba Pedidos
-        setArrivingCustomers(arriving.length); // Só quem está REALMENTE a caminho
-        setAttendingCustomers(confirmed); // Pedidos confirmados (pagos)
+        setPendingOrders(pending);
+        setArrivingCustomers(arriving.length);
+        setAttendingCustomers(confirmed);
+        setCustomersInSalon(inSalon);
         
         console.log('Orders loaded:', { 
           pending: pending.length, 
@@ -855,6 +865,19 @@ const EstablishmentDashboard = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
+                    className={`justify-start rounded-none border-l-4 ${activeTab === 'salon' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
+                    onClick={() => setActiveTab('salon')}
+                  >
+                    <TableProperties className="h-4 w-4 mr-2" />
+                    Clientes no Salão
+                    {customersInSalon.length > 0 && (
+                      <span className="ml-2 bg-green-500 text-white text-xs py-0.5 px-2 rounded-full">
+                        {customersInSalon.length}
+                      </span>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
                     className={`justify-start rounded-none border-l-4 ${activeTab === 'settings' ? 'border-l-blink-primary bg-black/20' : 'border-l-transparent'} text-white hover:bg-black/30`}
                     onClick={() => setActiveTab('settings')}
                   >
@@ -1131,86 +1154,89 @@ const EstablishmentDashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* ========== SEÇÃO 3: CLIENTES NO SALÃO (Mesas Ocupadas) ========== */}
-                <Card className="border-0 shadow-md bg-gray-800">
-                  <CardHeader>
-                    <CardTitle className="text-xl text-white">
-                      🍽️ Clientes no Salão ({attendingCustomers.length})
-                    </CardTitle>
-                    <CardDescription className="text-gray-300">
-                      Sendo atendidos no momento
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    {attendingCustomers.length > 0 ? (
-                      <div className="space-y-4">
-                        {attendingCustomers.map((order) => (
-                          <Card key={order.id} className="border-green-600/50 bg-green-950/30">
-                            <CardHeader>
-                              <div className="flex justify-between items-center">
-                                <CardTitle className="text-lg text-white">
-                                  {formatClientDisplay(order.customerName, order.assignedTable, order.dailyNumber)}
-                                </CardTitle>
-                                <Badge className="bg-green-600 text-white">No Salão</Badge>
-                              </div>
-                              <CardDescription className="text-gray-300">
-                                Sendo atendido • {order.created_at ? getServiceTime(order.created_at) : ''}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2 text-white">
-                                {order.customerPhone && (
-                                  <p className="text-sm text-gray-300">📞 {order.customerPhone}</p>
-                                )}
-                                {getPaymentStatusBadge(order.paymentStatus || 'pending')}
-                                
-                                {Array.isArray(order.items) && order.items.length > 0 && (
-                                  <div className="mt-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
-                                    <p className="text-sm font-semibold text-blink-primary mb-2">📋 Itens do Pedido:</p>
-                                    <ul className="space-y-2">
-                                      {order.items.map((item: any, idx: number) => (
-                                        <li key={idx} className="flex justify-between items-center text-sm border-b border-gray-700/50 pb-2 last:border-0">
-                                          <span className="text-white font-medium">
-                                            <span className="text-blink-primary mr-2">{item.quantity}x</span>
-                                            {item.name || 'Item sem nome'}
-                                          </span>
-                                          <span className="text-gray-300">R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                    <div className="mt-3 pt-2 border-t border-gray-700 flex justify-between font-bold">
-                                      <span className="text-white">Total:</span>
-                                      <span className="text-blink-primary">R$ {order.total.toFixed(2)}</span>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                <Button 
-                                  onClick={() => handleCompleteOrder(order.id)}
-                                  className="bg-blink-primary hover:bg-blink-primary/90 text-black mt-4 w-full"
-                                >
-                                  🍽️ Finalizar Atendimento
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <Alert className="bg-gray-700 border-gray-600">
-                        <Info className="h-4 w-4 text-gray-400" />
-                        <AlertTitle className="text-gray-200">Nenhum cliente no salão</AlertTitle>
-                        <AlertDescription className="text-gray-300">
-                          Mesas ocupadas aparecerão aqui
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
                 
               </div>
             )}
 
+
+            {activeTab === 'salon' && (
+              <Card className="border-0 shadow-md bg-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-xl text-white flex items-center gap-2">
+                    <TableProperties className="h-5 w-5" />
+                    👥 Clientes no Salão
+                  </CardTitle>
+                  <CardDescription className="text-gray-300">
+                    Clientes que fizeram check-in e estão sendo atendidos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {customersInSalon.length > 0 ? (
+                    <div className="space-y-4">
+                      {customersInSalon.map((customer) => (
+                        <Card key={customer.id} className="border-green-600/50 bg-green-950/30">
+                          <CardHeader>
+                            <div className="flex justify-between items-center">
+                              <CardTitle className="text-lg text-white">
+                                Mesa {customer.assignedTable || customer.tableNumber}
+                              </CardTitle>
+                              <Badge className="bg-green-500 text-white">No Salão</Badge>
+                            </div>
+                            <CardDescription className="text-gray-300">
+                              {customer.customerName || 'Cliente'} • {customer.created_at ? getServiceTime(customer.created_at) : ''}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2 text-white">
+                              {customer.customerPhone && (
+                                <p className="text-sm text-gray-300">📞 {customer.customerPhone}</p>
+                              )}
+                              {getPaymentStatusBadge(customer.paymentStatus || 'pending')}
+                              
+                              {Array.isArray(customer.items) && customer.items.length > 0 && (
+                                <div className="mt-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                                  <p className="text-sm font-semibold text-blink-primary mb-2">📋 Itens do Pedido:</p>
+                                  <ul className="space-y-2">
+                                    {customer.items.map((item: any, idx: number) => (
+                                      <li key={idx} className="flex justify-between items-center text-sm border-b border-gray-700/50 pb-2 last:border-0">
+                                        <span className="text-white font-medium">
+                                          <span className="text-blink-primary mr-2">{item.quantity}x</span>
+                                          {item.name || 'Item sem nome'}
+                                        </span>
+                                        <span className="text-gray-300">R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <div className="mt-3 pt-2 border-t border-gray-700 flex justify-between font-bold">
+                                    <span className="text-white">Total:</span>
+                                    <span className="text-blink-primary">R$ {customer.total.toFixed(2)}</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <Button 
+                                onClick={() => handleCompleteOrder(customer.id)}
+                                className="bg-blue-600 hover:bg-blue-700 mt-4 w-full"
+                              >
+                                ✅ Finalizar Atendimento
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Alert className="bg-gray-700 border-gray-600">
+                      <Info className="h-4 w-4 text-gray-400" />
+                      <AlertTitle className="text-gray-200">Nenhum cliente no salão</AlertTitle>
+                      <AlertDescription className="text-gray-300">
+                        Clientes que fizeram check-in aparecerão aqui
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {activeTab === 'notifications' && (
               <Card className="border-0 shadow-md bg-gray-800 text-white">

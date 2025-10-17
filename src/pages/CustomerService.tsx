@@ -62,6 +62,13 @@ const CustomerService = () => {
   const handleCallWaiter = async () => {
     if (!order || !establishment) return;
 
+    const tableNumber = order.assigned_table || order.table_number;
+    
+    if (!tableNumber) {
+      toast.error('Mesa não identificada');
+      return;
+    }
+
     setCallingWaiter(true);
     try {
       const { error } = await supabase
@@ -70,8 +77,8 @@ const CustomerService = () => {
           order_id: orderId,
           establishment_id: establishment.id,
           notification_type: 'call_waiter',
-          message: `Mesa ${order.assigned_table} chamou o garçom`,
-          table_number: order.assigned_table,
+          message: `Mesa ${tableNumber} chamou o garçom`,
+          table_number: tableNumber,
         });
 
       if (error) throw error;
@@ -88,7 +95,7 @@ const CustomerService = () => {
   };
 
   const handleAddItems = () => {
-    navigate(`/menu-selection/${establishment.id}?table=${order.assigned_table}&orderId=${orderId}`);
+    navigate(`/menu-selection/${establishment.id}/${order.assigned_table || order.table_number}?orderId=${orderId}`);
   };
 
   const handleFinalize = () => {
