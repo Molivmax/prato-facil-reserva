@@ -186,23 +186,9 @@ const PaymentOptions = () => {
           .from('orders')
           .update({ 
             payment_method: 'pindura',
-            payment_status: 'pending'
-          })
-          .eq('id', orderDetails.id);
-
-        if (updateError) throw updateError;
-
-        toast({
-          title: "Pedido registrado!",
-          description: "Você poderá pagar depois.",
-        });
-        navigate(`/order-tracking/${orderId}`);
-      } else if (paymentMethod === 'local') {
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({ 
-            payment_method: 'pay_at_location',
-            payment_status: 'pending'
+            payment_status: 'paid',
+            order_status: 'confirmed',
+            updated_at: new Date().toISOString()
           })
           .eq('id', orderDetails.id);
 
@@ -210,7 +196,25 @@ const PaymentOptions = () => {
 
         toast({
           title: "Pedido confirmado!",
-          description: "Pague no estabelecimento.",
+          description: "Você poderá pagar depois no estabelecimento.",
+        });
+        navigate(`/order-tracking/${orderId}`);
+      } else if (paymentMethod === 'local') {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ 
+            payment_method: 'pay_at_location',
+            payment_status: 'paid',
+            order_status: 'confirmed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', orderDetails.id);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Pedido confirmado!",
+          description: "Pague no estabelecimento quando chegar.",
         });
         navigate(`/order-tracking/${orderId}`);
       }

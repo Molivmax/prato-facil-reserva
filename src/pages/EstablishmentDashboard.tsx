@@ -269,14 +269,15 @@ const EstablishmentDashboard = () => {
         // Separar pedidos confirmados (pagos mas ainda não fizeram check-in)
         const confirmed = ordersWithCustomers.filter(o => 
           o.paymentStatus === 'paid' && 
-          o.orderStatus === 'confirmed' &&
-          o.customerStatus !== 'checked_in'
+          (o.customerStatus === null || o.customerStatus === 'pending' || o.customerStatus === 'on_the_way') &&
+          o.orderStatus !== 'completed'
         );
         
         // Clientes NO SALÃO (fizeram check-in)
         const inSalon = ordersWithCustomers.filter(o =>
           o.paymentStatus === 'paid' &&
-          o.customerStatus === 'checked_in'
+          o.customerStatus === 'checked_in' &&
+          o.orderStatus !== 'completed'
         );
         
         // Clientes REALMENTE a caminho (com localização ativa)

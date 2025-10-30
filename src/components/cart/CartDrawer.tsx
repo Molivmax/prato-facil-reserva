@@ -72,19 +72,19 @@ const CartDrawer = ({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-100"
                     onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
                   >
-                    <Minus className="h-3 w-3" />
+                    <Minus className="h-3 w-3 text-gray-700" />
                   </Button>
                   <span className="w-8 text-center font-medium">{item.quantity}</span>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-100"
                     onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3 w-3 text-gray-700" />
                   </Button>
                 </div>
 
@@ -125,7 +125,7 @@ const CartDrawer = ({
 
           <div className="space-y-2">
             <Button 
-              className="w-full bg-blink-primary text-black hover:bg-blink-secondary font-medium"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg"
               onClick={() => {
                 onReserve();
                 onClose();
@@ -137,7 +137,7 @@ const CartDrawer = ({
             {onClearCart && (
               <Button 
                 variant="outline"
-                className="w-full"
+                className="w-full border-2 border-red-500 text-red-600 hover:bg-red-50 font-medium"
                 onClick={() => {
                   if (confirm('Deseja limpar todo o carrinho?')) {
                     onClearCart();
