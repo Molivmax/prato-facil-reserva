@@ -219,8 +219,9 @@ const EstablishmentDashboard = () => {
 
   const fetchEstablishmentOrders = async (establishmentId: string) => {
     try {
+      // Usar timezone UTC para garantir que pegue todos os pedidos de hoje
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      today.setUTCHours(0, 0, 0, 0);
       
       const { data: orders, error } = await supabase
         .from('orders')
