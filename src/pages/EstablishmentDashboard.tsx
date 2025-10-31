@@ -287,11 +287,10 @@ const EstablishmentDashboard = () => {
           o.orderStatus !== 'completed'
         );
         
-        // Clientes NO SALÃO (fizeram check-in)
+        // Clientes NO SALÃO (fizeram check-in) - incluindo finalizados
         const inSalon = ordersWithCustomers.filter(o =>
           o.paymentStatus === 'paid' &&
-          o.customerStatus === 'checked_in' &&
-          o.orderStatus !== 'completed'
+          o.customerStatus === 'checked_in'
         );
         
         // Clientes REALMENTE a caminho (com localização ativa)
@@ -310,7 +309,9 @@ const EstablishmentDashboard = () => {
         console.log('Orders loaded:', { 
           pending: pending.length, 
           confirmed: confirmed.length,
-          totalOrders: [...pending, ...confirmed].length 
+          inSalon: inSalon.length,
+          arriving: arriving.length,
+          totalOrders: ordersWithCustomers.length 
         });
       } else {
         setPendingOrders([]);
