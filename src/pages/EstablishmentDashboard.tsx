@@ -184,8 +184,21 @@ const EstablishmentDashboard = () => {
     checkAuth();
   }, [navigate, location]);
 
-  const fetchCustomerInfo = async (userId: string) => {
+  const fetchCustomerInfo = async (userId: string, establishmentId: string) => {
     try {
+      // Primeiro verificar se existe um pedido para esse cliente neste estabelecimento
+      const { data: orderExists } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('establishment_id', establishmentId)
+        .maybeSingle();
+      
+      if (!orderExists) {
+        return null;
+      }
+      
+      // Agora buscar as informações do usuário (a RLS permitirá por causa da ordem acima)
       const { data: user, error } = await supabase
         .from('users')
         .select('name, phone, email')
@@ -247,7 +260,7 @@ const EstablishmentDashboard = () => {
         const ordersWithCustomers = await Promise.all(
           formattedOrders.map(async (order) => {
             if (order.user_id && order.paymentStatus === 'paid') {
-              const customerInfo = await fetchCustomerInfo(order.user_id);
+              const customerInfo = await fetchCustomerInfo(order.user_id, establishmentId);
               if (customerInfo) {
                 return {
                   ...order,
